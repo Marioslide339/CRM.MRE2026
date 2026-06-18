@@ -23,6 +23,8 @@ export default function ExpensesView({
   const [category, setCategory] = useState<'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác'>('Chi phí quảng cáo');
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState('');
+  const [hasTax, setHasTax] = useState(true);
+  const [taxRate, setTaxRate] = useState<number>(11);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +40,8 @@ export default function ExpensesView({
     setCategory('Chi phí quảng cáo');
     setAmount(0);
     setDescription('');
+    setHasTax(true);
+    setTaxRate(11);
     setIsAddOpen(true);
   };
 
@@ -47,6 +51,8 @@ export default function ExpensesView({
     setCategory(exp.category);
     setAmount(exp.amount);
     setDescription(exp.description);
+    setHasTax(exp.hasTax ?? (exp.category === 'Chi phí quảng cáo'));
+    setTaxRate(exp.taxRate ?? (exp.category === 'Chi phí quảng cáo' ? 11 : 0));
     setIsAddOpen(true);
   };
 
@@ -54,19 +60,28 @@ export default function ExpensesView({
     e.preventDefault();
     if (amount <= 0 || !description) return;
 
+    const taxAmount = hasTax && taxRate > 0 ? Math.round(amount * taxRate / 100) : 0;
+    const totalAmount = amount + taxAmount;
+
     if (editingExpense) {
       onUpdateExpense(editingExpense.id, {
         date,
         category,
-        amount,
-        description
+        amount: totalAmount,
+        description,
+        hasTax,
+        taxRate: hasTax ? taxRate : 0,
+        taxAmount
       });
     } else {
       onAddExpense({
         date,
         category,
-        amount,
-        description
+        amount: totalAmount,
+        description,
+        hasTax,
+        taxRate: hasTax ? taxRate : 0,
+        taxAmount
       });
     }
     setIsAddOpen(false);
@@ -275,7 +290,14 @@ export default function ExpensesView({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Danh Mục Chi Phí*</label>
                 <select
                   value={category}
-                  onChange={e => setCategory(e.target.value as any)}
+                  onChange={e => {
+                    const val = e.target.value as any;
+                    setCategory(val);
+                    if (val === 'Chi phí quảng cáo') {
+                      setHasTax(true);
+                      setTaxRate(11);
+                    }
+                  }}
                   className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 bg-white"
                 >
                   <option value="Chi phí quảng cáo">Chi phí quảng cáo (Google/FB Ads...)</option>
@@ -299,6 +321,58 @@ export default function ExpensesView({
                   onChange={e => setAmount(Number(e.target.value))}
                   className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700"
                 />
+              </div>
+
+              {/* Tax calculation */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hasTax}
+                    onChange={e => {
+                      setHasTax(e.target.checked);
+                      if (!e.target.checked) setTaxRate(0);
+                      if (e.target.checked && category === 'Chi phí quảng cáo') setTaxRate(11);
+                    }}
+                    className="rounded border-slate-300 text-primary focus:ring-primary/30"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">Có tính thuế</span>
+                </label>
+                {hasTax && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-slate-500 font-medium whitespace-nowrap">Thuế suất (%):</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={taxRate}
+                        onChange={e => setTaxRate(Number(e.target.value))}
+                        className="w-20 p-1.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 text-xs text-center"
+                      />
+                    </div>
+                    {amount > 0 && taxRate > 0 && (
+                      <div className="text-[11px] text-slate-500 bg-white rounded-lg p-2 border border-slate-100">
+                        <div className="flex justify-between">
+                          <span>Số tiền gốc:</span>
+                          <span className="font-mono font-semibold text-slate-700">{formatVND(amount)}</span>
+                        </div>
+                        <div className="flex justify-between text-orange-600">
+                          <span>Thuế ({taxRate}%):</span>
+                          <span className="font-mono font-semibold">+ {formatVND(Math.round(amount * taxRate / 100))}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-red-600 border-t border-slate-200 pt-1 mt-1">
+                          <span>Tổng chi phí:</span>
+                          <span className="font-mono">{formatVND(amount + Math.round(amount * taxRate / 100))}</span>
+                        </div>
+                      </div>
+                    )}
+                    {category === 'Chi phí quảng cáo' && (
+                      <p className="text-[10px] text-slate-400 italic">* Chi phí QC mặc định: 10% thuế VAT + 1% phí thanh toán = 11%</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
