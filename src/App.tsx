@@ -72,6 +72,22 @@ export default function App() {
     }, 4000);
   };
 
+  const sanitizeCustomers = (custs: Customer[]): Customer[] => {
+    return custs.map(c => ({
+      ...c,
+      coursesPurchased: c.coursesPurchased || [],
+      lmsProgress: c.lmsProgress || {},
+      lmsGrades: c.lmsGrades || {},
+      lmsCertificateEarned: c.lmsCertificateEarned || {},
+      tags: c.tags || [],
+      aiAnalysis: c.aiAnalysis || {
+        segment: 'Tiềm năng',
+        summary: 'Thành viên mới tạo trên hệ thống CRM.',
+        lastEvaluation: new Date().toISOString()
+      }
+    }));
+  };
+
   // Load from local storage on component mount
   useEffect(() => {
     try {
@@ -86,7 +102,8 @@ export default function App() {
       const storedSheetUrl = localStorage.getItem('mre_sheet_url') || '';
       const storedKeys = localStorage.getItem('mre_gemini_keys');
 
-      setCustomers(storedCustomers ? JSON.parse(storedCustomers) : INITIAL_CUSTOMERS);
+      const rawCustomers = storedCustomers ? JSON.parse(storedCustomers) : INITIAL_CUSTOMERS;
+      setCustomers(sanitizeCustomers(rawCustomers));
       setOrders(storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS);
       setCourses(storedCourses ? JSON.parse(storedCourses) : INITIAL_COURSES);
       setDesigns(storedDesigns ? JSON.parse(storedDesigns) : INITIAL_DESIGNS);
@@ -102,7 +119,7 @@ export default function App() {
       }
     } catch (e) {
       console.error('Failed to parse cached database:', e);
-      setCustomers(INITIAL_CUSTOMERS);
+      setCustomers(sanitizeCustomers(INITIAL_CUSTOMERS));
       setOrders(INITIAL_ORDERS);
       setCourses(INITIAL_COURSES);
       setDesigns(INITIAL_DESIGNS);
@@ -167,8 +184,9 @@ export default function App() {
       const data = await response.json();
       if (data) {
         if (data.customers) {
-          setCustomers(data.customers);
-          saveToStorage('mre_customers', data.customers);
+          const sanitized = sanitizeCustomers(data.customers);
+          setCustomers(sanitized);
+          saveToStorage('mre_customers', sanitized);
         }
         if (data.orders) {
           setOrders(data.orders);
