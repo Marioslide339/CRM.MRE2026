@@ -65,7 +65,7 @@ export default function CustomersView({
   const [newCustName, setNewCustName] = useState('');
   const [newCustEmail, setNewCustEmail] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
-  const [newCustProvince, setNewCustProvince] = useState('Hà Nội');
+  const [newCustProvince, setNewCustProvince] = useState('');
   const [newCustWard, setNewCustWard] = useState('');
   const [newCustNotes, setNewCustNotes] = useState('');
   const [newCustTags, setNewCustTags] = useState<string[]>([]);
@@ -94,7 +94,7 @@ export default function CustomersView({
   // Unique tags list
   const allTags = useMemo(() => {
     const list = new Set<string>();
-    customers.forEach(c => c.tags.forEach(t => list.add(t)));
+    customers.forEach(c => (c.tags || []).forEach(t => list.add(t)));
     return Array.from(list);
   }, [customers]);
 
@@ -102,12 +102,12 @@ export default function CustomersView({
   const filteredCustomers = useMemo(() => {
     return customers.filter(c => {
       const matchSearch =
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.phone.includes(searchTerm) ||
-        c.id.toLowerCase().includes(searchTerm.toLowerCase());
+        (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.phone || '').includes(searchTerm) ||
+        (c.id || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchProvince = selectedProvince ? c.province === selectedProvince : true;
-      const matchTag = selectedTag ? c.tags.includes(selectedTag) : true;
+      const matchTag = selectedTag ? (c.tags || []).includes(selectedTag) : true;
       return matchSearch && matchProvince && matchTag;
     });
   }, [customers, searchTerm, selectedProvince, selectedTag]);
@@ -226,7 +226,7 @@ export default function CustomersView({
 
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCustName || !newCustEmail || !newCustPhone) return;
+    if (!newCustName || !newCustEmail) return;
 
     onAddCustomer({
       name: newCustName,
@@ -250,7 +250,7 @@ export default function CustomersView({
     setNewCustName('');
     setNewCustEmail('');
     setNewCustPhone('');
-    setNewCustProvince('Hà Nội');
+    setNewCustProvince('');
     setNewCustWard('');
     setNewCustNotes('');
     setNewCustTags([]);
@@ -401,7 +401,7 @@ export default function CustomersView({
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-1">
-                          {c.tags.map(t => (
+                          {(c.tags || []).map(t => (
                             <span key={t} className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] bg-slate-100 border border-slate-200 text-slate-600 font-medium">
                               {t}
                             </span>
@@ -777,10 +777,9 @@ export default function CustomersView({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại</label>
                   <input
                     type="text"
-                    required
                     placeholder="Nhập SĐT của khách"
                     value={newCustPhone}
                     onChange={e => setNewCustPhone(e.target.value)}
@@ -791,12 +790,13 @@ export default function CustomersView({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành</label>
                   <select
                     value={newCustProvince}
                     onChange={e => setNewCustProvince(e.target.value)}
                     className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
                   >
+                    <option value="">Chưa chọn</option>
                     <option value="Hà Nội">Hà Nội</option>
                     <option value="Hồ Chí Minh">Hồ Chí Minh</option>
                     <option value="Đà Nẵng">Đà Nẵng</option>
@@ -913,10 +913,9 @@ export default function CustomersView({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại</label>
                   <input
                     type="text"
-                    required
                     placeholder="Nhập SĐT của khách"
                     value={editCustPhone}
                     onChange={e => setEditCustPhone(e.target.value)}
@@ -927,12 +926,13 @@ export default function CustomersView({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành</label>
                   <select
                     value={editCustProvince}
                     onChange={e => setEditCustProvince(e.target.value)}
                     className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
                   >
+                    <option value="">Chưa chọn</option>
                     <option value="Hà Nội">Hà Nội</option>
                     <option value="Hồ Chí Minh">Hồ Chí Minh</option>
                     <option value="Đà Nẵng">Đà Nẵng</option>
