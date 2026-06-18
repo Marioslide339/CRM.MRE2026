@@ -226,7 +226,7 @@ export default function CustomersView({
 
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCustName || !newCustEmail) return;
+    if (!newCustName) return;
 
     onAddCustomer({
       name: newCustName,
@@ -766,10 +766,9 @@ export default function CustomersView({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
                   <input
                     type="email"
-                    required
                     placeholder="abc@gmail.com"
                     value={newCustEmail}
                     onChange={e => setNewCustEmail(e.target.value)}
@@ -902,10 +901,9 @@ export default function CustomersView({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
                   <input
                     type="email"
-                    required
                     placeholder="abc@gmail.com"
                     value={editCustEmail}
                     onChange={e => setEditCustEmail(e.target.value)}
