@@ -239,6 +239,117 @@ export default function App() {
     await syncToGoogleSheets();
   };
 
+  const handleTestConnection = async (email: string) => {
+    if (!googleSheetUrl) {
+      showToast('error', 'Vui lòng cấu hình URL Google Apps Script Web App trước!');
+      throw new Error('Chưa cấu hình URL Web App');
+    }
+    try {
+      const response = await fetch(googleSheetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'activateCourse',
+          email: email,
+          customerName: 'Học viên Thử nghiệm',
+          courseName: 'Khóa học Thử nghiệm kết nối CRM',
+          driveFolderId: '1sjuhc0WnuKQ42wVqFfUASAxKWY16wqjS9smdqBUM6Ho' // standard test ID
+        })
+      });
+      const resData = await response.json();
+      if (resData && resData.success) {
+        if (resData.shareSuccess) {
+          showToast('success', `Kiểm tra thành công! Đã chia sẻ Drive và gửi email đến ${email}.`);
+        } else {
+          showToast('info', `Kết nối Apps Script thành công! Đã gửi mail, nhưng share Drive thất bại (Lỗi: ${resData.error || 'Thư mục thử nghiệm không hợp lệ'}).`);
+        }
+      } else {
+        throw new Error(resData.error || 'Apps Script báo lỗi không xác định.');
+      }
+    } catch (err: any) {
+      console.error('Test connection error:', err);
+      showToast('error', `Không thể kết nối đến Apps Script: ${err.message || err}`);
+      throw err;
+    }
+  };
+
+  const runAppsScriptActivation = async (order: Order) => {
+    if (!googleSheetUrl) return;
+    try {
+      const response = await fetch(googleSheetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'activateCourse',
+          email: order.customerEmail,
+          customerName: order.customerName,
+          courseName: order.productName,
+          driveFolderId: order.driveFolderId
+        })
+      });
+      const resData = await response.json();
+      
+      const newLogs: AutomationLog[] = [];
+      if (resData && resData.success) {
+        newLogs.push({
+          id: `L${Date.now()}_bg1`,
+          timestamp: new Date().toISOString(),
+          orderId: order.id,
+          step: 3,
+          message: `[Auto-Background] Kích hoạt và cấp quyền thành công cho ${order.customerEmail}`,
+          type: 'success'
+        });
+        if (resData.shareSuccess) {
+          showToast('success', `Đã tự động kích hoạt: Cấp quyền Drive và gửi email đến ${order.customerEmail}!`);
+        } else {
+          newLogs.push({
+            id: `L${Date.now()}_bg2`,
+            timestamp: new Date().toISOString(),
+            orderId: order.id,
+            step: 3,
+            message: `[Auto-Background] Gửi email thành công, lỗi cấp quyền Drive: ${resData.error || 'N/A'}`,
+            type: 'error'
+          });
+          showToast('info', `Đã gửi mail kích hoạt cho ${order.customerEmail}, nhưng không thể tự động share Drive (Lỗi: ${resData.error || 'File ID không hợp lệ'}).`);
+        }
+      } else {
+        newLogs.push({
+          id: `L${Date.now()}_bg3`,
+          timestamp: new Date().toISOString(),
+          orderId: order.id,
+          step: 3,
+          message: `[Auto-Background] Thất bại khi kết nối Apps Script: ${resData.error || 'Unknown'}`,
+          type: 'error'
+        });
+        showToast('error', `Lỗi Apps Script khi kích hoạt cho ${order.customerEmail}: ${resData.error || 'Unknown'}`);
+      }
+      
+      setLogs(prev => {
+        const u = [...newLogs, ...prev];
+        saveToStorage('mre_logs', u);
+        return u;
+      });
+      
+    } catch (err: any) {
+      console.error('Auto activation error:', err);
+      showToast('error', `Không thể kết nối Apps Script để kích hoạt và gửi email thực tế cho ${order.customerEmail}.`);
+      
+      const errLog: AutomationLog = {
+        id: `L${Date.now()}_bg_err`,
+        timestamp: new Date().toISOString(),
+        orderId: order.id,
+        step: 3,
+        message: `[Auto-Background] Lỗi mạng khi kết nối Apps Script: ${err.message || err}`,
+        type: 'error'
+      };
+      setLogs(prev => {
+        const u = [errLog, ...prev];
+        saveToStorage('mre_logs', u);
+        return u;
+      });
+    }
+  };
+
   // State modifiers and sync
   const handleAddCustomer = (newCustomer: Partial<Customer>) => {
     const id = `KH${String(customers.length + 1).padStart(4, '0')}`;
@@ -301,7 +412,7 @@ export default function App() {
     }
   };
 
-  const linkPurchasedCourseToClient = (customerId: string, productId: string, orderRef: Order, updatedOrdersList?: Order[]) => {
+  const linkPurchasedCourseToClient = (customerId: string, productId: string, orderRef: Order, updatedOrdersList?: Order[], triggerAppsScript: boolean = true) => {
     let updatedCusts = customers;
     setCustomers(prevCustomers => {
       const updated = prevCustomers.map(c => {
@@ -369,15 +480,18 @@ export default function App() {
         logs,
         expenses
       });
+      if (triggerAppsScript) {
+        runAppsScriptActivation(orderRef);
+      }
     }, 1000);
   };
 
-  const handleUpdateOrder = (id: string, updatedFields: Partial<Order>) => {
+  const handleUpdateOrder = (id: string, updatedFields: Partial<Order>, triggerAppsScript: boolean = true) => {
     const updated = orders.map(o => {
       if (o.id === id) {
         const withUpdated = { ...o, ...updatedFields };
         if (updatedFields.paymentStatus === 'Đã thanh toán' && o.paymentStatus !== 'Đã thanh toán') {
-          linkPurchasedCourseToClient(o.customerId, o.productId, withUpdated, updated);
+          linkPurchasedCourseToClient(o.customerId, o.productId, withUpdated, updated, triggerAppsScript);
         }
         return withUpdated;
       }
@@ -949,6 +1063,7 @@ export default function App() {
             isSyncing={isSyncing}
             onTriggerSync={handleTriggerSync}
             onFetchFromSheets={fetchFromGoogleSheets}
+            onTestConnection={handleTestConnection}
           />
         )}
       </main>
