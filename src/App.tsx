@@ -831,9 +831,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-offwhite flex flex-col md:flex-row shadow-inner pb-12 sm:pb-0" id="main_app_wrapper">
-      {/* Dynamic Left Sidebar menu */}
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800 shadow-xl" id="sidebar_nav_aside">
+    <div className="h-screen bg-bg-offwhite flex flex-col md:flex-row overflow-hidden" id="main_app_wrapper">
+      {/* Dynamic Left Sidebar menu — fixed, does not scroll with page */}
+      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800 shadow-xl md:h-screen md:sticky md:top-0 md:overflow-y-auto" id="sidebar_nav_aside">
         <div>
           {/* Logo Brand Header */}
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -975,7 +975,7 @@ export default function App() {
       </aside>
 
       {/* Main Container contents */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full space-y-6" id="view_contents_main">
+      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto w-full space-y-6" id="view_contents_main">
         {/* Render separate views natively inside active states */}
         {activeTab === 'dashboard' && (
           <DashboardView
