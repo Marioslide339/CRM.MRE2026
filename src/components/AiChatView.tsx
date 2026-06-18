@@ -69,6 +69,41 @@ export default function AiChatView({
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
+    const systemPrompt = `
+Bạn là Trợ lý phân tích dữ liệu AI thông minh tích hợp trong hệ thống "MRE CRM 2026" quản lý trung tâm đào tạo, thiết kế slide hoạt ảnh Mario Slide.
+Bạn là một chuyên gia phân tích kinh doanh, marketing và quản trị quan hệ khách hàng xuất sắc.
+
+Dưới đây là TOÀN BỘ dữ liệu hiện tại của hệ thống CRM từ Google Sheets Database (quy đổi dưới dạng JSON):
+
+--- DANH SÁCH KHÓA HỌC (KHOA_HOC) ---
+${JSON.stringify(courses, null, 2)}
+
+--- DANH SÁCH KHÁCH HÀNG (KHACH_HANG) ---
+${JSON.stringify(customers, null, 2)}
+
+--- DANH SÁCH ĐƠN HÀNG (DON_HANG) ---
+${JSON.stringify(orders, null, 2)}
+
+--- DỊCH VỤ THIẾT KẾ (THIET_KE) ---
+${JSON.stringify(designs, null, 2)}
+
+--- CỘNG TÁC VIÊN (CON_TAC_VIEN) ---
+${JSON.stringify(collaborators, null, 2)}
+
+--- CÁC CHIẾN DỊCH CAMPAIGN MARKETING ---
+${JSON.stringify(campaigns, null, 2)}
+
+--- DANH SÁCH CHI PHÍ (CHI_PHI) ---
+${JSON.stringify(expenses || [], null, 2)}
+
+HƯỚNG DẪN TRẢ LỜI:
+1. Trả lời bằng tiếng Việt lịch sự, nhiệt tình, chuyên nghiệp và có định dạng Markdown đẹp, mạch lạc.
+2. Thể hiện tư duy phân tích sâu sắc. Khi được hỏi về doanh thu, khách hàng, khóa học chạy tốt nhất, tỉnh thành, công nợ, hay CTV, hãy tìm kiếm, tính toán trực tiếp từ dữ liệu thực tế được cung cấp ở trên. Không bịa đặt số liệu.
+3. Nếu người dùng hỏi các câu hỏi chung hay yêu cầu tư duy marketing, hãy kết hợp dữ liệu thực tế của họ và đưa ra giải pháp đề xuất thông minh (Ví dụ: đề xuất tặng khóa học Canva cho khách VIP, chăm sóc khách 'Ngủ quên' ở tỉnh nào...).
+4. Định dạng tiền tệ bằng VND có dấu phân cách nghìn (Ví dụ: 1.250.000đ).
+5. Phân nhóm khách hàng cụ thể theo yêu cầu: Khách VIP (đã mua số tiền > 2 triệu hoặc nhiều khóa), Khách tiềm năng (đã mua 1 khóa học hoặc hoàn thành tốt LMS), Khách ngủ quên (tiến độ học 0% hoặc lâu chưa tương tác).
+`;
+
     let apiSuccess = false;
     let apiErrorMsg = '';
 
@@ -78,28 +113,77 @@ export default function AiChatView({
     for (let i = 0; i < keysToTry.length; i++) {
       const currentKey = keysToTry[i];
       try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: textToSend,
-            crmData: prepDataset(),
-            history: messages,
-            apiKey: currentKey
-          })
-        });
+        let textResult = '';
 
-        const data = await response.json();
+        if (currentKey) {
+          // Call Gemini API directly from browser to bypass backend limitations/Vercel SPA hosting issues
+          const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey}`;
+          const response = await fetch(directUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: systemPrompt }]
+                },
+                ...messages.map((h: any) => ({
+                  role: h.role === 'user' ? 'user' : 'model',
+                  parts: [{ text: h.content }]
+                })),
+                {
+                  role: 'user',
+                  parts: [{ text: textToSend }]
+                }
+              ]
+            })
+          });
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Yêu cầu phân tích dữ liệu thất bại.');
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData?.error?.message || `Google API trả về mã lỗi ${response.status}`);
+          }
+
+          const data = await response.json();
+          const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!candidateText) {
+            throw new Error('Phản hồi từ Gemini API không đúng cấu trúc mong đợi.');
+          }
+          textResult = candidateText;
+        } else {
+          // Fallback to Express backend endpoint
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: textToSend,
+              crmData: prepDataset(),
+              history: messages,
+              apiKey: currentKey
+            })
+          });
+
+          // Check if response is valid JSON
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server không phản hồi dạng JSON. Bạn đang chạy bản tĩnh (Vercel) mà không khởi tạo API Key? Hãy cấu hình mã API Key của bạn trong phần Cài đặt (Sheets Database) để trò chuyện trực tiếp từ trình duyệt.');
+          }
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Yêu cầu phân tích thất bại từ Server.');
+          }
+          textResult = data.text;
         }
 
-        setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: textResult }]);
         apiSuccess = true;
-        break; // Stop rotating on success
+        break; // Stop rotating keys on success
       } catch (err: any) {
         console.warn(`Gemini API key rotation index ${i} failed:`, err);
         apiErrorMsg = err.message || 'Lỗi không xác định.';
