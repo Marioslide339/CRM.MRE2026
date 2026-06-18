@@ -58,6 +58,8 @@ export interface DesignService {
   deadline: string; // YYYY-MM-DD
   deadlineDemo: string; // YYYY-MM-DD
   status: 'Tiếp nhận' | 'Đang làm' | 'Gửi demo' | 'Chỉnh sửa' | 'Hoàn thành';
+  amount?: number;
+  createdAt?: string;
 }
 
 export interface Expense {
