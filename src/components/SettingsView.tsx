@@ -11,6 +11,7 @@ interface SettingsViewProps {
   isSyncing: boolean;
   onTriggerSync: () => Promise<void>;
   onFetchFromSheets: () => Promise<void>;
+  onTestConnection: (email: string) => Promise<void>;
 }
 
 export default function SettingsView({
@@ -22,7 +23,8 @@ export default function SettingsView({
   onExportJSON,
   isSyncing,
   onTriggerSync,
-  onFetchFromSheets
+  onFetchFromSheets,
+  onTestConnection
 }: SettingsViewProps) {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [doneAction, setDoneAction] = useState<string | null>(null);
@@ -33,6 +35,24 @@ export default function SettingsView({
   const [key2, setKey2] = useState(geminiKeys[1] || '');
   const [key3, setKey3] = useState(geminiKeys[2] || '');
   const [copied, setCopied] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+  const [isTesting, setIsTesting] = useState(false);
+
+  const handleTestEmailSend = async () => {
+    if (!testEmail.trim()) {
+      showNotice('Vui lòng nhập địa chỉ email người nhận thử nghiệm!');
+      return;
+    }
+    setIsTesting(true);
+    try {
+      await onTestConnection(testEmail.trim());
+      showNotice(`Đã gửi yêu cầu kích hoạt thử nghiệm đến ${testEmail}!`);
+    } catch(err: any) {
+      showNotice(`Lỗi thử nghiệm: ${err.message || err}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   const handleReset = () => {
     onResetDatabase();
@@ -127,19 +147,35 @@ function doPost(e) {
       
       if (cleanId) {
         try {
+          // Grant Viewer permission using Google Drive REST API to trigger the standard Google sharing email notification
+          shareDrivePermission(cleanId, email);
+          shareSuccess = true;
+          
+          // Get the actual URL
           try {
-            var folder = DriveApp.getFolderById(cleanId);
-            folder.addViewer(email);
-            driveLink = folder.getUrl();
-            shareSuccess = true;
-          } catch(folderErr) {
-            var file = DriveApp.getFileById(cleanId);
-            file.addViewer(email);
-            driveLink = file.getUrl();
-            shareSuccess = true;
+            driveLink = DriveApp.getFolderById(cleanId).getUrl();
+          } catch(err) {
+            driveLink = DriveApp.getFileById(cleanId).getUrl();
           }
         } catch(e) {
           shareError = e.toString();
+          
+          // Fallback to DriveApp.addViewer if REST API fails
+          try {
+            try {
+              var folder = DriveApp.getFolderById(cleanId);
+              folder.addViewer(email);
+              driveLink = folder.getUrl();
+              shareSuccess = true;
+            } catch(folderErr) {
+              var file = DriveApp.getFileById(cleanId);
+              file.addViewer(email);
+              driveLink = file.getUrl();
+              shareSuccess = true;
+            }
+          } catch(fallbackErr) {
+            shareError += " | Fallback: " + fallbackErr.toString();
+          }
         }
       }
       
@@ -314,27 +350,50 @@ function writeSheet(ss, name, list) {
 
 function getCleanId(str) {
   if (!str) return "";
-  if (str.indexOf("drive.google.com") !== -1) {
-    var parts = str.split("/");
-    for (var i = 0; i < parts.length; i++) {
-      if (parts[i] === "folders" || parts[i] === "d") {
-        if (i + 1 < parts.length) {
-          return parts[i + 1].split("?")[0];
-        }
-      }
-    }
+  str = str.trim();
+  if (str.indexOf("/") === -1 && str.indexOf(".") === -1) {
+    return str;
   }
-  if (str.indexOf("docs.google.com/presentation") !== -1) {
-    var parts = str.split("/");
-    for (var i = 0; i < parts.length; i++) {
-      if (parts[i] === "d") {
-        if (i + 1 < parts.length) {
-          return parts[i + 1].split("?")[0];
-        }
-      }
-    }
+  var match = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  match = str.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  match = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  
+  return str;
+}
+
+function shareDrivePermission(fileId, email) {
+  // Call Drive API REST endpoint to share with standard Google email invitation (Notify people checkbox checked)
+  var url = "https://www.googleapis.com/drive/v3/files/" + fileId + "/permissions?sendNotificationEmail=true";
+  var payload = {
+    "role": "reader",
+    "type": "user",
+    "emailAddress": email
+  };
+  var options = {
+    "method": "POST",
+    "contentType": "application/json",
+    "headers": {
+      "Authorization": "Bearer " + ScriptApp.getOAuthToken()
+    },
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  
+  var response = UrlFetchApp.fetch(url, options);
+  var resText = response.getContentText();
+  var resJson = JSON.parse(resText);
+  if (response.getResponseCode() !== 200) {
+    throw new Error(resJson.error ? resJson.error.message : resText);
   }
-  return str.trim();
+  
+  // Dummy check to force Apps Script to request Drive permissions
+  // DriveApp.getFiles();
+  return resJson;
 }`;
 
   const copyToClipboard = () => {
@@ -414,6 +473,37 @@ function getCleanId(str) {
                 onChange={e => setSheetUrl(e.target.value)}
                 className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-xs font-mono"
               />
+            </div>
+
+            {/* Test Connection & Email section */}
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+              <h4 className="text-xs font-semibold text-secondary font-sans flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Kiểm Tra Kết Nối & Gửi Email Thử Nghiệm
+              </h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Nhập email của bạn để gửi một yêu cầu kích hoạt khóa học mẫu qua Apps Script. Hệ thống sẽ thử chia sẻ quyền xem (Viewer) thư mục học liệu thử nghiệm và gửi email thông báo để bạn kiểm tra luồng hoạt động thực tế.
+              </p>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1">
+                  <label className="block text-[10px] font-semibold text-slate-600">Email người nhận thử nghiệm</label>
+                  <input
+                    type="email"
+                    placeholder="vi-du@gmail.com"
+                    value={testEmail}
+                    onChange={e => setTestEmail(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-xs font-sans"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestEmailSend}
+                  disabled={isTesting}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow transition cursor-pointer shrink-0 h-[38px] flex items-center justify-center gap-1.5"
+                >
+                  {isTesting ? 'Đang gửi...' : 'Gửi Thử Nghiệm'}
+                </button>
+              </div>
             </div>
           </div>
 
