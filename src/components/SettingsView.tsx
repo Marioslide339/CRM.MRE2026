@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Database, FileJson, Check, RotateCcw, ShieldAlert, Sparkles, LayoutGrid, FileSpreadsheet, Key, Link2, Copy, RefreshCw } from 'lucide-react';
+import { Database, FileJson, Check, RotateCcw, ShieldAlert, Sparkles, LayoutGrid, FileSpreadsheet, Key, Link2, Copy, RefreshCw, Download } from 'lucide-react';
 
 interface SettingsViewProps {
   googleSheetUrl: string;
@@ -10,6 +10,7 @@ interface SettingsViewProps {
   onExportJSON: () => void;
   isSyncing: boolean;
   onTriggerSync: () => Promise<void>;
+  onFetchFromSheets: () => Promise<void>;
 }
 
 export default function SettingsView({
@@ -20,7 +21,8 @@ export default function SettingsView({
   onResetDatabase,
   onExportJSON,
   isSyncing,
-  onTriggerSync
+  onTriggerSync,
+  onFetchFromSheets
 }: SettingsViewProps) {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [doneAction, setDoneAction] = useState<string | null>(null);
@@ -69,6 +71,19 @@ export default function SettingsView({
     }
   };
 
+  const handleDownloadFromSheets = async () => {
+    if (!googleSheetUrl) {
+      showNotice('Vui lòng lưu URL Web App Google Sheets trước khi tải dữ liệu!');
+      return;
+    }
+    try {
+      await onFetchFromSheets();
+      showNotice('Tải dữ liệu từ Google Sheets về App thành công!');
+    } catch (err: any) {
+      showNotice(`Tải dữ liệu thất bại: ${err.message || err}`);
+    }
+  };
+
   const appsScriptCode = `function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify(readAllData()))
     .setMimeType(ContentService.MimeType.JSON);
@@ -83,6 +98,21 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     } else if (params.action === 'getData') {
       return ContentService.createTextOutput(JSON.stringify(readAllData()))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else if (params.action === 'sendEmail') {
+      var recipient = params.email;
+      var subject = "Kích hoạt khóa học: " + params.courseName;
+      var htmlBody = "<h3>Chào " + params.customerName + ",</h3>" +
+                     "<p>Cảm ơn bạn đã đăng ký học tập tại Mario Slide. Khóa học <strong>" + params.courseName + "</strong> của bạn đã được kích hoạt thành công.</p>" +
+                     "<p>Bạn có thể truy cập thư mục tài liệu học tập Google Drive theo liên kết dưới đây:</p>" +
+                     "<p><a href='" + params.driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Truy Cập Drive Khóa Học</a></p>" +
+                     "<p>Nếu bạn gặp bất kỳ khó khăn nào trong quá trình học tập, vui lòng liên hệ bộ phận hỗ trợ kỹ thuật.</p>" +
+                     "<br/><p>Trân trọng,<br/><strong>Mario Slide CRM 2026</strong></p>";
+      
+      GmailApp.sendEmail(recipient, subject, "", {
+        htmlBody: htmlBody
+      });
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
         .setMimeType(ContentService.MimeType.JSON);
     }
   } catch(err) {
@@ -249,14 +279,26 @@ function writeSheet(ss, name, list) {
         </div>
         
         {googleSheetUrl && (
-          <button
-            onClick={handleManualSync}
-            disabled={isSyncing}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
-          >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleDownloadFromSheets}
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition shadow-sm"
+              id="btn_download_from_sheets"
+            >
+              <Download className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              Tải dữ liệu về App
+            </button>
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
+              id="btn_upload_to_sheets"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Đang gửi...' : 'Đồng bộ lên Sheets'}
+            </button>
+          </div>
         )}
       </div>
 
