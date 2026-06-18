@@ -113,10 +113,6 @@ export default function App() {
       setExpenses(storedExpenses ? JSON.parse(storedExpenses) : INITIAL_EXPENSES);
       setGoogleSheetUrl(storedSheetUrl);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
-
-      if (storedSheetUrl) {
-        fetchFromGoogleSheets(storedSheetUrl);
-      }
     } catch (e) {
       console.error('Failed to parse cached database:', e);
       setCustomers(sanitizeCustomers(INITIAL_CUSTOMERS));
@@ -221,7 +217,6 @@ export default function App() {
     } catch (err) {
       console.error('Google Sheets read error:', err);
       showToast('error', 'Không thể đồng bộ dữ liệu từ Google Sheets.');
-      throw err;
     } finally {
       setIsSyncing(false);
     }
@@ -231,7 +226,7 @@ export default function App() {
     setGoogleSheetUrl(url);
     saveToStorage('mre_sheet_url', url);
     if (url) {
-      fetchFromGoogleSheets(url);
+      syncToGoogleSheets(url);
     }
   };
 
@@ -241,7 +236,7 @@ export default function App() {
   };
 
   const handleTriggerSync = async () => {
-    await fetchFromGoogleSheets();
+    await syncToGoogleSheets();
   };
 
   // State modifiers and sync
