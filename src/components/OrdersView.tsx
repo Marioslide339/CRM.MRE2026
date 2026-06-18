@@ -51,7 +51,8 @@ export default function OrdersView({
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [orderPrice, setOrderPrice] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<'Chưa thanh toán' | 'Đã thanh toán'>('Chưa thanh toán');
-  const [paymentRecipient, setPaymentRecipient] = useState<'TK cá nhân' | 'TK công ty'>('TK công ty');
+  const [paymentRecipient, setPaymentRecipient] = useState<'Tiền mặt' | 'TK công ty'>('TK công ty');
+  const [orderType, setOrderType] = useState<'Đăng ký mới' | 'Gửi lại'>('Đăng ký mới');
 
   // Edit order status
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -60,7 +61,8 @@ export default function OrdersView({
   const [editCourseId, setEditCourseId] = useState('');
   const [editOrderPrice, setEditOrderPrice] = useState<number>(0);
   const [editPaymentStatus, setEditPaymentStatus] = useState<'Chưa thanh toán' | 'Đã thanh toán'>('Chưa thanh toán');
-  const [editPaymentRecipient, setEditPaymentRecipient] = useState<'TK cá nhân' | 'TK công ty'>('TK công ty');
+  const [editPaymentRecipient, setEditPaymentRecipient] = useState<'Tiền mặt' | 'TK công ty'>('TK công ty');
+  const [editOrderType, setEditOrderType] = useState<'Đăng ký mới' | 'Gửi lại'>('Đăng ký mới');
   const [editDeliveryStatus, setEditDeliveryStatus] = useState<'Chưa kích hoạt' | 'Đã cấp tài khoản'>('Chưa kích hoạt');
 
   // Automation Simulator modal state
@@ -97,9 +99,10 @@ export default function OrdersView({
       customerEmail: cust.email,
       productId: course.id,
       productName: course.title,
-      price: orderPrice,
+      price: orderType === 'Gửi lại' ? 0 : orderPrice,
       paymentStatus: paymentStatus,
       paymentRecipient: paymentRecipient,
+      orderType: orderType,
       deliveryStatus: paymentStatus === 'Đã thanh toán' ? 'Đã cấp tài khoản' : 'Chưa kích hoạt',
       createdAt: new Date().toISOString(),
       driveFolderId: course.driveFolderId
@@ -112,6 +115,7 @@ export default function OrdersView({
     setOrderPrice(0);
     setPaymentStatus('Chưa thanh toán');
     setPaymentRecipient('TK công ty');
+    setOrderType('Đăng ký mới');
   };
 
   const handleMarkAsPaid = (order: Order) => {
@@ -189,6 +193,7 @@ export default function OrdersView({
     setEditOrderPrice(order.price);
     setEditPaymentStatus(order.paymentStatus);
     setEditPaymentRecipient(order.paymentRecipient || 'TK công ty');
+    setEditOrderType(order.orderType || 'Đăng ký mới');
     setEditDeliveryStatus(order.deliveryStatus);
     setIsEditOpen(true);
   };
@@ -207,9 +212,10 @@ export default function OrdersView({
       customerEmail: cust.email,
       productId: course.id,
       productName: course.title,
-      price: editOrderPrice,
+      price: editOrderType === 'Gửi lại' ? 0 : editOrderPrice,
       paymentStatus: editPaymentStatus,
       paymentRecipient: editPaymentRecipient,
+      orderType: editOrderType,
       deliveryStatus: editDeliveryStatus,
       driveFolderId: course.driveFolderId
     });
@@ -525,17 +531,43 @@ export default function OrdersView({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tài khoản thụ hưởng chuyển khoản*</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Loại đơn hàng*</label>
+                <div className="flex gap-4 pt-1">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="Đăng ký mới"
+                      checked={orderType === 'Đăng ký mới'}
+                      onChange={() => setOrderType('Đăng ký mới')}
+                    />
+                    <span>Đăng ký mới</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="Gửi lại"
+                      checked={orderType === 'Gửi lại'}
+                      onChange={() => setOrderType('Gửi lại')}
+                    />
+                    <span>Gửi lại <span className="text-[10px] text-slate-400">(không tính doanh thu)</span></span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Hình thức thanh toán*</label>
                 <div className="flex gap-4 pt-1">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="payAccountRecipient"
-                      value="TK cá nhân"
-                      checked={paymentRecipient === 'TK cá nhân'}
-                      onChange={() => setPaymentRecipient('TK cá nhân')}
+                      value="Tiền mặt"
+                      checked={paymentRecipient === 'Tiền mặt'}
+                      onChange={() => setPaymentRecipient('Tiền mặt')}
                     />
-                    <span>Chuyển khoản vào TK cá nhân</span>
+                    <span>Tiền mặt</span>
                   </label>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
@@ -818,17 +850,43 @@ export default function OrdersView({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tài khoản thụ hưởng chuyển khoản*</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Loại đơn hàng*</label>
+                <div className="flex gap-4 pt-1">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editOrderType"
+                      value="Đăng ký mới"
+                      checked={editOrderType === 'Đăng ký mới'}
+                      onChange={() => setEditOrderType('Đăng ký mới')}
+                    />
+                    <span>Đăng ký mới</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editOrderType"
+                      value="Gửi lại"
+                      checked={editOrderType === 'Gửi lại'}
+                      onChange={() => setEditOrderType('Gửi lại')}
+                    />
+                    <span>Gửi lại <span className="text-[10px] text-slate-400">(không tính doanh thu)</span></span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Hình thức thanh toán*</label>
                 <div className="flex gap-4 pt-1">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="editPayAccountRecipient"
-                      value="TK cá nhân"
-                      checked={editPaymentRecipient === 'TK cá nhân'}
-                      onChange={() => setEditPaymentRecipient('TK cá nhân')}
+                      value="Tiền mặt"
+                      checked={editPaymentRecipient === 'Tiền mặt'}
+                      onChange={() => setEditPaymentRecipient('Tiền mặt')}
                     />
-                    <span>TK cá nhân</span>
+                    <span>Tiền mặt</span>
                   </label>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
@@ -838,7 +896,7 @@ export default function OrdersView({
                       checked={editPaymentRecipient === 'TK công ty'}
                       onChange={() => setEditPaymentRecipient('TK công ty')}
                     />
-                    <span>TK công ty</span>
+                    <span>Chuyển khoản vào TK công ty</span>
                   </label>
                 </div>
               </div>
