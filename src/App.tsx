@@ -44,6 +44,8 @@ import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
 
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -58,7 +60,6 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // Google Sheets integration and Gemini rotation
-  const [googleSheetUrl, setGoogleSheetUrl] = useState<string>('https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec');
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -99,7 +100,6 @@ export default function App() {
       const storedCampaigns = localStorage.getItem('mre_campaigns');
       const storedLogs = localStorage.getItem('mre_logs');
       const storedExpenses = localStorage.getItem('mre_expenses');
-      const storedSheetUrl = localStorage.getItem('mre_sheet_url') || 'https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec';
       const storedKeys = localStorage.getItem('mre_gemini_keys');
 
       const rawCustomers = storedCustomers ? JSON.parse(storedCustomers) : INITIAL_CUSTOMERS;
@@ -111,7 +111,6 @@ export default function App() {
       setCampaigns(storedCampaigns ? JSON.parse(storedCampaigns) : INITIAL_CAMPAIGNS);
       setLogs(storedLogs ? JSON.parse(storedLogs) : INITIAL_LOGS);
       setExpenses(storedExpenses ? JSON.parse(storedExpenses) : INITIAL_EXPENSES);
-      setGoogleSheetUrl(storedSheetUrl);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
     } catch (e) {
       console.error('Failed to parse cached database:', e);
@@ -133,9 +132,7 @@ export default function App() {
 
   // Live Sync to Google Sheet
   const syncToGoogleSheets = async (urlToUse?: string, forcedData?: any) => {
-    const url = urlToUse || googleSheetUrl;
-    if (!url) return;
-    
+    const url = urlToUse || GOOGLE_SHEET_URL;
     setIsSyncing(true);
     try {
       const payload = forcedData || {
@@ -171,9 +168,7 @@ export default function App() {
   };
 
   const fetchFromGoogleSheets = async (urlToUse?: string) => {
-    const url = urlToUse || googleSheetUrl;
-    if (!url) return;
-    
+    const url = urlToUse || GOOGLE_SHEET_URL;
     setIsSyncing(true);
     try {
       const response = await fetch(`${url}?action=getData`);
@@ -222,14 +217,6 @@ export default function App() {
     }
   };
 
-  const handleSaveGoogleSheetUrl = (url: string) => {
-    setGoogleSheetUrl(url);
-    saveToStorage('mre_sheet_url', url);
-    if (url) {
-      syncToGoogleSheets(url);
-    }
-  };
-
   const handleSaveGeminiKeys = (keys: string[]) => {
     setGeminiKeys(keys);
     saveToStorage('mre_gemini_keys', keys);
@@ -240,12 +227,8 @@ export default function App() {
   };
 
   const handleTestConnection = async (email: string) => {
-    if (!googleSheetUrl) {
-      showToast('error', 'Vui lòng cấu hình URL Google Apps Script Web App trước!');
-      throw new Error('Chưa cấu hình URL Web App');
-    }
     try {
-      const response = await fetch(googleSheetUrl, {
+      const response = await fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
@@ -274,9 +257,8 @@ export default function App() {
   };
 
   const runAppsScriptActivation = async (order: Order) => {
-    if (!googleSheetUrl) return;
     try {
-      const response = await fetch(googleSheetUrl, {
+      const response = await fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
@@ -963,7 +945,7 @@ export default function App() {
             logs={logs}
             expenses={expenses}
             onNavigate={(tab) => setActiveTab(tab)}
-            googleSheetUrl={googleSheetUrl}
+            googleSheetUrl={GOOGLE_SHEET_URL}
             isSyncing={isSyncing}
           />
         )}
@@ -1054,8 +1036,6 @@ export default function App() {
 
         {activeTab === 'settings' && (
           <SettingsView
-            googleSheetUrl={googleSheetUrl}
-            onSaveGoogleSheetUrl={handleSaveGoogleSheetUrl}
             geminiKeys={geminiKeys}
             onSaveGeminiKeys={handleSaveGeminiKeys}
             onResetDatabase={handleResetDatabase}
