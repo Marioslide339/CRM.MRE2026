@@ -71,3 +71,31 @@ input, select, textarea {
   font-size: 0.875rem !important; /* text-xs equivalent at 14px */
   padding: 0.65rem 0.85rem !important;
 }
+
+/* Sidebar: hide scrollbar but allow scrolling */
+#sidebar_nav_aside {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+#sidebar_nav_aside::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Main content: thin custom scrollbar */
+#view_contents_main {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+#view_contents_main::-webkit-scrollbar {
+  width: 6px;
+}
+#view_contents_main::-webkit-scrollbar-track {
+  background: transparent;
+}
+#view_contents_main::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 999px;
+}
+#view_contents_main::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
