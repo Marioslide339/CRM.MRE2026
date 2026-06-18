@@ -44,7 +44,7 @@ import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
 
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxgblXuPIODMKiUSLtvD6-7QyLdCAGacj9wdkovJ3ERLTUqOZdzVjXmKBZKCXRKQYXWPg/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
