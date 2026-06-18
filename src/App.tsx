@@ -397,7 +397,7 @@ export default function App() {
     syncToGoogleSheets(undefined, { customers, orders: updated, courses, designs, collaborators, campaigns, logs, expenses });
   };
 
-  const handleTriggerAutomation = (order: Order, steps: string[]) => {
+  const handleTriggerAutomation = async (order: Order, steps: string[]) => {
     const newLogs: AutomationLog[] = [
       {
         id: `L${Date.now()}_3`,
@@ -429,6 +429,38 @@ export default function App() {
     setLogs(updatedLogs);
     saveToStorage('mre_logs', updatedLogs);
     showToast('success', 'Chạy mô phỏng tự động cấp học thành công!');
+
+    // Actual email trigger via Apps Script
+    if (googleSheetUrl) {
+      try {
+        const driveLink = order.driveFolderId && order.driveFolderId.startsWith('http')
+          ? order.driveFolderId
+          : `https://drive.google.com/drive/folders/${order.driveFolderId || ''}`;
+          
+        const response = await fetch(googleSheetUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'sendEmail',
+            email: order.customerEmail,
+            customerName: order.customerName,
+            courseName: order.productName,
+            driveLink: driveLink
+          })
+        });
+        
+        const resData = await response.json();
+        if (resData && resData.success) {
+          showToast('success', `Đã gửi email kích hoạt khóa học thực tế đến ${order.customerEmail}!`);
+        } else {
+          showToast('error', `Lỗi Apps Script khi gửi mail: ${resData.error || 'Unknown'}`);
+        }
+      } catch (err) {
+        console.error('Apps Script Email API Error:', err);
+        showToast('error', 'Không thể kết nối Apps Script để gửi email thực tế.');
+      }
+    }
+
     syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses });
   };
 
