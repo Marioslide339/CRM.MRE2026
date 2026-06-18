@@ -8,3 +8,66 @@
   --color-accent-purple: #D946EF;
   --color-accent-indigo: #7C3AED;
 }
+
+/* Global font size scale-up and optimization */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  background-color: #F8F5F5;
+  color: #1B1325;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom font scaling to make the interface larger and highly readable */
+.text-\[9px\] {
+  font-size: 0.75rem !important; /* 12px */
+}
+
+.text-\[10px\] {
+  font-size: 0.8125rem !important; /* 13px */
+}
+
+.text-\[11px\] {
+  font-size: 0.875rem !important; /* 14px */
+}
+
+.text-xs {
+  font-size: 0.875rem !important; /* 14px */
+}
+
+.text-sm {
+  font-size: 1rem !important; /* 16px */
+}
+
+.text-base {
+  font-size: 1.125rem !important; /* 18px */
+}
+
+.text-lg {
+  font-size: 1.25rem !important; /* 20px */
+}
+
+.text-xl {
+  font-size: 1.5rem !important; /* 24px */
+}
+
+.text-2xl {
+  font-size: 1.75rem !important; /* 28px */
+}
+
+.text-3xl {
+  font-size: 2.25rem !important; /* 36px */
+}
+
+/* Table layout adjustments for better screen usage */
+table th, table td {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Input size optimization */
+input, select, textarea {
+  font-size: 0.875rem !important; /* text-xs equivalent at 14px */
+  padding: 0.65rem 0.85rem !important;
+}
