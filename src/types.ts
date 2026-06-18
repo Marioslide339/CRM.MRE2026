@@ -34,7 +34,8 @@ export interface Order {
   productName: string;
   price: number;
   paymentStatus: 'Chưa thanh toán' | 'Đã thanh toán';
-  paymentRecipient?: 'TK cá nhân' | 'TK công ty'; // Chuyển khoản tới TK cá nhân hay công ty
+  paymentRecipient?: 'Tiền mặt' | 'TK công ty';
+  orderType?: 'Đăng ký mới' | 'Gửi lại';
   deliveryStatus: 'Chưa kích hoạt' | 'Đã cấp tài khoản';
   createdAt: string;
   activatedAt?: string;
@@ -68,6 +69,9 @@ export interface Expense {
   category: 'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác';
   amount: number;
   description: string;
+  hasTax?: boolean;
+  taxRate?: number; // percentage e.g. 11
+  taxAmount?: number; // calculated tax amount
 }
 
 export interface Collaborator {
