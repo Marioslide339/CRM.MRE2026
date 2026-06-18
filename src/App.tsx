@@ -91,6 +91,7 @@ export default function App() {
 
   // Load from local storage on component mount, then auto-sync from Google Sheets
   useEffect(() => {
+    // Bước 1: Tải nhanh từ localStorage (bộ nhớ đệm thiết bị) — KHÔNG dùng dữ liệu demo
     try {
       const storedCustomers = localStorage.getItem('mre_customers');
       const storedOrders = localStorage.getItem('mre_orders');
@@ -102,82 +103,65 @@ export default function App() {
       const storedExpenses = localStorage.getItem('mre_expenses');
       const storedKeys = localStorage.getItem('mre_gemini_keys');
 
-      const rawCustomers = storedCustomers ? JSON.parse(storedCustomers) : INITIAL_CUSTOMERS;
-      setCustomers(sanitizeCustomers(rawCustomers));
-      setOrders(storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS);
-      setCourses(storedCourses ? JSON.parse(storedCourses) : INITIAL_COURSES);
-      setDesigns(storedDesigns ? JSON.parse(storedDesigns) : INITIAL_DESIGNS);
-      setCollaborators(storedCollaborators ? JSON.parse(storedCollaborators) : INITIAL_COLLABORATORS);
-      setCampaigns(storedCampaigns ? JSON.parse(storedCampaigns) : INITIAL_CAMPAIGNS);
-      setLogs(storedLogs ? JSON.parse(storedLogs) : INITIAL_LOGS);
-      setExpenses(storedExpenses ? JSON.parse(storedExpenses) : INITIAL_EXPENSES);
+      setCustomers(storedCustomers ? sanitizeCustomers(JSON.parse(storedCustomers)) : []);
+      setOrders(storedOrders ? JSON.parse(storedOrders) : []);
+      setCourses(storedCourses ? JSON.parse(storedCourses) : []);
+      setDesigns(storedDesigns ? JSON.parse(storedDesigns) : []);
+      setCollaborators(storedCollaborators ? JSON.parse(storedCollaborators) : []);
+      setCampaigns(storedCampaigns ? JSON.parse(storedCampaigns) : []);
+      setLogs(storedLogs ? JSON.parse(storedLogs) : []);
+      setExpenses(storedExpenses ? JSON.parse(storedExpenses) : []);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
     } catch (e) {
       console.error('Failed to parse cached database:', e);
-      setCustomers(sanitizeCustomers(INITIAL_CUSTOMERS));
-      setOrders(INITIAL_ORDERS);
-      setCourses(INITIAL_COURSES);
-      setDesigns(INITIAL_DESIGNS);
-      setCollaborators(INITIAL_COLLABORATORS);
-      setCampaigns(INITIAL_CAMPAIGNS);
-      setLogs(INITIAL_LOGS);
-      setExpenses(INITIAL_EXPENSES);
     }
 
-    // Tự động tải dữ liệu mới nhất từ Google Sheets khi mở app trên bất kỳ thiết bị nào
+    // Bước 2: Tự động tải dữ liệu từ Google Sheets — nguồn dữ liệu chính duy nhất
     const autoSyncFromCloud = async () => {
       try {
+        setIsSyncing(true);
         const response = await fetch(`${GOOGLE_SHEET_URL}?action=getData`);
         const data = await response.json();
         if (data && !data.error) {
-          let hasData = false;
-          if (data.customers && data.customers.length > 0) {
-            const sanitized = sanitizeCustomers(data.customers);
-            setCustomers(sanitized);
-            localStorage.setItem('mre_customers', JSON.stringify(sanitized));
-            hasData = true;
-          }
-          if (data.orders && data.orders.length > 0) {
-            setOrders(data.orders);
-            localStorage.setItem('mre_orders', JSON.stringify(data.orders));
-            hasData = true;
-          }
-          if (data.courses && data.courses.length > 0) {
-            setCourses(data.courses);
-            localStorage.setItem('mre_courses', JSON.stringify(data.courses));
-            hasData = true;
-          }
-          if (data.designs && data.designs.length > 0) {
-            setDesigns(data.designs);
-            localStorage.setItem('mre_designs', JSON.stringify(data.designs));
-            hasData = true;
-          }
-          if (data.collaborators && data.collaborators.length > 0) {
-            setCollaborators(data.collaborators);
-            localStorage.setItem('mre_collaborators', JSON.stringify(data.collaborators));
-            hasData = true;
-          }
-          if (data.campaigns && data.campaigns.length > 0) {
-            setCampaigns(data.campaigns);
-            localStorage.setItem('mre_campaigns', JSON.stringify(data.campaigns));
-            hasData = true;
-          }
-          if (data.logs && data.logs.length > 0) {
-            setLogs(data.logs);
-            localStorage.setItem('mre_logs', JSON.stringify(data.logs));
-            hasData = true;
-          }
-          if (data.expenses && data.expenses.length > 0) {
-            setExpenses(data.expenses);
-            localStorage.setItem('mre_expenses', JSON.stringify(data.expenses));
-            hasData = true;
-          }
-          if (hasData) {
-            console.log('Auto-sync from Google Sheets completed.');
-          }
+          // Ghi đè TOÀN BỘ dữ liệu từ Google Sheets (kể cả mảng rỗng)
+          const cloudCustomers = sanitizeCustomers(data.customers || []);
+          setCustomers(cloudCustomers);
+          localStorage.setItem('mre_customers', JSON.stringify(cloudCustomers));
+
+          const cloudOrders = data.orders || [];
+          setOrders(cloudOrders);
+          localStorage.setItem('mre_orders', JSON.stringify(cloudOrders));
+
+          const cloudCourses = data.courses || [];
+          setCourses(cloudCourses);
+          localStorage.setItem('mre_courses', JSON.stringify(cloudCourses));
+
+          const cloudDesigns = data.designs || [];
+          setDesigns(cloudDesigns);
+          localStorage.setItem('mre_designs', JSON.stringify(cloudDesigns));
+
+          const cloudCollaborators = data.collaborators || [];
+          setCollaborators(cloudCollaborators);
+          localStorage.setItem('mre_collaborators', JSON.stringify(cloudCollaborators));
+
+          const cloudCampaigns = data.campaigns || [];
+          setCampaigns(cloudCampaigns);
+          localStorage.setItem('mre_campaigns', JSON.stringify(cloudCampaigns));
+
+          const cloudLogs = data.logs || [];
+          setLogs(cloudLogs);
+          localStorage.setItem('mre_logs', JSON.stringify(cloudLogs));
+
+          const cloudExpenses = data.expenses || [];
+          setExpenses(cloudExpenses);
+          localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
+
+          console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
         }
       } catch (err) {
         console.log('Auto-sync skipped (offline or error):', err);
+      } finally {
+        setIsSyncing(false);
       }
     };
     autoSyncFromCloud();
