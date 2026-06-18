@@ -947,6 +947,7 @@ export default function App() {
             onExportJSON={handleExportJSON}
             isSyncing={isSyncing}
             onTriggerSync={handleTriggerSync}
+            onFetchFromSheets={fetchFromGoogleSheets}
           />
         )}
       </main>
