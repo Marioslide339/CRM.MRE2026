@@ -63,7 +63,7 @@ export default function SettingsView({
     }
     try {
       await onTriggerSync();
-      showNotice('Đồng bộ dữ liệu hai chiều với Google Sheets thành công!');
+      showNotice('Đồng bộ dữ liệu từ App lên Google Sheets thành công!');
     } catch (err: any) {
       showNotice(`Đồng bộ thất bại: ${err.message || err}`);
     }
@@ -359,7 +359,7 @@ function writeSheet(ss, name, list) {
                   <FileSpreadsheet className="w-4 h-4 text-primary" />
                   Hướng Dẫn Cài Đặt Google Apps Script
                 </h3>
-                <p className="text-xs text-slate-400 font-sans">Triển khai code cầu nối lên Google Sheet để đồng bộ hai chiều</p>
+                <p className="text-xs text-slate-400 font-sans">Triển khai code cầu nối lên Google Sheet để đồng bộ dữ liệu từ App sang Google Sheets</p>
               </div>
               <button
                 onClick={copyToClipboard}
