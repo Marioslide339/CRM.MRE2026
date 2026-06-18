@@ -89,7 +89,7 @@ export default function App() {
     }));
   };
 
-  // Load from local storage on component mount
+  // Load from local storage on component mount, then auto-sync from Google Sheets
   useEffect(() => {
     try {
       const storedCustomers = localStorage.getItem('mre_customers');
@@ -123,6 +123,64 @@ export default function App() {
       setLogs(INITIAL_LOGS);
       setExpenses(INITIAL_EXPENSES);
     }
+
+    // Tự động tải dữ liệu mới nhất từ Google Sheets khi mở app trên bất kỳ thiết bị nào
+    const autoSyncFromCloud = async () => {
+      try {
+        const response = await fetch(`${GOOGLE_SHEET_URL}?action=getData`);
+        const data = await response.json();
+        if (data && !data.error) {
+          let hasData = false;
+          if (data.customers && data.customers.length > 0) {
+            const sanitized = sanitizeCustomers(data.customers);
+            setCustomers(sanitized);
+            localStorage.setItem('mre_customers', JSON.stringify(sanitized));
+            hasData = true;
+          }
+          if (data.orders && data.orders.length > 0) {
+            setOrders(data.orders);
+            localStorage.setItem('mre_orders', JSON.stringify(data.orders));
+            hasData = true;
+          }
+          if (data.courses && data.courses.length > 0) {
+            setCourses(data.courses);
+            localStorage.setItem('mre_courses', JSON.stringify(data.courses));
+            hasData = true;
+          }
+          if (data.designs && data.designs.length > 0) {
+            setDesigns(data.designs);
+            localStorage.setItem('mre_designs', JSON.stringify(data.designs));
+            hasData = true;
+          }
+          if (data.collaborators && data.collaborators.length > 0) {
+            setCollaborators(data.collaborators);
+            localStorage.setItem('mre_collaborators', JSON.stringify(data.collaborators));
+            hasData = true;
+          }
+          if (data.campaigns && data.campaigns.length > 0) {
+            setCampaigns(data.campaigns);
+            localStorage.setItem('mre_campaigns', JSON.stringify(data.campaigns));
+            hasData = true;
+          }
+          if (data.logs && data.logs.length > 0) {
+            setLogs(data.logs);
+            localStorage.setItem('mre_logs', JSON.stringify(data.logs));
+            hasData = true;
+          }
+          if (data.expenses && data.expenses.length > 0) {
+            setExpenses(data.expenses);
+            localStorage.setItem('mre_expenses', JSON.stringify(data.expenses));
+            hasData = true;
+          }
+          if (hasData) {
+            console.log('Auto-sync from Google Sheets completed.');
+          }
+        }
+      } catch (err) {
+        console.log('Auto-sync skipped (offline or error):', err);
+      }
+    };
+    autoSyncFromCloud();
   }, []);
 
   // Update localStorage helper
