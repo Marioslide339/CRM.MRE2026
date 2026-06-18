@@ -26,15 +26,26 @@ export default function DesignsView({
 }: DesignsViewProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newServiceType, setNewServiceType] = useState('');
   const [selectedCustId, setSelectedCustId] = useState('');
   const [selectedCtv, setSelectedCtv] = useState('');
   const [deadline, setDeadline] = useState('');
   const [deadlineDemo, setDeadlineDemo] = useState('');
 
+  const SERVICE_TYPES = [
+    'Thiết kế PowerPoint',
+    'Thiết kế E-Learning',
+    'Sáng kiến kinh nghiệm',
+    'Biện pháp giáo viên giỏi',
+    'Thiết kế App giáo dục',
+    'Dựng video hoạt hình AI'
+  ];
+
   // Edit design form states
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingDesign, setEditingDesign] = useState<DesignService | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [editServiceType, setEditServiceType] = useState('');
   const [editCustId, setEditCustId] = useState('');
   const [editCtv, setEditCtv] = useState('');
   const [editDeadline, setEditDeadline] = useState('');
@@ -49,13 +60,14 @@ export default function DesignsView({
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle || !selectedCustId || !selectedCtv || !deadline) return;
+    if (!newTitle || !newServiceType || !selectedCustId || !selectedCtv || !deadline) return;
 
     const cust = customers.find(c => c.id === selectedCustId);
     if (!cust) return;
 
     onAddDesign({
       title: newTitle,
+      serviceType: newServiceType,
       customerId: cust.id,
       customerName: cust.name,
       executor: selectedCtv,
@@ -66,6 +78,7 @@ export default function DesignsView({
 
     setIsAddOpen(false);
     setNewTitle('');
+    setNewServiceType('');
     setSelectedCustId('');
     setSelectedCtv('');
     setDeadline('');
@@ -75,6 +88,7 @@ export default function DesignsView({
   const handleStartEdit = (design: DesignService) => {
     setEditingDesign(design);
     setEditTitle(design.title);
+    setEditServiceType((design as any).serviceType || '');
     setEditCustId(design.customerId);
     setEditCtv(design.executor);
     setEditDeadline(design.deadline);
@@ -92,6 +106,7 @@ export default function DesignsView({
 
     onUpdateDesign(editingDesign.id, {
       title: editTitle,
+      serviceType: editServiceType,
       customerId: cust.id,
       customerName: cust.name,
       executor: editCtv,
@@ -142,6 +157,7 @@ export default function DesignsView({
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
                 <th className="py-3.5 px-6">Mã dự án</th>
+                <th className="py-3.5 px-4">Dịch vụ</th>
                 <th className="py-3.5 px-4">Yêu cầu thiết kế</th>
                 <th className="py-3.5 px-4">Khách hàng</th>
                 <th className="py-3.5 px-4">Cộng tác viên</th>
@@ -157,6 +173,11 @@ export default function DesignsView({
                 return (
                   <tr key={design.id} className="hover:bg-slate-50/40 transition">
                     <td className="py-4 px-6 font-mono font-bold text-slate-800">{design.id}</td>
+                    <td className="py-4 px-4">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {(design as any).serviceType || 'Thiết kế PowerPoint'}
+                      </span>
+                    </td>
                     <td className="py-4 px-4 font-semibold text-slate-800">{design.title}</td>
                     <td className="py-4 px-4 space-y-0.5">
                       <p className="font-medium text-slate-700">{design.customerName}</p>
@@ -227,6 +248,21 @@ export default function DesignsView({
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4 text-xs font-sans">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Dịch vụ thiết kế*</label>
+                <select
+                  required
+                  value={newServiceType}
+                  onChange={e => setNewServiceType(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                >
+                  <option value="">Chọn dịch vụ thiết kế...</option>
+                  {SERVICE_TYPES.map(st => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Mô tả Yêu cầu Thiết kế custom*</label>
                 <input
@@ -323,6 +359,21 @@ export default function DesignsView({
               </button>
             </div>
             <form onSubmit={handleUpdate} className="p-5 space-y-4 text-xs font-sans">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Dịch vụ thiết kế*</label>
+                <select
+                  required
+                  value={editServiceType}
+                  onChange={e => setEditServiceType(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                >
+                  <option value="">Chọn dịch vụ thiết kế...</option>
+                  {SERVICE_TYPES.map(st => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Mô tả Yêu cầu Thiết kế custom*</label>
                 <input
