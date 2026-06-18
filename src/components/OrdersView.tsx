@@ -28,7 +28,7 @@ interface OrdersViewProps {
   customers: Customer[];
   courses: Course[];
   onAddOrder: (newOrder: Partial<Order>) => void;
-  onUpdateOrder: (id: string, updated: Partial<Order>) => void;
+  onUpdateOrder: (id: string, updated: Partial<Order>, triggerAppsScript?: boolean) => void;
   onDeleteOrder?: (id: string) => void;
   onTriggerAutomation: (order: Order, steps: string[]) => void;
 }
@@ -172,7 +172,7 @@ export default function OrdersView({
         paymentStatus: 'Đã thanh toán',
         deliveryStatus: 'Đã cấp tài khoản',
         activatedAt: new Date().toISOString()
-      });
+      }, false);
 
       // Save persistent logs
       onTriggerAutomation(order, [
