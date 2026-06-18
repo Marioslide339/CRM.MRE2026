@@ -58,7 +58,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
   // Google Sheets integration and Gemini rotation
-  const [googleSheetUrl, setGoogleSheetUrl] = useState<string>('');
+  const [googleSheetUrl, setGoogleSheetUrl] = useState<string>('https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec');
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -99,7 +99,7 @@ export default function App() {
       const storedCampaigns = localStorage.getItem('mre_campaigns');
       const storedLogs = localStorage.getItem('mre_logs');
       const storedExpenses = localStorage.getItem('mre_expenses');
-      const storedSheetUrl = localStorage.getItem('mre_sheet_url') || '';
+      const storedSheetUrl = localStorage.getItem('mre_sheet_url') || 'https://script.google.com/macros/s/AKfycbzOyt6C_HPngthIrgpx91ieNB_osHyYcsfvQJ9WMVK5239806O-884JNpm2wfyrvefLAg/exec';
       const storedKeys = localStorage.getItem('mre_gemini_keys');
 
       const rawCustomers = storedCustomers ? JSON.parse(storedCustomers) : INITIAL_CUSTOMERS;
