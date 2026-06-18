@@ -181,7 +181,10 @@ export const INITIAL_DESIGNS: DesignService[] = [
     customerName: 'Lê Hoàng Dương',
     executor: 'Nguyễn Văn Hải (CTV)',
     deadline: '2026-06-20',
-    status: 'Đang làm'
+    deadlineDemo: '2026-06-18',
+    status: 'Đang làm',
+    amount: 1500000,
+    createdAt: '2026-06-18'
   },
   {
     id: 'TK0002',
@@ -190,7 +193,10 @@ export const INITIAL_DESIGNS: DesignService[] = [
     customerName: 'Nguyễn Văn Anh',
     executor: 'Trần Minh Quân (CTV)',
     deadline: '2026-06-19',
-    status: 'Đang làm'
+    deadlineDemo: '2026-06-17',
+    status: 'Đang làm',
+    amount: 2000000,
+    createdAt: '2026-06-17'
   },
   {
     id: 'TK0003',
@@ -199,7 +205,10 @@ export const INITIAL_DESIGNS: DesignService[] = [
     customerName: 'Hoàng Minh Ngọc',
     executor: 'Nguyễn Văn Hải (CTV)',
     deadline: '2026-06-25',
-    status: 'Chưa bắt đầu'
+    deadlineDemo: '2026-06-22',
+    status: 'Tiếp nhận',
+    amount: 3500000,
+    createdAt: '2026-06-16'
   },
   {
     id: 'TK0004',
@@ -208,7 +217,10 @@ export const INITIAL_DESIGNS: DesignService[] = [
     customerName: 'Trần Thị Bình',
     executor: 'Lê Thị Thu Thủy (CTV)',
     deadline: '2026-06-15',
-    status: 'Hoàn thành'
+    deadlineDemo: '2026-06-12',
+    status: 'Hoàn thành',
+    amount: 3000000,
+    createdAt: '2026-06-15'
   }
 ];
 
