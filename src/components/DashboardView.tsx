@@ -91,6 +91,21 @@ export default function DashboardView({
     });
   }, [orders, timeFilter, customStart, customEnd]);
 
+  const filteredDesigns = useMemo(() => {
+    return designs.filter(d => {
+      const dateStr = d.createdAt ? d.createdAt.substring(0, 10) : d.deadline;
+      if (timeFilter === 'day') return dateStr === todayStr;
+      if (timeFilter === 'week') return dateStr >= '2026-06-15' && dateStr <= '2026-06-21';
+      if (timeFilter === 'month') return dateStr >= '2026-06-01' && dateStr <= '2026-06-30';
+      if (timeFilter === 'quarter') return dateStr >= '2026-04-01' && dateStr <= '2026-06-30';
+      if (timeFilter === 'year') return dateStr >= '2026-01-01' && dateStr <= '2026-12-31';
+      if (timeFilter === 'custom') {
+        return (!customStart || dateStr >= customStart) && (!customEnd || dateStr <= customEnd);
+      }
+      return true;
+    });
+  }, [designs, timeFilter, customStart, customEnd]);
+
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       const d = e.date;
@@ -123,10 +138,13 @@ export default function DashboardView({
 
   // Financial KPIs
   const totalRevenue = useMemo(() => {
-    return filteredOrders
+    const orderRev = filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .reduce((sum, o) => sum + o.price, 0);
-  }, [filteredOrders]);
+    const designRev = filteredDesigns
+      .reduce((sum, d) => sum + (d.amount || 0), 0);
+    return orderRev + designRev;
+  }, [filteredOrders, filteredDesigns]);
 
   const totalExpense = useMemo(() => {
     return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -149,10 +167,17 @@ export default function DashboardView({
 
   // Extra KPI definitions
   const monthRevenue = useMemo(() => {
-    return orders
+    const orderMonthRev = orders
       .filter(o => o.paymentStatus === 'Đã thanh toán' && o.createdAt.substring(0, 7) === '2026-06')
       .reduce((sum, o) => sum + o.price, 0);
-  }, [orders]);
+    const designMonthRev = designs
+      .filter(d => {
+        const dateStr = d.createdAt ? d.createdAt.substring(0, 7) : d.deadline.substring(0, 7);
+        return dateStr === '2026-06';
+      })
+      .reduce((sum, d) => sum + (d.amount || 0), 0);
+    return orderMonthRev + designMonthRev;
+  }, [orders, designs]);
 
   const currentMonthCustomers = useMemo(() => {
     return customers.filter(c => c.createdAt.substring(0, 7) === '2026-06').length;
@@ -233,6 +258,13 @@ export default function DashboardView({
         const monthLabel = `Tháng ${monthNum}`;
         dataMap[monthLabel] = (dataMap[monthLabel] || 0) + o.price;
       });
+
+    filteredDesigns.forEach(d => {
+      const dateStr = d.createdAt || d.deadline;
+      const monthNum = dateStr.substring(5, 7);
+      const monthLabel = `Tháng ${monthNum}`;
+      dataMap[monthLabel] = (dataMap[monthLabel] || 0) + (d.amount || 0);
+    });
       
     return Object.keys(dataMap)
       .sort()
@@ -240,7 +272,7 @@ export default function DashboardView({
         name: m,
         'Doanh thu VND': dataMap[m]
       }));
-  }, [filteredOrders]);
+  }, [filteredOrders, filteredDesigns]);
 
   return (
     <div className="space-y-8 animate-fade-in" id="dashboard_view_container">
