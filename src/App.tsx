@@ -658,8 +658,8 @@ export default function App() {
 
     if (updatedFields.status === 'Hoàn thành' && prevDesign && prevDesign.status !== 'Hoàn thành') {
       const ctvName = prevDesign.executor;
-      const budget = 2000000; // Simulated custom design price
-      const payout = Math.round(budget * 0.3); // 30% standard payout = 600k
+      const budget = prevDesign.amount || 2000000; // Use actual design service amount, fallback to 2000000
+      const payout = Math.round(budget * 0.3); // 30% standard payout
 
       // Update collaborator stats
       const uCtvs = collaborators.map(c => {
