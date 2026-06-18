@@ -84,7 +84,13 @@ export default function SettingsView({
   const handleDownloadFromSheets = async () => {
     try {
       await onFetchFromSheets();
-      showNotice('Tải dữ liệu từ Google Sheets về App thành công  return (
+      showNotice('Tải dữ liệu từ Google Sheets về App thành công!');
+    } catch (err: any) {
+      showNotice(`Tải dữ liệu thất bại: ${err.message || err}`);
+    }
+  };
+
+  return (
     <div className="space-y-6 animate-fade-in" id="settings_view_container">
       {/* Upper Title */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
