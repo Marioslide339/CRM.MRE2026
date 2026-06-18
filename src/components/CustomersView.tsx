@@ -114,7 +114,7 @@ export default function CustomersView({
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setNotesEdit(customer.notes);
+    setNotesEdit(customer.notes || '');
     setSidebarTab('lms');
   };
 
@@ -181,13 +181,13 @@ export default function CustomersView({
     setTimeout(() => {
       let segment: 'VIP' | 'Tiềm năng' | 'Ngủ quên' = 'Tiềm năng';
       let summary = '';
-      const purchasedCount = selectedCustomer.coursesPurchased.length;
+      const purchasedCount = (selectedCustomer.coursesPurchased || []).length;
       const progressValues = selectedCustomer.lmsProgress ? Object.values(selectedCustomer.lmsProgress) as number[] : [];
       const averageProgress = progressValues.length > 0
         ? progressValues.reduce((acc, c) => acc + c, 0) / progressValues.length
         : 0;
 
-      if (purchasedCount >= 2 || (selectedCustomer.tags.includes('Khách VIP'))) {
+      if (purchasedCount >= 2 || ((selectedCustomer.tags || []).includes('Khách VIP'))) {
         segment = 'VIP';
         summary = `Phân khúc VIP: Đã mua ${purchasedCount} khóa học. Thành viên học tập tích cực, cần duy trì chính sách hỗ trợ và CSKH ưu đãi đặc quyền.`;
       } else if (purchasedCount === 0) {
@@ -496,7 +496,7 @@ export default function CustomersView({
                   Phân Loại Thẻ & Tags
                 </h4>
                 <div className="flex flex-wrap gap-1.5 mb-2">
-                  {selectedCustomer.tags.map(t => (
+                  {(selectedCustomer.tags || []).map(t => (
                     <span key={t} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-slate-100 border border-slate-100 text-slate-600">
                       {t}
                     </span>
@@ -514,7 +514,7 @@ export default function CustomersView({
                       sidebarTab === 'lms' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-650'
                     }`}
                   >
-                    LMS ({selectedCustomer.coursesPurchased.length})
+                    LMS ({(selectedCustomer.coursesPurchased || []).length})
                   </button>
                   <button
                     type="button"
@@ -542,12 +542,12 @@ export default function CustomersView({
                       <BookOpen className="w-3 h-3 text-indigo-500" />
                       Tiến độ học tập LMS
                     </h5>
-                    {selectedCustomer.coursesPurchased.length > 0 ? (
-                      selectedCustomer.coursesPurchased.map(cid => {
-                        const c = courses.find(course => course.id === cid);
-                        const progress = selectedCustomer.lmsProgress?.[cid] ?? 0;
-                        const score = selectedCustomer.lmsGrades?.[cid];
-                        const cert = selectedCustomer.lmsCertificateEarned?.[cid];
+                    {(selectedCustomer.coursesPurchased || []).length > 0 ? (
+                      (selectedCustomer.coursesPurchased || []).map(cid => {
+                        const c = (courses || []).find(course => course.id === cid);
+                        const progress = (selectedCustomer.lmsProgress || {})[cid] ?? 0;
+                        const score = (selectedCustomer.lmsGrades || {})[cid];
+                        const cert = (selectedCustomer.lmsCertificateEarned || {})[cid];
 
                         return (
                           <div key={cid} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-xs">
@@ -582,7 +582,7 @@ export default function CustomersView({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const updatedCerts = { ...selectedCustomer.lmsCertificateEarned, [cid]: true };
+                                    const updatedCerts = { ...(selectedCustomer.lmsCertificateEarned || {}), [cid]: true };
                                     onUpdateCustomer(selectedCustomer.id, { lmsCertificateEarned: updatedCerts });
                                     setSelectedCustomer(prev => prev ? { ...prev, lmsCertificateEarned: updatedCerts } : null);
                                   }}
