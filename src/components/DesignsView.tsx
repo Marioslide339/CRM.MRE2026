@@ -31,6 +31,7 @@ export default function DesignsView({
   const [selectedCtv, setSelectedCtv] = useState('');
   const [deadline, setDeadline] = useState('');
   const [deadlineDemo, setDeadlineDemo] = useState('');
+  const [newAmount, setNewAmount] = useState<number | ''>('');
 
   const SERVICE_TYPES = [
     'Thiết kế PowerPoint',
@@ -51,6 +52,7 @@ export default function DesignsView({
   const [editDeadline, setEditDeadline] = useState('');
   const [editDeadlineDemo, setEditDeadlineDemo] = useState('');
   const [editStatus, setEditStatus] = useState<'Tiếp nhận' | 'Đang làm' | 'Gửi demo' | 'Chỉnh sửa' | 'Hoàn thành'>('Tiếp nhận');
+  const [editAmount, setEditAmount] = useState<number | ''>('');
 
   const todayStr = '2026-06-18'; // Mock current date
 
@@ -73,7 +75,9 @@ export default function DesignsView({
       executor: selectedCtv,
       deadline,
       deadlineDemo: deadlineDemo || deadline,
-      status: 'Tiếp nhận'
+      status: 'Tiếp nhận',
+      amount: newAmount === '' ? 0 : Number(newAmount),
+      createdAt: new Date().toISOString().split('T')[0]
     });
 
     setIsAddOpen(false);
@@ -83,6 +87,7 @@ export default function DesignsView({
     setSelectedCtv('');
     setDeadline('');
     setDeadlineDemo('');
+    setNewAmount('');
   };
 
   const handleStartEdit = (design: DesignService) => {
@@ -94,6 +99,7 @@ export default function DesignsView({
     setEditDeadline(design.deadline);
     setEditDeadlineDemo(design.deadlineDemo || design.deadline);
     setEditStatus(design.status);
+    setEditAmount(design.amount !== undefined ? design.amount : '');
     setIsEditOpen(true);
   };
 
@@ -112,11 +118,13 @@ export default function DesignsView({
       executor: editCtv,
       deadline: editDeadline,
       deadlineDemo: editDeadlineDemo,
-      status: editStatus
+      status: editStatus,
+      amount: editAmount === '' ? 0 : Number(editAmount)
     });
 
     setIsEditOpen(false);
     setEditingDesign(null);
+    setEditAmount('');
   };
 
   const handleDelete = (id: string) => {
@@ -156,14 +164,15 @@ export default function DesignsView({
           <table className="w-full text-left text-xs text-slate-600 font-sans">
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
-                <th className="py-3.5 px-6">Mã dự án</th>
-                <th className="py-3.5 px-4">Dịch vụ</th>
-                <th className="py-3.5 px-4">Yêu cầu thiết kế</th>
-                <th className="py-3.5 px-4">Khách hàng</th>
-                <th className="py-3.5 px-4">Cộng tác viên</th>
-                <th className="py-3.5 px-4">Hạn Demo</th>
-                <th className="py-3.5 px-4">Hạn Nghiệm Thu</th>
-                <th className="py-3.5 px-4">Trạng thái</th>
+                 <th className="py-3.5 px-6">Mã dự án</th>
+                 <th className="py-3.5 px-4">Dịch vụ</th>
+                 <th className="py-3.5 px-4">Yêu cầu thiết kế</th>
+                 <th className="py-3.5 px-4">Khách hàng</th>
+                 <th className="py-3.5 px-4">Cộng tác viên</th>
+                 <th className="py-3.5 px-4">Thành tiền</th>
+                 <th className="py-3.5 px-4">Hạn Demo</th>
+                 <th className="py-3.5 px-4">Hạn Nghiệm Thu</th>
+                 <th className="py-3.5 px-4">Trạng thái</th>
                 <th className="py-3.5 px-6 text-right">Hành động</th>
               </tr>
             </thead>
@@ -183,10 +192,13 @@ export default function DesignsView({
                       <p className="font-medium text-slate-700">{design.customerName}</p>
                       <p className="text-[10px] text-slate-400">Mã KH: {design.customerId}</p>
                     </td>
-                    <td className="py-4 px-4 font-semibold text-slate-700">{design.executor}</td>
-                    <td className="py-4 px-4 font-mono font-semibold text-slate-700">
-                      {design.deadlineDemo ? new Date(design.deadlineDemo).toLocaleDateString('vi-VN') : '-'}
-                    </td>
+                     <td className="py-4 px-4 font-semibold text-slate-700">{design.executor}</td>
+                     <td className="py-4 px-4 font-mono font-semibold text-slate-700">
+                       {design.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(design.amount) : '0 ₫'}
+                     </td>
+                     <td className="py-4 px-4 font-mono font-semibold text-slate-700">
+                       {design.deadlineDemo ? new Date(design.deadlineDemo).toLocaleDateString('vi-VN') : '-'}
+                     </td>
                     <td className="py-4 px-4 font-mono">
                       <div className="space-y-0.5">
                         <span className={`text-xs font-semibold ${overdue ? 'text-rose-600' : 'text-slate-700'}`}>
@@ -305,9 +317,20 @@ export default function DesignsView({
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Thành tiền (VND)</label>
+                <input
+                  type="number"
+                  placeholder="Nhập số tiền thiết kế..."
+                  value={newAmount}
+                  onChange={e => setNewAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Gửi Demo (Deadline Demo)*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn gửi bản Demo*</label>
                   <input
                     type="date"
                     required
@@ -317,7 +340,7 @@ export default function DesignsView({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Nghiệm Thu (Deadline)*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Nghiệm Thu*</label>
                   <input
                     type="date"
                     required
@@ -416,9 +439,20 @@ export default function DesignsView({
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Thành tiền (VND)</label>
+                <input
+                  type="number"
+                  placeholder="Nhập số tiền thiết kế..."
+                  value={editAmount}
+                  onChange={e => setEditAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Gửi Demo (Deadline Demo)*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn gửi bản Demo*</label>
                   <input
                     type="date"
                     required
@@ -428,7 +462,7 @@ export default function DesignsView({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Nghiệm Thu (Deadline)*</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hạn Nghiệm Thu*</label>
                   <input
                     type="date"
                     required
