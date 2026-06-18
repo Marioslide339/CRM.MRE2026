@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Database, FileJson, Check, RotateCcw, ShieldAlert, Sparkles, LayoutGrid, FileSpreadsheet, Key, Link2, Copy, RefreshCw, Download } from 'lucide-react';
 
 interface SettingsViewProps {
-  googleSheetUrl: string;
-  onSaveGoogleSheetUrl: (url: string) => void;
   geminiKeys: string[];
   onSaveGeminiKeys: (keys: string[]) => void;
   onResetDatabase: () => void;
@@ -15,8 +13,6 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({
-  googleSheetUrl,
-  onSaveGoogleSheetUrl,
   geminiKeys,
   onSaveGeminiKeys,
   onResetDatabase,
@@ -30,7 +26,6 @@ export default function SettingsView({
   const [doneAction, setDoneAction] = useState<string | null>(null);
 
   // local states for inputs
-  const [sheetUrl, setSheetUrl] = useState(googleSheetUrl);
   const [key1, setKey1] = useState(geminiKeys[0] || '');
   const [key2, setKey2] = useState(geminiKeys[1] || '');
   const [key3, setKey3] = useState(geminiKeys[2] || '');
@@ -73,16 +68,11 @@ export default function SettingsView({
   };
 
   const handleSaveSettings = () => {
-    onSaveGoogleSheetUrl(sheetUrl);
     onSaveGeminiKeys([key1, key2, key3].filter(k => k.trim() !== ''));
-    showNotice('Đã lưu cấu hình kết nối và API Keys thành công!');
+    showNotice('Đã lưu cấu hình API Keys thành công!');
   };
 
   const handleManualSync = async () => {
-    if (!googleSheetUrl) {
-      showNotice('Vui lòng lưu URL Web App Google Sheets trước khi đồng bộ!');
-      return;
-    }
     try {
       await onTriggerSync();
       showNotice('Đồng bộ dữ liệu từ App lên Google Sheets thành công!');
@@ -92,317 +82,9 @@ export default function SettingsView({
   };
 
   const handleDownloadFromSheets = async () => {
-    if (!googleSheetUrl) {
-      showNotice('Vui lòng lưu URL Web App Google Sheets trước khi tải dữ liệu!');
-      return;
-    }
     try {
       await onFetchFromSheets();
-      showNotice('Tải dữ liệu từ Google Sheets về App thành công!');
-    } catch (err: any) {
-      showNotice(`Tải dữ liệu thất bại: ${err.message || err}`);
-    }
-  };
-
-  const appsScriptCode = `function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify(readAllData()))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    var params = JSON.parse(e.postData.contents);
-    if (params.action === 'sync') {
-      writeAllData(params.data);
-      return ContentService.createTextOutput(JSON.stringify({ success: true }))
-        .setMimeType(ContentService.MimeType.JSON);
-    } else if (params.action === 'getData') {
-      return ContentService.createTextOutput(JSON.stringify(readAllData()))
-        .setMimeType(ContentService.MimeType.JSON);
-    } else if (params.action === 'sendEmail') {
-      var recipient = params.email;
-      var subject = "Kích hoạt khóa học: " + params.courseName;
-      var htmlBody = "<h3>Chào " + params.customerName + ",</h3>" +
-                     "<p>Cảm ơn bạn đã đăng ký học tập tại Mario Slide. Khóa học <strong>" + params.courseName + "</strong> của bạn đã được kích hoạt thành công.</p>" +
-                     "<p>Bạn có thể truy cập thư mục tài liệu học tập Google Drive theo liên kết dưới đây:</p>" +
-                     "<p><a href='" + params.driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Truy Cập Drive Khóa Học</a></p>" +
-                     "<p>Nếu bạn gặp bất kỳ khó khăn nào trong quá trình học tập, vui lòng liên hệ bộ phận hỗ trợ kỹ thuật.</p>" +
-                     "<br/><p>Trân trọng,<br/><strong>Mario Slide CRM 2026</strong></p>";
-      
-      GmailApp.sendEmail(recipient, subject, "", {
-        htmlBody: htmlBody
-      });
-      return ContentService.createTextOutput(JSON.stringify({ success: true }))
-        .setMimeType(ContentService.MimeType.JSON);
-    } else if (params.action === 'activateCourse') {
-      var email = params.email;
-      var customerName = params.customerName;
-      var courseName = params.courseName;
-      var rawDriveLink = params.driveFolderId;
-      
-      var cleanId = getCleanId(rawDriveLink);
-      var driveLink = rawDriveLink;
-      var shareSuccess = false;
-      var shareError = "";
-      
-      if (cleanId) {
-        try {
-          // Grant Viewer permission using Google Drive REST API to trigger the standard Google sharing email notification
-          shareDrivePermission(cleanId, email);
-          shareSuccess = true;
-          
-          // Get the actual URL
-          try {
-            driveLink = DriveApp.getFolderById(cleanId).getUrl();
-          } catch(err) {
-            driveLink = DriveApp.getFileById(cleanId).getUrl();
-          }
-        } catch(e) {
-          shareError = e.toString();
-          
-          // Fallback to DriveApp.addViewer if REST API fails
-          try {
-            try {
-              var folder = DriveApp.getFolderById(cleanId);
-              folder.addViewer(email);
-              driveLink = folder.getUrl();
-              shareSuccess = true;
-            } catch(folderErr) {
-              var file = DriveApp.getFileById(cleanId);
-              file.addViewer(email);
-              driveLink = file.getUrl();
-              shareSuccess = true;
-            }
-          } catch(fallbackErr) {
-            shareError += " | Fallback: " + fallbackErr.toString();
-          }
-        }
-      }
-      
-      var subject = "Mario Slide - Kích hoạt khóa học: " + courseName;
-      var htmlBody = "<h3>Chào " + customerName + ",</h3>" +
-                     "<p>Cảm ơn bạn đã đăng ký học tập tại Mario Slide. Khóa học <strong>" + courseName + "</strong> của bạn đã được kích hoạt thành công.</p>";
-      
-      if (shareSuccess) {
-        htmlBody += "<p>Hệ thống đã tự động chia sẻ quyền xem (Viewer) thư mục học liệu/slide vào tài khoản Google: <strong>" + email + "</strong>.</p>" +
-                    "<p>Bạn có thể truy cập trực tiếp bằng cách click vào liên kết dưới đây:</p>" +
-                    "<p><a href='" + driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Truy Cập Drive Khóa Học</a></p>";
-      } else {
-        htmlBody += "<p>Dưới đây là liên kết tài liệu học tập của bạn:</p>" +
-                    "<p><a href='" + driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Vào Link Học Liệu</a></p>";
-        if (shareError) {
-          htmlBody += "<p style='color:#777;font-size:11px;margin-top:10px;'>Lưu ý: Hệ thống không tự động cấp quyền trực tiếp được vì lỗi: " + shareError + ". Vui lòng yêu cầu quyền truy cập khi mở link hoặc liên hệ hỗ trợ.</p>";
-        }
-      }
-      
-      htmlBody += "<p>Nếu gặp khó khăn trong quá trình học tập, vui lòng liên hệ bộ phận hỗ trợ.</p>" +
-                  "<br/><p>Trân trọng,<br/><strong>Mario Slide CRM 2026</strong></p>";
-      
-      GmailApp.sendEmail(email, subject, "", {
-        htmlBody: htmlBody
-      });
-      
-      return ContentService.createTextOutput(JSON.stringify({ success: true, shareSuccess: shareSuccess, error: shareError }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function readAllData() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var data = {
-    customers: readSheet(ss, "KHACH_HANG"),
-    courses: readSheet(ss, "KHOA_HOC"),
-    designs: readSheet(ss, "THIET_KE"),
-    collaborators: readSheet(ss, "CONG_TAC_VIEN"),
-    campaigns: readSheet(ss, "MARKETING"),
-    logs: readSheet(ss, "LOGS"),
-    orders: [],
-    expenses: []
-  };
-  
-  var sheets = ss.getSheets();
-  for (var i = 0; i < sheets.length; i++) {
-    var name = sheets[i].getName();
-    if (name.indexOf("DON_HANG_") === 0) {
-      data.orders = data.orders.concat(readSheet(ss, name));
-    } else if (name.indexOf("CHI_PHI_") === 0) {
-      data.expenses = data.expenses.concat(readSheet(ss, name));
-    }
-  }
-  return data;
-}
-
-function writeAllData(data) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  writeSheet(ss, "KHACH_HANG", data.customers);
-  writeSheet(ss, "KHOA_HOC", data.courses);
-  writeSheet(ss, "THIET_KE", data.designs);
-  writeSheet(ss, "CONG_TAC_VIEN", data.collaborators);
-  writeSheet(ss, "MARKETING", data.campaigns);
-  writeSheet(ss, "LOGS", data.logs);
-  
-  // Clear old monthly sheets to prevent leftovers
-  var sheets = ss.getSheets();
-  for (var i = 0; i < sheets.length; i++) {
-    var name = sheets[i].getName();
-    if (name.indexOf("DON_HANG_") === 0 || name.indexOf("CHI_PHI_") === 0) {
-      sheets[i].clear();
-    }
-  }
-  
-  // Partition orders by month
-  var ordersByMonth = {};
-  if (data.orders) {
-    data.orders.forEach(function(o) {
-      var dateStr = o.createdAt || new Date().toISOString();
-      var monthStr = dateStr.substring(0, 7).replace("-", "_");
-      var sheetName = "DON_HANG_" + monthStr;
-      if (!ordersByMonth[sheetName]) ordersByMonth[sheetName] = [];
-      ordersByMonth[sheetName].push(o);
-    });
-  }
-  for (var sheetName in ordersByMonth) {
-    writeSheet(ss, sheetName, ordersByMonth[sheetName]);
-  }
-  
-  // Partition expenses by month
-  var expensesByMonth = {};
-  if (data.expenses) {
-    data.expenses.forEach(function(e) {
-      var dateStr = e.date || new Date().toISOString().split('T')[0];
-      var monthStr = dateStr.substring(0, 7).replace("-", "_");
-      var sheetName = "CHI_PHI_" + monthStr;
-      if (!expensesByMonth[sheetName]) expensesByMonth[sheetName] = [];
-      expensesByMonth[sheetName].push(e);
-    });
-  }
-  for (var sheetName in expensesByMonth) {
-    writeSheet(ss, sheetName, expensesByMonth[sheetName]);
-  }
-}
-
-function readSheet(ss, name) {
-  var sheet = ss.getSheetByName(name);
-  if (!sheet) return [];
-  var range = sheet.getDataRange();
-  if (range.getNumRows() < 2) return [];
-  var values = range.getValues();
-  var headers = values[0];
-  var list = [];
-  for (var r = 1; r < values.length; r++) {
-    var obj = {};
-    var rowEmpty = true;
-    for (var c = 0; c < headers.length; c++) {
-      var val = values[r][c];
-      if (val !== "") rowEmpty = false;
-      if (headers[c] === "tags" || headers[c] === "coursesPurchased" || headers[c] === "lmsProgress" || headers[c] === "aiAnalysis" || headers[c] === "lmsGrades" || headers[c] === "lmsCertificateEarned") {
-        try {
-          obj[headers[c]] = JSON.parse(val);
-        } catch(e) {
-          obj[headers[c]] = val ? val.toString().split(",") : [];
-        }
-      } else {
-        obj[headers[c]] = val;
-      }
-    }
-    if (!rowEmpty) list.push(obj);
-  }
-  return list;
-}
-
-function writeSheet(ss, name, list) {
-  var sheet = ss.getSheetByName(name);
-  if (!sheet) {
-    sheet = ss.insertSheet(name);
-  } else {
-    sheet.clear();
-  }
-  if (!list || list.length === 0) return;
-  var headers = [];
-  list.forEach(function(item) {
-    Object.keys(item).forEach(function(k) {
-      if (headers.indexOf(k) === -1) headers.push(k);
-    });
-  });
-  sheet.appendRow(headers);
-  var rows = [];
-  list.forEach(function(item) {
-    var row = [];
-    headers.forEach(function(h) {
-      var val = item[h];
-      if (typeof val === 'object' && val !== null) {
-        row.push(JSON.stringify(val));
-      } else {
-        row.push(val === undefined ? "" : val);
-      }
-    });
-    rows.push(row);
-  });
-  if (rows.length > 0) {
-    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
-  }
-}
-
-function getCleanId(str) {
-  if (!str) return "";
-  str = str.trim();
-  if (str.indexOf("/") === -1 && str.indexOf(".") === -1) {
-    return str;
-  }
-  var match = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  
-  match = str.match(/\/folders\/([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  
-  match = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match) return match[1];
-  
-  return str;
-}
-
-function shareDrivePermission(fileId, email) {
-  // Call Drive API REST endpoint to share with standard Google email invitation (Notify people checkbox checked)
-  var url = "https://www.googleapis.com/drive/v3/files/" + fileId + "/permissions?sendNotificationEmail=true";
-  var payload = {
-    "role": "reader",
-    "type": "user",
-    "emailAddress": email
-  };
-  var options = {
-    "method": "POST",
-    "contentType": "application/json",
-    "headers": {
-      "Authorization": "Bearer " + ScriptApp.getOAuthToken()
-    },
-    "payload": JSON.stringify(payload),
-    "muteHttpExceptions": true
-  };
-  
-  var response = UrlFetchApp.fetch(url, options);
-  var resText = response.getContentText();
-  var resJson = JSON.parse(resText);
-  if (response.getResponseCode() !== 200) {
-    throw new Error(resJson.error ? resJson.error.message : resText);
-  }
-  
-  // Dummy check to force Apps Script to request Drive permissions
-  // DriveApp.getFiles();
-  return resJson;
-}`;
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(appsScriptCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
+      showNotice('Tải dữ liệu từ Google Sheets về App thành công  return (
     <div className="space-y-6 animate-fade-in" id="settings_view_container">
       {/* Upper Title */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
@@ -416,28 +98,26 @@ function shareDrivePermission(fileId, email) {
           </p>
         </div>
         
-        {googleSheetUrl && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleDownloadFromSheets}
-              disabled={isSyncing}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition shadow-sm"
-              id="btn_download_from_sheets"
-            >
-              <Download className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              Tải dữ liệu về App
-            </button>
-            <button
-              onClick={handleManualSync}
-              disabled={isSyncing}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
-              id="btn_upload_to_sheets"
-            >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Đang gửi...' : 'Đồng bộ lên Sheets'}
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleDownloadFromSheets}
+            disabled={isSyncing}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition shadow-sm"
+            id="btn_download_from_sheets"
+          >
+            <Download className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            Tải dữ liệu về App
+          </button>
+          <button
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
+            id="btn_upload_to_sheets"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Đang gửi...' : 'Đồng bộ lên Sheets'}
+          </button>
+        </div>
       </div>
 
       {/* Success alert notice */}
@@ -451,59 +131,34 @@ function shareDrivePermission(fileId, email) {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* API & Sheet Configuration Form */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Connection URL setting */}
+          {/* Test Connection & Email section */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-primary" />
-              Kết Nối Google Sheets Trực Tiếp
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Kiểm Tra Kết Nối & Gửi Email Thử Nghiệm
             </h3>
             <p className="text-xs text-slate-400 font-sans leading-relaxed">
-              Nhập liên kết Web App Apps Script được triển khai từ Google Sheet của bạn. Link Google Sheet gốc: 
-              <a href="https://docs.google.com/spreadsheets/d/1sjuhc0WnuKQ42wVqFfUASAxKWY16wqjS9smdqBUM6Ho/edit" target="_blank" rel="noreferrer" className="text-primary hover:underline ml-1 font-semibold">
-                [docs.google.com/spreadsheets/d/1sjuhc0Wnu...]
-              </a>
+              Nhập email học viên thử nghiệm để gửi một yêu cầu kích hoạt khóa học mẫu qua Apps Script. Hệ thống sẽ kiểm tra xem tài khoản có nhận được email chia sẻ Drive học liệu và email thông báo HTML thực tế từ hệ thống hay không.
             </p>
-            
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-700">Google Apps Script Web App URL*</label>
-              <input
-                type="url"
-                placeholder="https://script.google.com/macros/s/.../exec"
-                value={sheetUrl}
-                onChange={e => setSheetUrl(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-xs font-mono"
-              />
-            </div>
-
-            {/* Test Connection & Email section */}
-            <div className="pt-4 border-t border-slate-100 space-y-3">
-              <h4 className="text-xs font-semibold text-secondary font-sans flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                Kiểm Tra Kết Nối & Gửi Email Thử Nghiệm
-              </h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Nhập email của bạn để gửi một yêu cầu kích hoạt khóa học mẫu qua Apps Script. Hệ thống sẽ thử chia sẻ quyền xem (Viewer) thư mục học liệu thử nghiệm và gửi email thông báo để bạn kiểm tra luồng hoạt động thực tế.
-              </p>
-              <div className="flex gap-2 items-end">
-                <div className="flex-1 space-y-1">
-                  <label className="block text-[10px] font-semibold text-slate-600">Email người nhận thử nghiệm</label>
-                  <input
-                    type="email"
-                    placeholder="vi-du@gmail.com"
-                    value={testEmail}
-                    onChange={e => setTestEmail(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-xs font-sans"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleTestEmailSend}
-                  disabled={isTesting}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow transition cursor-pointer shrink-0 h-[38px] flex items-center justify-center gap-1.5"
-                >
-                  {isTesting ? 'Đang gửi...' : 'Gửi Thử Nghiệm'}
-                </button>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1">
+                <label className="block text-[10px] font-semibold text-slate-600">Email người nhận thử nghiệm</label>
+                <input
+                  type="email"
+                  placeholder="vi-du@gmail.com"
+                  value={testEmail}
+                  onChange={e => setTestEmail(e.target.value)}
+                  className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-xs font-sans"
+                />
               </div>
+              <button
+                type="button"
+                onClick={handleTestEmailSend}
+                disabled={isTesting}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow transition cursor-pointer shrink-0 h-[38px] flex items-center justify-center gap-1.5"
+              >
+                {isTesting ? 'Đang gửi...' : 'Gửi Thử Nghiệm'}
+              </button>
             </div>
           </div>
 
@@ -560,42 +215,6 @@ function shareDrivePermission(fileId, email) {
             >
               Lưu Cấu Hình CRM
             </button>
-          </div>
-
-          {/* Guide Deployment section */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
-                  <FileSpreadsheet className="w-4 h-4 text-primary" />
-                  Hướng Dẫn Cài Đặt Google Apps Script
-                </h3>
-                <p className="text-xs text-slate-400 font-sans">Triển khai code cầu nối lên Google Sheet để đồng bộ dữ liệu từ App sang Google Sheets</p>
-              </div>
-              <button
-                onClick={copyToClipboard}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer border border-slate-200"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                {copied ? 'Đã sao chép' : 'Sao chép mã'}
-              </button>
-            </div>
-
-            <div className="text-xs text-slate-650 space-y-2 leading-relaxed list-decimal pl-4">
-              <li>Bước 1: Mở File Google Sheet của bạn.</li>
-              <li>Bước 2: Click vào <strong>Tiện ích mở rộng (Extensions)</strong> &gt; <strong>Apps Script</strong>.</li>
-              <li>Bước 3: Xóa mọi code mặc định, dán đoạn mã Apps Script bên dưới vào. Bấm Lưu (Save).</li>
-              <li>Bước 4: Click <strong>Triển khai (Deploy)</strong> &gt; <strong>Triển khai mới (New deployment)</strong>.</li>
-              <li>Bước 5: Click bánh răng cấu hình, chọn <strong>Ứng dụng web (Web app)</strong>.</li>
-              <li>Bước 6: Thiết lập <strong>Execute as: Me</strong> và <strong>Who has access: Anyone</strong> (Mọi người).</li>
-              <li>Bước 7: Click Deploy, cấp quyền truy cập của Google và copy link Web App dán vào ô cài đặt phía trên.</li>
-            </div>
-
-            <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl max-h-60 overflow-y-auto">
-              <pre className="text-[10px] text-slate-300 font-mono select-all select-none leading-relaxed whitespace-pre-wrap">
-                {appsScriptCode}
-              </pre>
-            </div>
           </div>
         </div>
 
