@@ -430,34 +430,35 @@ export default function App() {
     saveToStorage('mre_logs', updatedLogs);
     showToast('success', 'Chạy mô phỏng tự động cấp học thành công!');
 
-    // Actual email trigger via Apps Script
+    // Actual email & Drive share trigger via Apps Script
     if (googleSheetUrl) {
       try {
-        const driveLink = order.driveFolderId && order.driveFolderId.startsWith('http')
-          ? order.driveFolderId
-          : `https://drive.google.com/drive/folders/${order.driveFolderId || ''}`;
-          
         const response = await fetch(googleSheetUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
-            action: 'sendEmail',
+            action: 'activateCourse',
             email: order.customerEmail,
             customerName: order.customerName,
             courseName: order.productName,
-            driveLink: driveLink
+            driveFolderId: order.driveFolderId
           })
         });
         
         const resData = await response.json();
         if (resData && resData.success) {
-          showToast('success', `Đã gửi email kích hoạt khóa học thực tế đến ${order.customerEmail}!`);
+          if (resData.shareSuccess) {
+            showToast('success', `Đã cấp quyền Drive và gửi email kích hoạt thực tế đến ${order.customerEmail}!`);
+          } else {
+            showToast('info', `Đã gửi mail kích hoạt, nhưng không thể tự động share Drive (Vui lòng xem lỗi trong console).`);
+            console.warn('Google Drive share warning:', resData.error);
+          }
         } else {
-          showToast('error', `Lỗi Apps Script khi gửi mail: ${resData.error || 'Unknown'}`);
+          showToast('error', `Lỗi Apps Script khi kích hoạt: ${resData.error || 'Unknown'}`);
         }
       } catch (err) {
-        console.error('Apps Script Email API Error:', err);
-        showToast('error', 'Không thể kết nối Apps Script để gửi email thực tế.');
+        console.error('Apps Script Activation Error:', err);
+        showToast('error', 'Không thể kết nối Apps Script để kích hoạt và gửi email thực tế.');
       }
     }
 
