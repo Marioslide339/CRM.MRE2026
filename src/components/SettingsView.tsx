@@ -114,6 +114,60 @@ function doPost(e) {
       });
       return ContentService.createTextOutput(JSON.stringify({ success: true }))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (params.action === 'activateCourse') {
+      var email = params.email;
+      var customerName = params.customerName;
+      var courseName = params.courseName;
+      var rawDriveLink = params.driveFolderId;
+      
+      var cleanId = getCleanId(rawDriveLink);
+      var driveLink = rawDriveLink;
+      var shareSuccess = false;
+      var shareError = "";
+      
+      if (cleanId) {
+        try {
+          try {
+            var folder = DriveApp.getFolderById(cleanId);
+            folder.addViewer(email);
+            driveLink = folder.getUrl();
+            shareSuccess = true;
+          } catch(folderErr) {
+            var file = DriveApp.getFileById(cleanId);
+            file.addViewer(email);
+            driveLink = file.getUrl();
+            shareSuccess = true;
+          }
+        } catch(e) {
+          shareError = e.toString();
+        }
+      }
+      
+      var subject = "Mario Slide - Kích hoạt khóa học: " + courseName;
+      var htmlBody = "<h3>Chào " + customerName + ",</h3>" +
+                     "<p>Cảm ơn bạn đã đăng ký học tập tại Mario Slide. Khóa học <strong>" + courseName + "</strong> của bạn đã được kích hoạt thành công.</p>";
+      
+      if (shareSuccess) {
+        htmlBody += "<p>Hệ thống đã tự động chia sẻ quyền xem (Viewer) thư mục học liệu/slide vào tài khoản Google: <strong>" + email + "</strong>.</p>" +
+                    "<p>Bạn có thể truy cập trực tiếp bằng cách click vào liên kết dưới đây:</p>" +
+                    "<p><a href='" + driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Truy Cập Drive Khóa Học</a></p>";
+      } else {
+        htmlBody += "<p>Dưới đây là liên kết tài liệu học tập của bạn:</p>" +
+                    "<p><a href='" + driveLink + "' style='display:inline-block;padding:10px 20px;background-color:#FF3B30;color:white;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;'>Vào Link Học Liệu</a></p>";
+        if (shareError) {
+          htmlBody += "<p style='color:#777;font-size:11px;margin-top:10px;'>Lưu ý: Hệ thống không tự động cấp quyền trực tiếp được vì lỗi: " + shareError + ". Vui lòng yêu cầu quyền truy cập khi mở link hoặc liên hệ hỗ trợ.</p>";
+        }
+      }
+      
+      htmlBody += "<p>Nếu gặp khó khăn trong quá trình học tập, vui lòng liên hệ bộ phận hỗ trợ.</p>" +
+                  "<br/><p>Trân trọng,<br/><strong>Mario Slide CRM 2026</strong></p>";
+      
+      GmailApp.sendEmail(email, subject, "", {
+        htmlBody: htmlBody
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({ success: true, shareSuccess: shareSuccess, error: shareError }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
@@ -256,6 +310,31 @@ function writeSheet(ss, name, list) {
   if (rows.length > 0) {
     sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
   }
+}
+
+function getCleanId(str) {
+  if (!str) return "";
+  if (str.indexOf("drive.google.com") !== -1) {
+    var parts = str.split("/");
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === "folders" || parts[i] === "d") {
+        if (i + 1 < parts.length) {
+          return parts[i + 1].split("?")[0];
+        }
+      }
+    }
+  }
+  if (str.indexOf("docs.google.com/presentation") !== -1) {
+    var parts = str.split("/");
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === "d") {
+        if (i + 1 < parts.length) {
+          return parts[i + 1].split("?")[0];
+        }
+      }
+    }
+  }
+  return str.trim();
 }`;
 
   const copyToClipboard = () => {
