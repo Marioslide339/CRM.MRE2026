@@ -1,0 +1,6 @@
+{
+  "name": "MRE CRM 2026",
+  "description": "Hệ thống CRM quản lý khách hàng, đơn hàng, khóa học, dịch vụ thiết kế, công nợ và marketing, đồng bộ Google Sheets, Google Drive, Gmail và tích hợp phân tích thông minh bằng Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
