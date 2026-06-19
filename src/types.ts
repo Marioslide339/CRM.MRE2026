@@ -101,3 +101,26 @@ export interface MarketingCampaign {
   sentAt: string;
   recipientCount: number;
 }
+
+export interface MonthlyTarget {
+  month: number; // 1-12
+  revenueTarget: number; // Doanh thu tổng mục tiêu
+  revenueCourseTarget: number; // DT khoá học mục tiêu
+  revenueDesignTarget: number; // DT thiết kế mục tiêu
+  expenseAdsTarget: number; // CP quảng cáo mục tiêu
+  expenseStaffTarget: number; // CP nhân sự mục tiêu
+  profitTarget: number; // Lợi nhuận mục tiêu
+  // Actual historical data (nhập tay hoặc tính từ dữ liệu)
+  actualRevenue?: number;
+  actualRevenueCourse?: number;
+  actualRevenueDesign?: number;
+  actualExpenseOther?: number; // Chi phí khác (ngoài QC)
+  actualExpenseAds?: number; // Chi phí quảng cáo thực
+  actualProfit?: number;
+}
+
+export interface YearlyGoal {
+  id: string;
+  year: number;
+  months: MonthlyTarget[];
+}
