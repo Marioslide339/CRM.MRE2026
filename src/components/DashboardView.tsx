@@ -34,7 +34,7 @@ import {
   LineChart,
   Line
 } from 'recharts';
-import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, Expense } from '../types';
+import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, Expense, YearlyGoal } from '../types';
 
 interface DashboardViewProps {
   customers: Customer[];
@@ -44,6 +44,7 @@ interface DashboardViewProps {
   collaborators: Collaborator[];
   logs: AutomationLog[];
   expenses: Expense[];
+  goals: YearlyGoal[];
   onNavigate: (tab: string) => void;
   googleSheetUrl?: string;
   isSyncing?: boolean;
@@ -60,6 +61,7 @@ export default function DashboardView({
   collaborators,
   logs,
   expenses,
+  goals,
   onNavigate,
   googleSheetUrl = '',
   isSyncing = false
@@ -243,14 +245,21 @@ export default function DashboardView({
     });
   }, [collaborators, filteredExpenses]);
 
-  // Monthly Revenue Trend (constructed dynamically from filtered orders)
+  // Monthly Revenue Trend (constructed dynamically from goals and current orders/designs)
   const monthlyRevenueTrend = useMemo(() => {
     const dataMap: { [month: string]: number } = {};
     
-    // Default months for visual continuity
-    dataMap['Tháng 04'] = 15400000;
-    dataMap['Tháng 05'] = 24800000;
+    // Find goals for 2026
+    const goal2026 = goals.find(g => g.year === 2026);
     
+    // Populate historical actual revenues for Month 1 to Month 5
+    for (let m = 1; m <= 5; m++) {
+      const monthLabel = `Tháng ${String(m).padStart(2, '0')}`;
+      const targetMonth = goal2026?.months.find(mo => mo.month === m);
+      dataMap[monthLabel] = targetMonth?.actualRevenue || 0;
+    }
+    
+    // Compute current/future month revenues from actual paid orders and designs
     filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .forEach(o => {
@@ -272,7 +281,7 @@ export default function DashboardView({
         name: m,
         'Doanh thu VND': dataMap[m]
       }));
-  }, [filteredOrders, filteredDesigns]);
+  }, [filteredOrders, filteredDesigns, goals]);
 
   return (
     <div className="space-y-8 animate-fade-in" id="dashboard_view_container">
