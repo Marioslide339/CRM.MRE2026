@@ -124,7 +124,7 @@ export default function ExpensesView({
   return (
     <div className="space-y-6 animate-fade-in" id="expenses_view_container">
       {/* Title */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-secondary font-sans flex items-center gap-2">
             <Coins className="w-5 h-5 text-primary" />
@@ -134,17 +134,17 @@ export default function ExpensesView({
             Theo dõi chi phí quảng cáo, văn phòng phẩm, trả lương, phần mềm dịch vụ, thuế VAT và thuế TNDN.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition"
             id="btn_export_expenses_csv"
           >
             Xuất CSV
           </button>
           <button
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
             id="btn_add_expense"
           >
             <Plus className="w-4 h-4" />
@@ -193,17 +193,14 @@ export default function ExpensesView({
                 <option value="Văn phòng phẩm">Văn phòng phẩm</option>
                 <option value="Trả lương">Trả lương</option>
                 <option value="Phần mềm dịch vụ">Phần mềm dịch vụ</option>
-                <option value="Thuế VAT">Thuế VAT</option>
-                <option value="Thuế TNDN">Thuế TNDN</option>
-                <option value="Khác">Khác</option>
-              </select>
+                <opti              </select>
               <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-450 pointer-events-none" />
             </div>
           </div>
         </div>
 
-        {/* Expenses List */}
-        <div className="overflow-x-auto">
+        {/* Expenses List (Desktop only) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 font-sans">
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
@@ -237,7 +234,7 @@ export default function ExpensesView({
                     <td className="py-4 px-6 text-right space-x-2">
                       <button
                         onClick={() => handleOpenEdit(exp)}
-                        className="p-1 px-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
+                        className="p-1 px-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-655 font-bold rounded-lg transition text-[10px] cursor-pointer"
                       >
                         Sửa
                       </button>
@@ -260,21 +257,71 @@ export default function ExpensesView({
             </tbody>
           </table>
         </div>
+
+        {/* Expenses List (Mobile only) */}
+        <div className="block md:hidden divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+          {filteredExpenses.length > 0 ? (
+            filteredExpenses.map(exp => (
+              <div key={exp.id} className="p-4 space-y-2 hover:bg-slate-50/50 transition">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{exp.id}</span>
+                  <span className="font-mono text-[10px] text-slate-400">{exp.date}</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${
+                      exp.category === 'Chi phí quảng cáo' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                      exp.category === 'Trả lương' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                      exp.category === 'Phần mềm dịch vụ' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                      exp.category === 'Thuế VAT' || exp.category === 'Thuế TNDN' ? 'bg-red-50 text-red-600 border-red-100' :
+                      'bg-slate-100 text-slate-600'
+                    }`}>
+                      {exp.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">{exp.description}</p>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[10px] text-slate-400">Số tiền:</span>
+                  <span className="font-mono font-bold text-red-655 text-red-600 text-sm">{formatVND(exp.amount)}</span>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    onClick={() => handleOpenEdit(exp)}
+                    className="p-1 px-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-655 font-bold rounded-lg transition text-[10px] cursor-pointer"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    onClick={() => onDeleteExpense(exp.id)}
+                    className="p-1 px-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-slate-400 font-sans">
+              Không tìm thấy dữ liệu chi phí nào.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Add / Edit Expense Modal Dialog */}
       {isAddOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="font-semibold text-slate-900 text-sm">
                 {editingExpense ? 'Cập Nhật Khoản Chi Phí' : 'Ghi Nhận Chi Phí Vận Hành Mới'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-slate-450 hover:text-slate-650 transition text-lg font-bold">
+              <button onClick={() => setIsAddOpen(false)} className="text-slate-450 hover:text-slate-655 hover:text-slate-650 transition text-lg font-bold">
                 ×
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs font-sans">
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs font-sans overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Ngày Phát Sinh*</label>
                 <input
