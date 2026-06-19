@@ -465,9 +465,9 @@ export default function App() {
       return c;
     });
 
-    // 2. Update Collaborators and compute new Expense (commission)
+    // 2. Update Collaborators (add revenue, keep salary manual)
     let updatedCtvs = currentCollaborators;
-    let updatedExpenses = currentExpenses;
+    const updatedExpenses = currentExpenses;
 
     const randomAssignee = currentCollaborators[Math.floor(Math.random() * currentCollaborators.length)];
     if (randomAssignee && orderRef.price > 1000000) {
@@ -475,26 +475,13 @@ export default function App() {
         if (ctv.id === randomAssignee.id) {
           const addedRev = orderRef.price;
           const updatedRev = ctv.revenue + addedRev;
-          const updatedSalary = (updatedRev * 30) / 100;
           return {
             ...ctv,
-            revenue: updatedRev,
-            salary: updatedSalary
+            revenue: updatedRev
           };
         }
         return ctv;
       });
-
-      // Add a commission expense
-      const expId = `CP${String(currentExpenses.length + 1).padStart(4, '0')}`;
-      const newCommissionExpense: Expense = {
-        id: expId,
-        date: new Date().toISOString().split('T')[0],
-        category: 'Trả lương',
-        amount: Math.round((orderRef.price * 30) / 100),
-        description: `Trích xuất 30% hoa hồng CTV ${randomAssignee.name} từ đơn hàng ${orderRef.id}`
-      };
-      updatedExpenses = [newCommissionExpense, ...currentExpenses];
     }
 
     return {
