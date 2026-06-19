@@ -18,9 +18,10 @@ import {
   ShieldCheck,
   ChevronDown,
   UserCheck,
-  DollarSign
+  DollarSign,
+  Target
 } from 'lucide-react';
-import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, MarketingCampaign, Expense } from './types';
+import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, MarketingCampaign, Expense, YearlyGoal } from './types';
 import {
   INITIAL_COURSES,
   INITIAL_CUSTOMERS,
@@ -29,7 +30,8 @@ import {
   INITIAL_COLLABORATORS,
   INITIAL_CAMPAIGNS,
   INITIAL_LOGS,
-  INITIAL_EXPENSES
+  INITIAL_EXPENSES,
+  INITIAL_GOALS
 } from './data/mockData';
 
 // Modular Component imports
@@ -43,6 +45,7 @@ import MarketingView from './components/MarketingView';
 import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
+import GoalsView from './components/GoalsView';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 
@@ -58,6 +61,7 @@ export default function App() {
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [logs, setLogs] = useState<AutomationLog[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [goals, setGoals] = useState<YearlyGoal[]>([]);
 
   // Google Sheets integration and Gemini rotation
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
@@ -102,6 +106,7 @@ export default function App() {
       const storedLogs = localStorage.getItem('mre_logs');
       const storedExpenses = localStorage.getItem('mre_expenses');
       const storedKeys = localStorage.getItem('mre_gemini_keys');
+      const storedGoals = localStorage.getItem('mre_goals');
 
       setCustomers(storedCustomers ? sanitizeCustomers(JSON.parse(storedCustomers)) : []);
       setOrders(storedOrders ? JSON.parse(storedOrders) : []);
@@ -112,6 +117,7 @@ export default function App() {
       setLogs(storedLogs ? JSON.parse(storedLogs) : []);
       setExpenses(storedExpenses ? JSON.parse(storedExpenses) : []);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
+      setGoals(storedGoals ? JSON.parse(storedGoals) : INITIAL_GOALS);
     } catch (e) {
       console.error('Failed to parse cached database:', e);
     }
@@ -156,6 +162,10 @@ export default function App() {
           setExpenses(cloudExpenses);
           localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
 
+          const cloudGoals = data.goals || INITIAL_GOALS;
+          setGoals(cloudGoals);
+          localStorage.setItem('mre_goals', JSON.stringify(cloudGoals));
+
           console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
         }
       } catch (err) {
@@ -185,7 +195,8 @@ export default function App() {
         collaborators,
         campaigns,
         logs,
-        expenses
+        expenses,
+        goals
       };
       
       const response = await fetch(url, {
@@ -771,6 +782,14 @@ export default function App() {
     syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs, expenses: updated });
   };
 
+  // Goals Handlers
+  const handleUpdateGoals = (updatedGoals: YearlyGoal[]) => {
+    setGoals(updatedGoals);
+    saveToStorage('mre_goals', updatedGoals);
+    showToast('success', 'Đã cập nhật mục tiêu thành công.');
+    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs, expenses, goals: updatedGoals });
+  };
+
   const handleDeleteExpense = (id: string) => {
     const updated = expenses.filter(e => e.id !== id);
     setExpenses(updated);
@@ -789,6 +808,7 @@ export default function App() {
     localStorage.removeItem('mre_campaigns');
     localStorage.removeItem('mre_logs');
     localStorage.removeItem('mre_expenses');
+    localStorage.removeItem('mre_goals');
 
     setCustomers(INITIAL_CUSTOMERS);
     setOrders(INITIAL_ORDERS);
@@ -798,6 +818,7 @@ export default function App() {
     setCampaigns(INITIAL_CAMPAIGNS);
     setLogs(INITIAL_LOGS);
     setExpenses(INITIAL_EXPENSES);
+    setGoals(INITIAL_GOALS);
     
     syncToGoogleSheets(undefined, {
       customers: INITIAL_CUSTOMERS,
@@ -807,7 +828,8 @@ export default function App() {
       collaborators: INITIAL_COLLABORATORS,
       campaigns: INITIAL_CAMPAIGNS,
       logs: INITIAL_LOGS,
-      expenses: INITIAL_EXPENSES
+      expenses: INITIAL_EXPENSES,
+      goals: INITIAL_GOALS
     });
   };
 
@@ -821,7 +843,8 @@ export default function App() {
         CONG_TAC_VIEN: collaborators,
         KPI: campaigns,
         logs: logs,
-        CHI_PHI: expenses
+        CHI_PHI: expenses,
+        MUC_TIEU: goals
       }, null, 2)
     );
     const dlAnchorElem = document.createElement('a');
@@ -927,6 +950,17 @@ export default function App() {
             >
               <DollarSign className="w-4 h-4" />
               <span>Quản Lý Chi Phí</span>
+            </button>
+
+            {/* Goals Link */}
+            <button
+              onClick={() => setActiveTab('goals')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
+                activeTab === 'goals' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
+              }`}
+            >
+              <Target className="w-4 h-4" />
+              <span>Mục Tiêu</span>
             </button>
 
             {/* Marketing Link */}
@@ -1051,6 +1085,13 @@ export default function App() {
             onAddExpense={handleAddExpense}
             onUpdateExpense={handleUpdateExpense}
             onDeleteExpense={handleDeleteExpense}
+          />
+        )}
+
+        {activeTab === 'goals' && (
+          <GoalsView
+            goals={goals}
+            onUpdateGoals={handleUpdateGoals}
           />
         )}
 
