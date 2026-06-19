@@ -177,7 +177,7 @@ export default function ExpensesView({
               placeholder="Tìm kiếm chi tiết, mã chi phí..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-400 transition"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition"
             />
           </div>
 
@@ -186,7 +186,7 @@ export default function ExpensesView({
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-400 text-slate-600 font-sans appearance-none cursor-pointer"
+                className="pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans appearance-none cursor-pointer"
               >
                 <option value="">Tất cả danh mục</option>
                 <option value="Chi phí quảng cáo">Chi phí quảng cáo</option>
@@ -332,7 +332,7 @@ export default function ExpensesView({
                   required
                   value={date}
                   onChange={e => setDate(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 text-base md:text-xs"
                 />
               </div>
 
@@ -348,7 +348,7 @@ export default function ExpensesView({
                       setTaxRate(11);
                     }
                   }}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 bg-white text-base md:text-xs"
                 >
                   <option value="Chi phí quảng cáo">Chi phí quảng cáo (Google/FB Ads...)</option>
                   <option value="Văn phòng phẩm">Văn phòng phẩm</option>
@@ -369,7 +369,7 @@ export default function ExpensesView({
                   placeholder="Nhập số tiền thực chi"
                   value={amount === 0 ? '' : amount}
                   onChange={e => setAmount(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 text-base md:text-xs"
                 />
               </div>
 
@@ -399,11 +399,11 @@ export default function ExpensesView({
                         step={0.5}
                         value={taxRate}
                         onChange={e => setTaxRate(Number(e.target.value))}
-                        className="w-20 p-1.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 text-xs text-center"
+                        className="w-20 p-1.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 text-base md:text-xs text-center font-mono"
                       />
                     </div>
                     {amount > 0 && taxRate > 0 && (
-                      <div className="text-[11px] text-slate-500 bg-white rounded-lg p-2 border border-slate-100">
+                      <div className="text-[11px] text-slate-500 bg-white rounded-lg p-2 border border-slate-100 font-sans">
                         <div className="flex justify-between">
                           <span>Số tiền gốc:</span>
                           <span className="font-mono font-semibold text-slate-700">{formatVND(amount)}</span>
@@ -419,7 +419,7 @@ export default function ExpensesView({
                       </div>
                     )}
                     {category === 'Chi phí quảng cáo' && (
-                      <p className="text-[10px] text-slate-400 italic">* Chi phí QC mặc định: 10% thuế VAT + 1% phí thanh toán = 11%</p>
+                      <p className="text-[10px] text-slate-400 italic font-sans">* Chi phí QC mặc định: 10% thuế VAT + 1% phí thanh toán = 11%</p>
                     )}
                   </div>
                 )}
@@ -433,7 +433,7 @@ export default function ExpensesView({
                   placeholder="Mô tả cụ thể lý do chi, người thụ hưởng..."
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 text-base md:text-xs"
                 />
               </div>
 
