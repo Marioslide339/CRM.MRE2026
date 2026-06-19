@@ -24,7 +24,7 @@ export default function CollaboratorsView({
   const [newName, setNewName] = useState('');
   const [newJob, setNewJob] = useState('Thiết kế Slide hoạt hình');
   const [initRev, setInitRev] = useState<number>(0);
-  const [commissionRate, setCommissionRate] = useState<number>(30); // Default 30% commission
+  const [newSalary, setNewSalary] = useState<number>(0); // Manual salary input state
 
   // Edit collaborator states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -44,14 +44,13 @@ export default function CollaboratorsView({
     if (!newName) return;
 
     const code = `CTV${String(collaborators.length + 1).padStart(3, '0')}`;
-    const calculatedSalary = (initRev * commissionRate) / 100;
 
     onAddCollaborator({
       id: code,
       name: `${newName} (CTV)`,
       job: newJob,
       revenue: initRev,
-      salary: calculatedSalary,
+      salary: newSalary,
       efficiency: 95
     });
 
@@ -59,7 +58,7 @@ export default function CollaboratorsView({
     setNewName('');
     setNewJob('Thiết kế Slide hoạt hình');
     setInitRev(0);
-    setCommissionRate(30);
+    setNewSalary(0);
   };
 
   const handleStartEdit = (ctv: Collaborator) => {
@@ -130,7 +129,7 @@ export default function CollaboratorsView({
                   <th className="py-3.5 px-4">Cộng tác viên</th>
                   <th className="py-3.5 px-4">Công việc phụ trách</th>
                   <th className="py-3.5 px-4">Doanh số đóng góp</th>
-                  <th className="py-3.5 px-4">Lương quyết toán (30%)</th>
+                  <th className="py-3.5 px-4">Lương quyết toán</th>
                   <th className="py-3.5 px-6 text-right">KPI Hoàn thành</th>
                   <th className="py-3.5 px-6 text-right">Hành động</th>
                 </tr>
@@ -194,7 +193,7 @@ export default function CollaboratorsView({
                       <span className="font-semibold text-slate-700 font-mono">{formatVND(ctv.revenue)}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Lương quyết toán (30%):</span>
+                      <span className="text-slate-400 block text-[10px]">Lương quyết toán:</span>
                       <span className="font-semibold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block">{formatVND(ctv.salary)}</span>
                     </div>
                   </div>
@@ -240,10 +239,10 @@ export default function CollaboratorsView({
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-sm font-semibold text-slate-800 font-sans flex items-center gap-2">
               <Coins className="w-4 h-4 text-amber-500" />
-              Công Thức Quyết Toán Tự Động
+              Quyết Toán Quỹ Lương CTV
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed font-sans">
-              Hệ thống sử dụng Apps Script tự động cộng gộp doanh thu từ Sheet <span className="font-mono bg-slate-100 px-1 py-0.5 rounded text-[10px] text-indigo-600">DON_HANG</span> và trích xuất tỷ lệ hoa hồng đại lý tiêu chuẩn là <span className="font-bold text-slate-800">30%</span> để tính quỹ lương cho từng CTV.
+              Quỹ lương và hoa hồng của cộng tác viên được quản trị viên điền thủ công dựa trên đối soát thực tế doanh số đóng góp và thỏa thuận công việc riêng.
             </p>
             <div className="border-t border-slate-100 pt-4 space-y-3">
               <div className="flex justify-between items-center text-xs">
@@ -322,16 +321,16 @@ export default function CollaboratorsView({
                     type="number"
                     value={initRev}
                     onChange={e => setInitRev(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">% Hoa hồng thụ hưởng</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Lương quyết toán khởi tạo</label>
                   <input
                     type="number"
-                    value={commissionRate}
-                    onChange={e => setCommissionRate(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
+                    value={newSalary}
+                    onChange={e => setNewSalary(Number(e.target.value))}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                   />
                 </div>
               </div>
