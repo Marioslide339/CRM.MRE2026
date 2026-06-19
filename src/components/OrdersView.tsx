@@ -116,6 +116,19 @@ export default function OrdersView({
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
+  const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const date = d.toLocaleDateString('vi-VN');
+      const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      return `${date} ${time}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   // Pre-fill prices based on course selection
   const handleCourseSelection = (courseId: string) => {
     setSelectedCourseId(courseId);
@@ -447,7 +460,12 @@ export default function OrdersView({
               {filteredOrders.length > 0 ? (
                 filteredOrders.map(order => (
                   <tr key={order.id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-4 px-6 font-mono font-bold text-slate-800">{order.id}</td>
+                    <td className="py-4 px-6 space-y-0.5">
+                      <p className="font-mono font-bold text-slate-800">{order.id}</p>
+                      <p className="text-[9px] text-slate-400 font-mono font-medium block">
+                        {formatDateTime(order.createdAt)}
+                      </p>
+                    </td>
                     <td className="py-4 px-4 space-y-0.5">
                       <p className="font-semibold text-slate-800">{order.customerName}</p>
                       <p className="text-[10px] text-slate-400">{order.customerEmail}</p>
@@ -551,7 +569,7 @@ export default function OrdersView({
                 <div className="flex justify-between items-center">
                   <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{order.id}</span>
                   <span className="text-[10px] text-slate-400 font-mono">
-                    {order.createdAt.substring(0, 10)}
+                    {formatDateTime(order.createdAt)}
                   </span>
                 </div>
                 <div>
