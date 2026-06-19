@@ -166,7 +166,8 @@ export default function DesignsView({
 
       {/* Grid of designs */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-        <div className="overflow-x-auto">
+        {/* Desktop version (Table) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 font-sans">
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
@@ -252,6 +253,82 @@ export default function DesignsView({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile version (Cards) */}
+        <div className="block md:hidden divide-y divide-slate-100 max-h-[600px] overflow-y-auto" id="designs_cards_mobile">
+          {designs.length > 0 ? (
+            designs.map(design => {
+              const overdue = isOverdue(design.deadline, design.status);
+              return (
+                <div key={design.id} className="p-4 space-y-3 hover:bg-slate-50/40 transition">
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{design.id}</span>
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      {(design as any).serviceType || 'Thiết kế PowerPoint'}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-800 text-xs">{design.title}</h4>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
+                      <span className="font-medium text-slate-700">{design.customerName}</span>
+                      <span>•</span>
+                      <span className="text-slate-400">KH: {design.customerId}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-baseline text-xs">
+                    <span className="text-slate-400">Thành tiền:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {design.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(design.amount) : '0 ₫'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1 text-[10px]">
+                    <div className="flex flex-col">
+                      <span className="text-slate-400">CTV Phụ trách:</span>
+                      <span className="font-semibold text-slate-700">{design.executor}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400">Hạn nghiệm thu:</span>
+                      <span className={`font-semibold font-mono ${overdue ? 'text-rose-600' : 'text-slate-700'}`}>
+                        {new Date(design.deadline).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                      design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                      design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-750 border-purple-100' :
+                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                      'bg-blue-50 text-blue-750 border-blue-100'
+                    }`}>
+                      {design.status}
+                    </span>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleStartEdit(design)}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      >
+                        Sửa
+                      </button>
+                      {onDeleteDesign && (
+                        <button
+                          onClick={() => handleDelete(design.id)}
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                        >
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="py-12 text-center text-slate-400 font-mono text-xs">
+              Chưa có yêu cầu thiết kế nào
+            </div>
+          )}
         </div>
       </div>
 
