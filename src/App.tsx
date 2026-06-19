@@ -19,7 +19,9 @@ import {
   ChevronDown,
   UserCheck,
   DollarSign,
-  Target
+  Target,
+  Menu,
+  X
 } from 'lucide-react';
 import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, MarketingCampaign, Expense, YearlyGoal } from './types';
 import {
@@ -51,6 +53,12 @@ const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const selectTab = (tabName: string) => {
+    setActiveTab(tabName);
+    setIsSidebarOpen(false);
+  };
 
   // Unified State with localStorage persistence
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -855,8 +863,36 @@ export default function App() {
 
   return (
     <div className="h-screen bg-bg-offwhite flex flex-col md:flex-row overflow-hidden" id="main_app_wrapper">
-      {/* Dynamic Left Sidebar menu — fixed, does not scroll with page */}
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800 shadow-xl md:h-screen md:sticky md:top-0 md:overflow-y-auto" id="sidebar_nav_aside">
+      {/* Mobile Top Header */}
+      <header className="md:hidden bg-slate-900 text-slate-300 h-16 flex items-center justify-between px-6 border-b border-slate-800 z-30 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white font-black text-sm">
+            MR
+          </div>
+          <span className="font-extrabold text-white text-sm tracking-wide font-sans">
+            MRE <span className="text-primary">CÔNG NGHỆ</span>
+          </span>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-1.5 hover:bg-slate-800 rounded-lg transition"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </header>
+
+      {/* Sidebar Backdrop Overlay on Mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden animate-fade-in"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Dynamic Left Sidebar menu — truting/slide-out on mobile */}
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800 shadow-xl z-40 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`} id="sidebar_nav_aside">
         <div>
           {/* Logo Brand Header */}
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -871,13 +907,20 @@ export default function App() {
                 <span className="text-[10px] text-slate-400 block font-mono font-bold">● Active Sandbox</span>
               </div>
             </div>
+            {/* Close button on Mobile */}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden p-1.5 hover:bg-slate-800 rounded-lg transition"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
           </div>
 
           {/* Nav list links */}
           <nav className="p-4 space-y-1 text-xs font-semibold">
             {/* Dashboard Link */}
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => selectTab('dashboard')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'dashboard' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -888,7 +931,7 @@ export default function App() {
 
             {/* Customers Link */}
             <button
-              onClick={() => setActiveTab('customers')}
+              onClick={() => selectTab('customers')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'customers' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -899,7 +942,7 @@ export default function App() {
 
             {/* Orders Link */}
             <button
-              onClick={() => setActiveTab('orders')}
+              onClick={() => selectTab('orders')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'orders' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -910,7 +953,7 @@ export default function App() {
 
             {/* Courses Link */}
             <button
-              onClick={() => setActiveTab('courses')}
+              onClick={() => selectTab('courses')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'courses' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -921,7 +964,7 @@ export default function App() {
 
             {/* Designs Link */}
             <button
-              onClick={() => setActiveTab('designs')}
+              onClick={() => selectTab('designs')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'designs' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -932,7 +975,7 @@ export default function App() {
 
             {/* Collaborators Link */}
             <button
-              onClick={() => setActiveTab('collaborators')}
+              onClick={() => selectTab('collaborators')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'collaborators' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -943,7 +986,7 @@ export default function App() {
 
             {/* Expenses Link */}
             <button
-              onClick={() => setActiveTab('expenses')}
+              onClick={() => selectTab('expenses')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'expenses' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -954,7 +997,7 @@ export default function App() {
 
             {/* Goals Link */}
             <button
-              onClick={() => setActiveTab('goals')}
+              onClick={() => selectTab('goals')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'goals' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -965,7 +1008,7 @@ export default function App() {
 
             {/* Marketing Link */}
             <button
-              onClick={() => setActiveTab('marketing')}
+              onClick={() => selectTab('marketing')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'marketing' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
@@ -976,7 +1019,7 @@ export default function App() {
 
             {/* AI Phân tích */}
             <button
-              onClick={() => setActiveTab('ai')}
+              onClick={() => selectTab('ai')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-dashed border-primary/20 transition ${
                 activeTab === 'ai' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-accent-orange'
               }`}
@@ -987,7 +1030,7 @@ export default function App() {
 
             {/* Settings Link */}
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => selectTab('settings')}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition ${
                 activeTab === 'settings' ? 'bg-gradient-to-r from-primary to-accent-orange text-white shadow-lg font-bold' : 'hover:bg-slate-800/60 text-slate-400'
               }`}
