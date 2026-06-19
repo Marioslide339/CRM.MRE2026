@@ -45,7 +45,7 @@ import MarketingView from './components/MarketingView';
 import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
-import GoalsView from './components/GoalsView';
+import GoalsViewComponent from './components/GoalsViewComponent';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 
@@ -1089,7 +1089,7 @@ export default function App() {
         )}
 
         {activeTab === 'goals' && (
-          <GoalsView
+          <GoalsViewComponent
             goals={goals}
             onUpdateGoals={handleUpdateGoals}
           />
