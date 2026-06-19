@@ -38,6 +38,53 @@ export default function OrdersView({
 }: OrdersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'day' | 'week' | 'month' | 'year' | 'custom'>('all');
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
+
+  const currentDateTime = useMemo(() => new Date(), []);
+  
+  const getTodayStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = useMemo(() => getTodayStr(currentDateTime), [currentDateTime]);
+
+  const weekRange = useMemo(() => {
+    const d = new Date(currentDateTime);
+    const day = d.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return {
+      start: getTodayStr(monday),
+      end: getTodayStr(sunday)
+    };
+  }, [currentDateTime]);
+
+  const monthRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    const month = currentDateTime.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return {
+      start: getTodayStr(firstDay),
+      end: getTodayStr(lastDay)
+    };
+  }, [currentDateTime]);
+
+  const yearRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    return {
+      start: `${year}-01-01`,
+      end: `${year}-12-31`
+    };
+  }, [currentDateTime]);
 
   // Modals status
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -243,9 +290,26 @@ export default function OrdersView({
         o.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = statusFilter ? o.paymentStatus === statusFilter : true;
-      return matchSearch && matchStatus;
+      
+      let matchTime = true;
+      if (timeFilter !== 'all') {
+        const d = o.createdAt.substring(0, 10);
+        if (timeFilter === 'day') {
+          matchTime = d === todayStr;
+        } else if (timeFilter === 'week') {
+          matchTime = d >= weekRange.start && d <= weekRange.end;
+        } else if (timeFilter === 'month') {
+          matchTime = d >= monthRange.start && d <= monthRange.end;
+        } else if (timeFilter === 'year') {
+          matchTime = d >= yearRange.start && d <= yearRange.end;
+        } else if (timeFilter === 'custom') {
+          matchTime = (!customStart || d >= customStart) && (!customEnd || d <= customEnd);
+        }
+      }
+
+      return matchSearch && matchStatus && matchTime;
     });
-  }, [orders, searchTerm, statusFilter]);
+  }, [orders, searchTerm, statusFilter, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, yearRange]);
 
   const handleExportCSV = () => {
     const headers = ["Mã Đơn", "Học viên", "Email", "Khóa học / Gói", "Thanh toán (VND)", "Phương thức", "Ngày tạo", "Trạng thái thanh toán", "Kích hoạt LMS"];
@@ -307,28 +371,62 @@ export default function OrdersView({
       {/* Main Grid View */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
         {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Tìm kiếm mã đơn, khách hàng, tên khóa học..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition"
-            />
-            {/* Simple icon inside input */}
-            <span className="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
+        <div className="p-4 border-b border-slate-100 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Tìm kiếm mã đơn, khách hàng, tên khóa học..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
+              />
+              {/* Simple icon inside input */}
+              <span className="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
+            >
+              <option value="">Tất cả thanh toán ({orders.length})</option>
+              <option value="Đã thanh toán">Đã thanh toán</option>
+              <option value="Chưa thanh toán">Chưa thanh toán</option>
+            </select>
+
+            <select
+              value={timeFilter}
+              onChange={e => setTimeFilter(e.target.value as any)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
+            >
+              <option value="all">Tất cả thời gian</option>
+              <option value="day">Hôm nay (Ngày)</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+              <option value="year">Năm nay</option>
+              <option value="custom">Tùy chọn ngày</option>
+            </select>
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
-          >
-            <option value="">Tất cả thanh toán ({orders.length})</option>
-            <option value="Đã thanh toán">Đã thanh toán</option>
-            <option value="Chưa thanh toán">Chưa thanh toán</option>
-          </select>
+          {/* Custom date range inputs */}
+          {timeFilter === 'custom' && (
+            <div className="flex items-center gap-2 animate-fade-in self-end sm:self-auto">
+              <input
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
+              />
+              <span className="text-slate-400 text-xs">đến</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
+              />
+            </div>
+          )}
         </div>
 
         {/* Table representation (desktop only) */}
