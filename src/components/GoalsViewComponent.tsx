@@ -30,11 +30,14 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts';
-import { MonthlyTarget, YearlyGoal } from '../types';
+import { MonthlyTarget, YearlyGoal, Order, DesignService, Expense } from '../types';
 
 interface GoalsViewComponentProps {
   goals: YearlyGoal[];
   onUpdateGoals: (updatedGoals: YearlyGoal[]) => void;
+  orders: Order[];
+  designs: DesignService[];
+  expenses: Expense[];
 }
 
 const MONTH_LABELS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
@@ -126,7 +129,13 @@ const BarChartTooltip = ({ active, payload, label }: any) => {
 };
 
 // ===== MAIN COMPONENT =====
-export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewComponentProps) {
+export default function GoalsViewComponent({
+  goals,
+  onUpdateGoals,
+  orders = [],
+  designs = [],
+  expenses = []
+}: GoalsViewComponentProps) {
   const availableYears = useMemo(() => {
     const years = goals.map(g => g.year);
     if (!years.includes(2026)) years.push(2026);
@@ -144,7 +153,97 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
     return goals.find(g => g.year === selectedYear) || null;
   }, [goals, selectedYear]);
 
-  const months = useMemo(() => currentGoal?.months || [], [currentGoal]);
+  // Calculate actual goal metrics dynamically from CRM data in real-time
+  const months = useMemo(() => {
+    if (!currentGoal) return [];
+
+    return currentGoal.months.map(m => {
+      // Find orders for this month & year
+      const monthOrders = orders.filter(o => {
+        if (o.paymentStatus !== 'Đã thanh toán') return false;
+        const d = o.createdAt.substring(0, 10);
+        const parts = d.split('-');
+        if (parts.length >= 2) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          return year === selectedYear && month === m.month;
+        }
+        return false;
+      });
+
+      // Find designs for this month & year
+      const monthDesigns = designs.filter(d => {
+        const dateStr = d.createdAt ? d.createdAt.substring(0, 10) : d.deadline;
+        if (!dateStr) return false;
+        const parts = dateStr.split('-');
+        if (parts.length >= 2) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          return year === selectedYear && month === m.month;
+        }
+        return false;
+      });
+
+      // Find expenses for this month & year
+      const monthExpenses = expenses.filter(e => {
+        const d = e.date;
+        if (!d) return false;
+        const parts = d.split('-');
+        if (parts.length >= 2) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          return year === selectedYear && month === m.month;
+        }
+        return false;
+      });
+
+      // Course actual (KH Thực)
+      const dynamicCourseActual = monthOrders.reduce((sum, o) => sum + o.price, 0);
+
+      // Design actual (TK Thực)
+      const dynamicDesignActual = monthDesigns.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+      // Total revenue (DT Thực đạt)
+      const dynamicRevenueActual = dynamicCourseActual + dynamicDesignActual;
+
+      // Expense actual - Ads (CP QC Thực)
+      const dynamicExpenseAds = monthExpenses
+        .filter(e => e.category === 'Chi phí quảng cáo')
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      // Expense actual - Other
+      const dynamicExpenseOther = monthExpenses
+        .filter(e => e.category !== 'Chi phí quảng cáo')
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      // Total Expense actual
+      const dynamicTotalExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+      // Profit actual (LN Thực)
+      const dynamicProfitActual = dynamicRevenueActual - dynamicTotalExpense;
+
+      // If we have dynamic transactions (revenue actual > 0 or expense actual > 0), we use the dynamic calculations.
+      // Otherwise, we fallback to the static values already defined in the goals database (which might be pre-populated mock values for T1-T5).
+      const hasDynamicData = dynamicRevenueActual > 0 || dynamicTotalExpense > 0;
+
+      const actualRevenue = hasDynamicData ? dynamicRevenueActual : m.actualRevenue;
+      const actualRevenueCourse = hasDynamicData ? dynamicCourseActual : m.actualRevenueCourse;
+      const actualRevenueDesign = hasDynamicData ? dynamicDesignActual : m.actualRevenueDesign;
+      const actualExpenseAds = hasDynamicData ? dynamicExpenseAds : m.actualExpenseAds;
+      const actualExpenseOther = hasDynamicData ? dynamicExpenseOther : m.actualExpenseOther;
+      const actualProfit = hasDynamicData ? dynamicProfitActual : m.actualProfit;
+
+      return {
+        ...m,
+        actualRevenue,
+        actualRevenueCourse,
+        actualRevenueDesign,
+        actualExpenseAds,
+        actualExpenseOther,
+        actualProfit
+      };
+    });
+  }, [currentGoal, selectedYear, orders, designs, expenses]);
 
   // YTD calculations (months 1 through CURRENT_MONTH)
   const ytdStats = useMemo(() => {
@@ -447,10 +546,10 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
               <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={formatCompact} width={55} />
               <Tooltip content={<BarChartTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
-              <Bar dataKey="KH Mục tiêu" fill="#FF3B30" radius={[3, 3, 0, 0]} opacity={0.35} />
+              <Bar dataKey="KH Mục tiêu" fill="#2563EB" radius={[3, 3, 0, 0]} opacity={0.35} />
               <Bar dataKey="KH Thực" fill="#FF3B30" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="TK Mục tiêu" fill="#FFA726" radius={[3, 3, 0, 0]} opacity={0.35} />
-              <Bar dataKey="TK Thực" fill="#FFA726" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="TK Mục tiêu" fill="#10B981" radius={[3, 3, 0, 0]} opacity={0.35} />
+              <Bar dataKey="TK Thực" fill="#FBBF24" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -747,7 +846,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                             type="number"
                             value={m[field]}
                             onChange={e => handleEditFieldChange(idx, field, e.target.value)}
-                            className="w-full text-right bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 focus:ring-2 focus:ring-primary/30 focus:border-primary/50 outline-none transition"
+                            className="w-full text-right bg-slate-50 border border-slate-200 rounded-lg text-base md:text-xs font-mono text-slate-700 focus:ring-2 focus:ring-primary/30 focus:border-primary/50 outline-none transition"
                           />
                         </td>
                       ))}
@@ -759,7 +858,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                             value={m[field] ?? ''}
                             onChange={e => handleEditFieldChange(idx, field, e.target.value)}
                             placeholder="—"
-                            className="w-full text-right bg-primary/[0.03] border border-primary/15 rounded-lg text-xs font-mono text-slate-700 focus:ring-2 focus:ring-primary/30 focus:border-primary/50 outline-none transition placeholder:text-slate-300"
+                            className="w-full text-right bg-primary/[0.03] border border-primary/15 rounded-lg text-base md:text-xs font-mono text-slate-700 focus:ring-2 focus:ring-primary/30 focus:border-primary/50 outline-none transition placeholder:text-slate-300"
                           />
                         </td>
                       ))}
@@ -799,7 +898,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.revenueTarget}
                                 onChange={e => handleEditFieldChange(idx, 'revenueTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -808,7 +907,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.revenueCourseTarget}
                                 onChange={e => handleEditFieldChange(idx, 'revenueCourseTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -817,7 +916,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.revenueDesignTarget}
                                 onChange={e => handleEditFieldChange(idx, 'revenueDesignTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -826,7 +925,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.expenseAdsTarget}
                                 onChange={e => handleEditFieldChange(idx, 'expenseAdsTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -835,7 +934,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.expenseStaffTarget}
                                 onChange={e => handleEditFieldChange(idx, 'expenseStaffTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -844,7 +943,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 type="number"
                                 value={m.profitTarget}
                                 onChange={e => handleEditFieldChange(idx, 'profitTarget', e.target.value)}
-                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                           </div>
@@ -861,7 +960,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 value={m.actualRevenue ?? ''}
                                 onChange={e => handleEditFieldChange(idx, 'actualRevenue', e.target.value)}
                                 placeholder="—"
-                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -871,7 +970,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 value={m.actualRevenueCourse ?? ''}
                                 onChange={e => handleEditFieldChange(idx, 'actualRevenueCourse', e.target.value)}
                                 placeholder="—"
-                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -881,7 +980,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 value={m.actualRevenueDesign ?? ''}
                                 onChange={e => handleEditFieldChange(idx, 'actualRevenueDesign', e.target.value)}
                                 placeholder="—"
-                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div>
@@ -891,7 +990,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 value={m.actualExpenseAds ?? ''}
                                 onChange={e => handleEditFieldChange(idx, 'actualExpenseAds', e.target.value)}
                                 placeholder="—"
-                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                             <div className="col-span-2">
@@ -901,7 +1000,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                                 value={m.actualProfit ?? ''}
                                 onChange={e => handleEditFieldChange(idx, 'actualProfit', e.target.value)}
                                 placeholder="—"
-                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-base font-mono text-slate-700 outline-none"
                               />
                             </div>
                           </div>
