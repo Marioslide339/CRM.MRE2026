@@ -791,6 +791,20 @@ export default function CustomersView({
                 <button
                   onClick={handleSaveNotes}
                   className="w-full text-center py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Lưu Ghi Chú
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-400 font-mono">
+              <User className="w-12 h-12 text-slate-200 mb-2" id="empty_customer_selection_icon" />
+              Chọn khách hàng ở bảng danh sách để cập nhật tiến trình đào tạo LMS và đánh giá AI.
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Add New Customer Popup Form Modal */}
       {isAddOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
