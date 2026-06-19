@@ -38,39 +38,7 @@ export default function DesignsView({
   const [statusFilter, setStatusFilter] = useState('');
   const [serviceTypeFilter, setServiceTypeFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
-  const [demoDeadlineFilter, setDemoDeadlineFilter] = useState<'all' | 'day' | 'week' | 'month' | 'overdue' | 'custom'>('all');
-  const [customStart, setCustomStart] = useState<string>('');
-  const [customEnd, setCustomEnd] = useState<string>('');
-  const [finalDeadlineFilter, setFinalDeadlineFilter] = useState<'all' | 'day' | 'week' | 'month' | 'overdue' | 'custom'>('all');
-  const [customFinalStart, setCustomFinalStart] = useState<string>('');
-  const [customFinalEnd, setCustomFinalEnd] = useState<string>('');
-
-  const currentDateTime = useMemo(() => new Date(), []);
-
-  const weekRange = useMemo(() => {
-    const d = new Date(currentDateTime);
-    const day = d.getDay();
-    const diffToMonday = day === 0 ? -6 : 1 - day;
-    const monday = new Date(d);
-    monday.setDate(d.getDate() + diffToMonday);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return {
-      start: `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`,
-      end: `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, '0')}-${String(sunday.getDate()).padStart(2, '0')}`
-    };
-  }, [currentDateTime]);
-
-  const monthRange = useMemo(() => {
-    const year = currentDateTime.getFullYear();
-    const month = currentDateTime.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    return {
-      start: `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`,
-      end: `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`
-    };
-  }, [currentDateTime]);
+  const [sortBy, setSortBy] = useState<string>('created-desc');
 
   const SERVICE_TYPES = [
     'Thiết kế PowerPoint',
@@ -116,67 +84,70 @@ export default function DesignsView({
       const matchService = !serviceTypeFilter || d.serviceType === serviceTypeFilter;
       const matchCustomer = !customerFilter || d.customerId === customerFilter;
 
-      let matchDemo = true;
-      if (demoDeadlineFilter !== 'all') {
-        const demoDate = d.deadlineDemo || d.deadline;
-        if (demoDeadlineFilter === 'day') {
-          matchDemo = demoDate === todayStr;
-        } else if (demoDeadlineFilter === 'week') {
-          matchDemo = demoDate >= weekRange.start && demoDate <= weekRange.end;
-        } else if (demoDeadlineFilter === 'month') {
-          matchDemo = demoDate >= monthRange.start && demoDate <= monthRange.end;
-        } else if (demoDeadlineFilter === 'overdue') {
-          matchDemo = d.status !== 'Hoàn thành' && demoDate < todayStr;
-        } else if (demoDeadlineFilter === 'custom') {
-          matchDemo = (!customStart || demoDate >= customStart) && (!customEnd || demoDate <= customEnd);
-        }
-      }
-
-      let matchFinal = true;
-      if (finalDeadlineFilter !== 'all') {
-        const finalDate = d.deadline;
-        if (finalDeadlineFilter === 'day') {
-          matchFinal = finalDate === todayStr;
-        } else if (finalDeadlineFilter === 'week') {
-          matchFinal = finalDate >= weekRange.start && finalDate <= weekRange.end;
-        } else if (finalDeadlineFilter === 'month') {
-          matchFinal = finalDate >= monthRange.start && finalDate <= monthRange.end;
-        } else if (finalDeadlineFilter === 'overdue') {
-          matchFinal = d.status !== 'Hoàn thành' && finalDate < todayStr;
-        } else if (finalDeadlineFilter === 'custom') {
-          matchFinal = (!customFinalStart || finalDate >= customFinalStart) && (!customFinalEnd || finalDate <= customFinalEnd);
-        }
-      }
-
-      return matchSearch && matchStatus && matchService && matchCustomer && matchDemo && matchFinal;
+      return matchSearch && matchStatus && matchService && matchCustomer;
     });
 
-    // 2. Sort: nearest to furthest (ascending), completed status default to bottom
+    // 2. Sort based on sortBy
     return [...filtered].sort((a, b) => {
       // Completed ('Hoàn thành') status always goes to the bottom
       if (a.status === 'Hoàn thành' && b.status !== 'Hoàn thành') return 1;
       if (a.status !== 'Hoàn thành' && b.status === 'Hoàn thành') return -1;
 
-      let dateA = '';
-      let dateB = '';
-
-      if (finalDeadlineFilter !== 'all') {
-        dateA = a.deadline || '';
-        dateB = b.deadline || '';
-      } else {
-        // By default, sort by deadlineDemo
-        dateA = a.deadlineDemo || a.deadline || '';
-        dateB = b.deadlineDemo || b.deadline || '';
+      if (sortBy === 'created-desc') {
+        const dateA = a.createdAt || '';
+        const dateB = b.createdAt || '';
+        if (!dateA && !dateB) return b.id.localeCompare(a.id);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA); // Gần nhất -> Xa nhất
       }
 
-      if (!dateA && !dateB) return 0;
-      if (!dateA) return 1;
-      if (!dateB) return -1;
+      if (sortBy === 'created-asc') {
+        const dateA = a.createdAt || '';
+        const dateB = b.createdAt || '';
+        if (!dateA && !dateB) return a.id.localeCompare(b.id);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateA.localeCompare(dateB); // Xa nhất -> Gần nhất
+      }
 
-      const compareDates = dateA.localeCompare(dateB);
-      if (compareDates !== 0) return compareDates;
+      if (sortBy === 'demo-asc') {
+        const dateA = a.deadlineDemo || a.deadline || '';
+        const dateB = b.deadlineDemo || b.deadline || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateA.localeCompare(dateB); // Gần nhất -> Xa nhất
+      }
 
-      // Fallback: newest project first
+      if (sortBy === 'demo-desc') {
+        const dateA = a.deadlineDemo || a.deadline || '';
+        const dateB = b.deadlineDemo || b.deadline || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA); // Xa nhất -> Gần nhất
+      }
+
+      if (sortBy === 'deadline-asc') {
+        const dateA = a.deadline || '';
+        const dateB = b.deadline || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateA.localeCompare(dateB); // Gần nhất -> Xa nhất
+      }
+
+      if (sortBy === 'deadline-desc') {
+        const dateA = a.deadline || '';
+        const dateB = b.deadline || '';
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.localeCompare(dateA); // Xa nhất -> Gần nhất
+      }
+
+      // Fallback
       return b.id.localeCompare(a.id);
     });
   }, [
@@ -185,15 +156,7 @@ export default function DesignsView({
     statusFilter,
     serviceTypeFilter,
     customerFilter,
-    demoDeadlineFilter,
-    finalDeadlineFilter,
-    customStart,
-    customEnd,
-    customFinalStart,
-    customFinalEnd,
-    todayStr,
-    weekRange,
-    monthRange
+    sortBy
   ]);
 
   const isOverdue = (dl: string, status: string) => {
@@ -320,17 +283,16 @@ export default function DesignsView({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
         {/* Filters */}
         <div className="p-4 border-b border-slate-100 flex flex-col gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             {/* Search Input */}
-            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1">
               <input
                 type="text"
                 placeholder="Tìm kiếm dự án, khách hàng, CTV..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
               />
-              <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
             </div>
 
             {/* Status Filter */}
@@ -371,74 +333,19 @@ export default function DesignsView({
               ))}
             </select>
 
-            {/* Demo Deadline Filter */}
+            {/* Sort Dropdown */}
             <select
-              value={demoDeadlineFilter}
-              onChange={e => setDemoDeadlineFilter(e.target.value as any)}
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer"
             >
-              <option value="all">Tất cả hạn Demo</option>
-              <option value="day">Hạn hôm nay</option>
-              <option value="week">Hạn tuần này</option>
-              <option value="month">Hạn tháng này</option>
-              <option value="overdue">Quá hạn demo</option>
-              <option value="custom">Tùy chọn ngày</option>
+              <option value="created-desc">Ngày đăng ký: A-z (Gần nhất → Xa nhất)</option>
+              <option value="created-asc">Ngày đăng ký: z-a (Xa nhất → Gần nhất)</option>
+              <option value="demo-asc">Hạn Demo: a-z (Gần nhất → Xa nhất)</option>
+              <option value="demo-desc">Hạn Demo: z-a (Xa nhất → Gần nhất)</option>
+              <option value="deadline-asc">Hạn Nghiệm thu: a-z (Gần nhất → Xa nhất)</option>
+              <option value="deadline-desc">Hạn Nghiệm thu: z-a (Xa nhất → Gần nhất)</option>
             </select>
-
-            {/* Final Deadline Filter */}
-            <select
-              value={finalDeadlineFilter}
-              onChange={e => setFinalDeadlineFilter(e.target.value as any)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer"
-            >
-              <option value="all">Tất cả hạn Nghiệm thu</option>
-              <option value="day">Hôm nay</option>
-              <option value="week">Tuần này</option>
-              <option value="month">Tháng này</option>
-              <option value="overdue">Quá hạn nghiệm thu</option>
-              <option value="custom">Tùy chọn ngày</option>
-            </select>
-          </div>
-
-          {/* Custom Date Range Inputs */}
-          <div className="flex flex-wrap gap-4 items-center justify-start text-xs font-sans mt-1">
-            {demoDeadlineFilter === 'custom' && (
-              <div className="flex items-center gap-2 animate-fade-in bg-slate-50 p-2 rounded-xl border border-slate-100">
-                <span className="text-slate-500 font-semibold">Hạn Demo từ:</span>
-                <input
-                  type="date"
-                  value={customStart}
-                  onChange={e => setCustomStart(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
-                />
-                <span className="text-slate-400">đến</span>
-                <input
-                  type="date"
-                  value={customEnd}
-                  onChange={e => setCustomEnd(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
-                />
-              </div>
-            )}
-
-            {finalDeadlineFilter === 'custom' && (
-              <div className="flex items-center gap-2 animate-fade-in bg-slate-50 p-2 rounded-xl border border-slate-100">
-                <span className="text-slate-500 font-semibold">Hạn Nghiệm thu từ:</span>
-                <input
-                  type="date"
-                  value={customFinalStart}
-                  onChange={e => setCustomFinalStart(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
-                />
-                <span className="text-slate-400">đến</span>
-                <input
-                  type="date"
-                  value={customFinalEnd}
-                  onChange={e => setCustomFinalEnd(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
-                />
-              </div>
-            )}
           </div>
         </div>
         {/* Desktop version (Table) */}
