@@ -297,7 +297,7 @@ export default function CollaboratorsView({
                   placeholder="Ví dụ: Hoàng Văn Định"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export default function CollaboratorsView({
                 <select
                   value={newJob}
                   onChange={e => setNewJob(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="Thiết kế Slide hoạt hình">Thiết kế Slide hoạt hình</option>
                   <option value="Thiết kế Landing Page">Thiết kế Landing Page</option>
@@ -322,7 +322,7 @@ export default function CollaboratorsView({
                     type="number"
                     value={initRev}
                     onChange={e => setInitRev(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -331,7 +331,7 @@ export default function CollaboratorsView({
                     type="number"
                     value={commissionRate}
                     onChange={e => setCommissionRate(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -375,7 +375,7 @@ export default function CollaboratorsView({
                   placeholder="Ví dụ: Hoàng Văn Định"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -384,7 +384,7 @@ export default function CollaboratorsView({
                 <select
                   value={editJob}
                   onChange={e => setEditJob(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="Thiết kế Slide hoạt hình">Thiết kế Slide hoạt hình</option>
                   <option value="Thiết kế Landing Page">Thiết kế Landing Page</option>
@@ -400,7 +400,7 @@ export default function CollaboratorsView({
                     type="number"
                     value={editRevenue}
                     onChange={e => setEditRevenue(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -409,7 +409,7 @@ export default function CollaboratorsView({
                     type="number"
                     value={editSalary}
                     onChange={e => setEditSalary(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -418,7 +418,7 @@ export default function CollaboratorsView({
                     type="number"
                     value={editEfficiency}
                     onChange={e => setEditEfficiency(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                   />
                 </div>
               </div>
