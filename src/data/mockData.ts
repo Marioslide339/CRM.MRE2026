@@ -26,7 +26,7 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     lmsProgress: { 'KC0001': 85, 'KC0003': 40 },
     lmsGrades: { 'KC0001': 9 },
     aiAnalysis: {
-      segment: 'VIP',
+      segment: 'Hạng Bạc',
       summary: 'Khách hàng cực kỳ trung thành, học tập tích cực và thường xuyên tương tác.',
       lastEvaluation: '2026-06-16T10:00:00Z'
     }
@@ -62,7 +62,7 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     coursesPurchased: ['KC0001', 'KC0002'],
     lmsProgress: { 'KC0001': 5, 'KC0002': 0 },
     aiAnalysis: {
-      segment: 'Ngủ quên',
+      segment: 'Hạng Bạc',
       summary: 'Đã mua 2 khóa học nhưng tiến độ gần như bằng 0. Cần chiến dịch marketing nhắc nhở và kích hoạt.',
       lastEvaluation: '2026-06-14T09:12:00Z'
     }
@@ -95,7 +95,7 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     coursesPurchased: ['KC0003'],
     lmsProgress: { 'KC0003': 10 },
     aiAnalysis: {
-      segment: 'VIP',
+      segment: 'Hạng Bạc',
       summary: 'Đang bắt đầu lộ trình Mario Slide Premium, phản hồi ban đầu rất tốt.',
       lastEvaluation: '2026-06-16T11:30:00Z'
     }
