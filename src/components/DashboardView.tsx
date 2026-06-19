@@ -288,19 +288,32 @@ export default function DashboardView({
   }, [designs, currentDateTime]);
 
   // 2. Charts Data Prep
-  // Revenue by product (course)
+  // Revenue structure breakdown (courses & design services)
   const productRevenueData = useMemo(() => {
     const counts: { [name: string]: number } = {};
+
+    // 1. Accumulate paid courses (orders)
     filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .forEach(o => {
-        counts[o.productName] = (counts[o.productName] || 0) + o.price;
+        const displayName = `[Khóa học] ${o.productName}`;
+        counts[displayName] = (counts[displayName] || 0) + o.price;
       });
-    return Object.keys(counts).map(key => ({
-      name: key,
-      value: counts[key]
-    }));
-  }, [filteredOrders]);
+
+    // 2. Accumulate design services
+    filteredDesigns.forEach(d => {
+      const serviceName = d.serviceType || 'Thiết kế PowerPoint';
+      const displayName = `[Thiết kế] ${serviceName}`;
+      counts[displayName] = (counts[displayName] || 0) + (d.amount || 0);
+    });
+
+    return Object.keys(counts)
+      .map(key => ({
+        name: key,
+        value: counts[key]
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [filteredOrders, filteredDesigns]);
 
   // Operational Expenses Breakdown
   const expensesBreakdownData = useMemo(() => {
@@ -995,9 +1008,9 @@ export default function DashboardView({
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              Sản Phẩm & Khóa Học
+              Cơ Cấu Doanh Thu
             </h3>
-            <p className="text-xs text-slate-400 font-sans">Doanh thu phân bổ theo các gói</p>
+            <p className="text-xs text-slate-400 font-sans">Doanh thu khóa học & thiết kế custom</p>
           </div>
           <div className="h-56 flex items-center justify-center mt-4">
             {productRevenueData.length > 0 ? (
@@ -1020,15 +1033,15 @@ export default function DashboardView({
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-xs text-slate-400 font-mono">Chưa ghi nhận doanh thu khóa học</p>
+              <p className="text-xs text-slate-400 font-mono">Chưa ghi nhận doanh thu phát sinh</p>
             )}
           </div>
           <div className="mt-4 space-y-2">
-            {productRevenueData.slice(0, 3).map((item, index) => (
+            {productRevenueData.slice(0, 5).map((item, index) => (
               <div key={item.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                  <span className="truncate max-w-[120px] text-slate-600 font-sans font-medium">{item.name}</span>
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                  <span className="truncate max-w-[140px] text-slate-600 font-sans font-medium">{item.name}</span>
                 </div>
                 <span className="text-slate-800 font-mono font-semibold">{formatVND(item.value)}</span>
               </div>
