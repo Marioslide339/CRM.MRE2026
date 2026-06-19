@@ -424,7 +424,7 @@ export default function OrdersView({
                         {onDeleteOrder && (
                           <button
                             onClick={() => handleDelete(order.id)}
-                            className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                            className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                           >
                             Xóa
                           </button>
@@ -520,7 +520,7 @@ export default function OrdersView({
                   {onDeleteOrder && (
                     <button
                       onClick={() => handleDelete(order.id)}
-                      className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                     >
                       Xóa
                     </button>
@@ -1008,3 +1008,4 @@ export default function OrdersView({
     </div>
   );
 }
+
