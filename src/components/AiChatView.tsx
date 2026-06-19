@@ -234,7 +234,7 @@ HƯỚNG DẪN TRẢ LỜI:
                 key={idx}
                 disabled={isLoading}
                 onClick={() => handleSendMessage(prompt)}
-                className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/50 hover:text-indigo-900 border border-slate-150 transition text-[11px] font-medium text-slate-700 leading-relaxed cursor-pointer"
+                className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/50 hover:text-indigo-900 border border-slate-100 transition text-[11px] font-medium text-slate-700 leading-relaxed cursor-pointer"
               >
                 {prompt}
               </button>
@@ -329,3 +329,4 @@ HƯỚNG DẪN TRẢ LỜI:
     </div>
   );
 }
+
