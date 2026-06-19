@@ -47,7 +47,7 @@ import MarketingView from './components/MarketingView';
 import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
-import GoalsViewComponent from './components/GoalsViewComponent.tsx';
+import GoalsViewComponent from './components/GoalsViewComponent';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 
@@ -436,6 +436,66 @@ export default function App() {
     syncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs, expenses });
   };
 
+  const activateOrderPayoutsAndLinks = (
+    orderRef: Order,
+    currentCustomers: Customer[],
+    currentCollaborators: Collaborator[],
+    currentExpenses: Expense[]
+  ) => {
+    // 1. Update Customers
+    const updatedCusts = currentCustomers.map(c => {
+      if (c.id === orderRef.customerId) {
+        const list = c.coursesPurchased || [];
+        if (!list.includes(orderRef.productId)) {
+          return {
+            ...c,
+            coursesPurchased: [...list, orderRef.productId],
+            lmsProgress: { ...(c.lmsProgress || {}), [orderRef.productId]: 10 }
+          };
+        }
+      }
+      return c;
+    });
+
+    // 2. Update Collaborators and compute new Expense (commission)
+    let updatedCtvs = currentCollaborators;
+    let updatedExpenses = currentExpenses;
+
+    const randomAssignee = currentCollaborators[Math.floor(Math.random() * currentCollaborators.length)];
+    if (randomAssignee && orderRef.price > 1000000) {
+      updatedCtvs = currentCollaborators.map(ctv => {
+        if (ctv.id === randomAssignee.id) {
+          const addedRev = orderRef.price;
+          const updatedRev = ctv.revenue + addedRev;
+          const updatedSalary = (updatedRev * 30) / 100;
+          return {
+            ...ctv,
+            revenue: updatedRev,
+            salary: updatedSalary
+          };
+        }
+        return ctv;
+      });
+
+      // Add a commission expense
+      const expId = `CP${String(currentExpenses.length + 1).padStart(4, '0')}`;
+      const newCommissionExpense: Expense = {
+        id: expId,
+        date: new Date().toISOString().split('T')[0],
+        category: 'Trả lương',
+        amount: Math.round((orderRef.price * 30) / 100),
+        description: `Trích xuất 30% hoa hồng CTV ${randomAssignee.name} từ đơn hàng ${orderRef.id}`
+      };
+      updatedExpenses = [newCommissionExpense, ...currentExpenses];
+    }
+
+    return {
+      updatedCusts,
+      updatedCtvs,
+      updatedExpenses
+    };
+  };
+
   const handleAddOrder = (newOrder: Partial<Order>) => {
     const id = `DH${String(orders.length + 1).padStart(4, '0')}`;
     const fullOrder: Order = {
@@ -443,107 +503,126 @@ export default function App() {
       id,
       createdAt: newOrder.createdAt || new Date().toISOString()
     } as Order;
-    const updated = [fullOrder, ...orders];
-    setOrders(updated);
-    saveToStorage('mre_orders', updated);
-    showToast('success', `Đã tạo đơn hàng ${id} thành công!`);
+    const updatedOrders = [fullOrder, ...orders];
 
     if (fullOrder.paymentStatus === 'Đã thanh toán') {
-      linkPurchasedCourseToClient(fullOrder.customerId, fullOrder.productId, fullOrder, updated);
-    } else {
-      syncToGoogleSheets(undefined, { customers, orders: updated, courses, designs, collaborators, campaigns, logs, expenses });
-    }
-  };
+      const { updatedCusts, updatedCtvs, updatedExpenses } = activateOrderPayoutsAndLinks(
+        fullOrder,
+        customers,
+        collaborators,
+        expenses
+      );
 
-  const linkPurchasedCourseToClient = (customerId: string, productId: string, orderRef: Order, updatedOrdersList?: Order[], triggerAppsScript: boolean = true) => {
-    let updatedCusts = customers;
-    setCustomers(prevCustomers => {
-      const updated = prevCustomers.map(c => {
-        if (c.id === customerId) {
-          const list = c.coursesPurchased || [];
-          if (!list.includes(productId)) {
-            const newList = [...list, productId];
-            const newLmsProgress = { ...(c.lmsProgress || {}), [productId]: 10 };
-            return {
-              ...c,
-              coursesPurchased: newList,
-              lmsProgress: newLmsProgress
-            };
-          }
-        }
-        return c;
-      });
-      updatedCusts = updated;
-      saveToStorage('mre_customers', updated);
-      return updated;
-    });
+      setCustomers(updatedCusts);
+      saveToStorage('mre_customers', updatedCusts);
 
-    let updatedCtvs = collaborators;
-    const randomAssignee = collaborators[Math.floor(Math.random() * collaborators.length)];
-    if (randomAssignee && orderRef.price > 1000000) {
-      setCollaborators(prevCtvs => {
-        const u = prevCtvs.map(ctv => {
-          if (ctv.id === randomAssignee.id) {
-            const addedRev = orderRef.price;
-            const updatedRev = ctv.revenue + addedRev;
-            const updatedSalary = (updatedRev * 30) / 100;
-            
-            // Auto add expense for CTV salary payout
-            setTimeout(() => {
-              handleAddExpense({
-                date: new Date().toISOString().split('T')[0],
-                category: 'Trả lương',
-                amount: Math.round((orderRef.price * 30) / 100),
-                description: `Trích xuất 30% hoa hồng CTV ${ctv.name} từ đơn hàng ${orderRef.id}`
-              });
-            }, 500);
+      setCollaborators(updatedCtvs);
+      saveToStorage('mre_collaborators', updatedCtvs);
 
-            return {
-              ...ctv,
-              revenue: updatedRev,
-              salary: updatedSalary
-            };
-          }
-          return ctv;
-        });
-        updatedCtvs = u;
-        saveToStorage('mre_collaborators', u);
-        return u;
-      });
-    }
+      setExpenses(updatedExpenses);
+      saveToStorage('mre_expenses', updatedExpenses);
 
-    setTimeout(() => {
+      setOrders(updatedOrders);
+      saveToStorage('mre_orders', updatedOrders);
+
+      showToast('success', `Đã tạo đơn hàng ${id} và kích hoạt khóa học thành công!`);
+
       syncToGoogleSheets(undefined, {
         customers: updatedCusts,
-        orders: updatedOrdersList || orders,
+        orders: updatedOrders,
         courses,
         designs,
         collaborators: updatedCtvs,
         campaigns,
         logs,
+        expenses: updatedExpenses
+      });
+
+      runAppsScriptActivation(fullOrder);
+    } else {
+      setOrders(updatedOrders);
+      saveToStorage('mre_orders', updatedOrders);
+      showToast('success', `Đã tạo đơn hàng ${id} thành công!`);
+      syncToGoogleSheets(undefined, {
+        customers,
+        orders: updatedOrders,
+        courses,
+        designs,
+        collaborators,
+        campaigns,
+        logs,
         expenses
       });
-      if (triggerAppsScript) {
-        runAppsScriptActivation(orderRef);
-      }
-    }, 1000);
+    }
   };
 
   const handleUpdateOrder = (id: string, updatedFields: Partial<Order>, triggerAppsScript: boolean = true) => {
-    const updated = orders.map(o => {
+    let isTransitioningToPaid = false;
+    let activatedOrder: Order | null = null;
+
+    const updatedOrders = orders.map(o => {
       if (o.id === id) {
         const withUpdated = { ...o, ...updatedFields };
         if (updatedFields.paymentStatus === 'Đã thanh toán' && o.paymentStatus !== 'Đã thanh toán') {
-          linkPurchasedCourseToClient(o.customerId, o.productId, withUpdated, updated, triggerAppsScript);
+          isTransitioningToPaid = true;
+          activatedOrder = withUpdated;
         }
         return withUpdated;
       }
       return o;
     });
-    setOrders(updated);
-    saveToStorage('mre_orders', updated);
-    showToast('success', 'Đã cập nhật thông tin đơn hàng.');
-    syncToGoogleSheets(undefined, { customers, orders: updated, courses, designs, collaborators, campaigns, logs, expenses });
+
+    if (isTransitioningToPaid && activatedOrder) {
+      const { updatedCusts, updatedCtvs, updatedExpenses } = activateOrderPayoutsAndLinks(
+        activatedOrder,
+        customers,
+        collaborators,
+        expenses
+      );
+
+      setCustomers(updatedCusts);
+      saveToStorage('mre_customers', updatedCusts);
+
+      setCollaborators(updatedCtvs);
+      saveToStorage('mre_collaborators', updatedCtvs);
+
+      setExpenses(updatedExpenses);
+      saveToStorage('mre_expenses', updatedExpenses);
+
+      setOrders(updatedOrders);
+      saveToStorage('mre_orders', updatedOrders);
+
+      showToast('success', 'Đã cập nhật đơn hàng và kích hoạt khóa học thành công!');
+
+      syncToGoogleSheets(undefined, {
+        customers: updatedCusts,
+        orders: updatedOrders,
+        courses,
+        designs,
+        collaborators: updatedCtvs,
+        campaigns,
+        logs,
+        expenses: updatedExpenses
+      });
+
+      if (triggerAppsScript) {
+        runAppsScriptActivation(activatedOrder);
+      }
+    } else {
+      setOrders(updatedOrders);
+      saveToStorage('mre_orders', updatedOrders);
+      showToast('success', 'Đã cập nhật thông tin đơn hàng.');
+      syncToGoogleSheets(undefined, {
+        customers: updatedCusts,
+        orders: updatedOrders,
+        courses,
+        designs,
+        collaborators,
+        campaigns,
+        logs,
+        expenses
+      });
+    }
   };
 
   const handleDeleteOrder = (id: string) => {
