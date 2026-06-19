@@ -349,30 +349,29 @@ export const INITIAL_GOALS: YearlyGoal[] = [
       },
       {
         month: 8,
-        revenueTarget: 180000000, revenueCourseTarget: 126000000, revenueDesignTarget: 54000000,
-        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 131000000
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
       },
       {
         month: 9,
-        revenueTarget: 200000000, revenueCourseTarget: 140000000, revenueDesignTarget: 60000000,
-        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 151000000
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
       },
       {
         month: 10,
-        revenueTarget: 250000000, revenueCourseTarget: 175000000, revenueDesignTarget: 75000000,
-        expenseAdsTarget: 80000000, expenseStaffTarget: 4000000, profitTarget: 166000000
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
       },
       {
         month: 11,
-        revenueTarget: 250000000, revenueCourseTarget: 175000000, revenueDesignTarget: 75000000,
-        expenseAdsTarget: 75000000, expenseStaffTarget: 4000000, profitTarget: 171000000
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
       },
       {
         month: 12,
-        revenueTarget: 120000000, revenueCourseTarget: 84000000, revenueDesignTarget: 36000000,
-        expenseAdsTarget: 36000000, expenseStaffTarget: 4000000, profitTarget: 80000000
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
       }
     ]
   }
 ];
-
