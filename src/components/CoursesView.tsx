@@ -180,7 +180,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   placeholder="KC000X"
                   value={newId}
                   onChange={e => setNewId(e.target.value.toUpperCase())}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 uppercase font-mono"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 uppercase font-mono text-base md:text-xs"
                 />
               </div>
 
@@ -192,7 +192,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   placeholder="Ví dụ: Khóa học biên tập video chuyên nghiệp"
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -204,7 +204,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   placeholder="ID chuỗi ký tự trên đường dẫn Drive"
                   value={newFolderId}
                   onChange={e => setNewFolderId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                 />
               </div>
 
@@ -217,7 +217,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                     placeholder="Mức thu"
                     value={newPrice}
                     onChange={e => setNewPrice(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -226,7 +226,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                     type="number"
                     value={lessons}
                     onChange={e => setLessons(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -268,7 +268,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   type="text"
                   disabled
                   value={editingCourse?.id || ''}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-500 font-mono"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-500 font-mono text-base md:text-xs"
                 />
               </div>
 
@@ -280,7 +280,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   placeholder="Ví dụ: Khóa học biên tập video chuyên nghiệp"
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -292,7 +292,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   placeholder="ID chuỗi ký tự trên đường dẫn Drive"
                   value={editFolderId}
                   onChange={e => setEditFolderId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 font-mono text-base md:text-xs"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                     placeholder="Mức thu"
                     value={editPrice}
                     onChange={e => setEditPrice(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -314,7 +314,7 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                     type="number"
                     value={editLessons}
                     onChange={e => setEditLessons(Number(e.target.value))}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
               </div>
