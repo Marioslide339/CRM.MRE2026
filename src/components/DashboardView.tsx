@@ -383,7 +383,7 @@ export default function DashboardView({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 font-mono text-xs font-semibold text-slate-650">
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 font-mono text-xs font-semibold text-slate-600">
             <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>Hôm nay: {formattedDateTime}</span>
           </div>
@@ -414,7 +414,7 @@ export default function DashboardView({
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-50 p-1 border border-slate-150 rounded-xl">
+          <div className="flex bg-slate-50 p-1 border border-slate-100 rounded-xl">
             {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as const).map(f => (
               <button
                 key={f}
@@ -474,7 +474,7 @@ export default function DashboardView({
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_expense">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">CHI PHÍ VẬN HÀNH</span>
-            <div className="p-2 bg-red-50 text-red-650 rounded-xl">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl">
               <TrendingDown className="w-4 h-4" />
             </div>
           </div>
@@ -490,7 +490,7 @@ export default function DashboardView({
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_profit">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">LỢI NHUẬN RÒNG</span>
-            <div className="p-2 bg-indigo-50 text-indigo-650 rounded-xl">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -506,7 +506,7 @@ export default function DashboardView({
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_margin">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">TỶ SUẤT LỢI NHUẬN</span>
-            <div className="p-2 bg-blue-50 text-blue-650 rounded-xl">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
               <Percent className="w-4 h-4" />
             </div>
           </div>
@@ -812,3 +812,4 @@ export default function DashboardView({
     </div>
   );
 }
+
