@@ -46,6 +46,25 @@ export default function CustomersView({
   onDeleteCustomer
 }: CustomersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
+
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return isoString;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      if (isoString.length <= 10) {
+        return `${day}/${month}/${year}`;
+      }
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch {
+      return isoString;
+    }
+  };
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -380,12 +399,18 @@ export default function CustomersView({
                     >
                       <td className="py-4 px-6 font-mono font-bold text-slate-800">{c.id}</td>
                       <td className="py-4 px-4">
-                        <span className="font-semibold text-slate-800">{c.name}</span>
-                        {c.aiAnalysis?.segment === 'VIP' && (
-                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
-                            VIP
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-800">{c.name}</span>
+                          {c.aiAnalysis?.segment === 'VIP' && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
+                              VIP
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
+                          <span>Tạo:</span>
+                          <span>{c.createdAt ? formatDateTime(c.createdAt) : '—'}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-4 space-y-0.5">
                         <div className="flex items-center gap-1.5 text-slate-500">
@@ -438,7 +463,12 @@ export default function CustomersView({
                   className={`p-4 hover:bg-slate-50 transition cursor-pointer flex flex-col gap-2 ${selectedCustomer?.id === c.id ? 'bg-indigo-50/40 hover:bg-indigo-50/50' : ''}`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{c.id}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-slate-800">{c.id}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {c.createdAt ? formatDateTime(c.createdAt) : ''}
+                      </span>
+                    </div>
                     <div className="flex gap-1">
                       {c.aiAnalysis?.segment === 'VIP' && (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
@@ -446,7 +476,7 @@ export default function CustomersView({
                         </span>
                       )}
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                        c.aiAnalysis?.segment === 'VIP' ? 'bg-amber-100 text-amber-850 border border-amber-200' :
+                        c.aiAnalysis?.segment === 'VIP' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
                         c.aiAnalysis?.segment === 'Ngủ quên' ? 'bg-red-50 text-red-700 border border-red-100' :
                         'bg-slate-100 text-slate-700'
                       }`}>
@@ -504,7 +534,11 @@ export default function CustomersView({
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-800 text-sm font-sans">{selectedCustomer.name}</h3>
-                    <p className="text-[10px] font-mono text-indigo-600">Mã KH: {selectedCustomer.id}</p>
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+                      <span className="text-indigo-600 font-bold">Mã KH: {selectedCustomer.id}</span>
+                      <span>•</span>
+                      <span>Tạo: {selectedCustomer.createdAt ? formatDateTime(selectedCustomer.createdAt) : '—'}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -525,7 +559,7 @@ export default function CustomersView({
                     {onDeleteCustomer && (
                       <button
                         onClick={() => handleDelete(selectedCustomer.id)}
-                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-655 rounded-md text-[10px] font-semibold transition"
+                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-[10px] font-semibold transition"
                       >
                         Xóa
                       </button>
@@ -584,7 +618,7 @@ export default function CustomersView({
                     type="button"
                     onClick={() => setSidebarTab('orders')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-655'
+                      sidebarTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Đơn Hàng ({customerOrders.length})
@@ -593,7 +627,7 @@ export default function CustomersView({
                     type="button"
                     onClick={() => setSidebarTab('designs')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'designs' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-650'
+                      sidebarTab === 'designs' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Thiết Kế ({customerDesigns.length})
@@ -687,7 +721,7 @@ export default function CustomersView({
                           <div className="flex justify-between items-center pt-1 border-t border-slate-200/30">
                             <span className="text-[10px] text-slate-400">Thanh toán:</span>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              o.paymentStatus === 'Đã thanh toán' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-700 border-slate-200'
+                              o.paymentStatus === 'Đã thanh toán' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                             }`}>
                               {o.paymentStatus}
                             </span>
@@ -1077,3 +1111,4 @@ export default function CustomersView({
     </div>
   );
 }
+
