@@ -70,6 +70,7 @@ export default function App() {
   const [logs, setLogs] = useState<AutomationLog[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goals, setGoals] = useState<YearlyGoal[]>([]);
+  const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(false);
 
   // Google Sheets integration and Gemini rotation
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
@@ -174,6 +175,7 @@ export default function App() {
           setGoals(cloudGoals);
           localStorage.setItem('mre_goals', JSON.stringify(cloudGoals));
 
+          setHasLoadedFromCloud(true);
           console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
         }
       } catch (err) {
@@ -192,6 +194,11 @@ export default function App() {
 
   // Live Sync to Google Sheet
   const syncToGoogleSheets = async (urlToUse?: string, forcedData?: any) => {
+    if (!hasLoadedFromCloud) {
+      console.warn('Sync to Google Sheets blocked: Cloud data has not been loaded on this device yet.');
+      showToast('error', 'Chưa hoàn thành tải dữ liệu từ Google Sheets. Vui lòng đợi trong giây lát!');
+      return;
+    }
     const url = urlToUse || GOOGLE_SHEET_URL;
     setIsSyncing(true);
     try {
@@ -268,6 +275,7 @@ export default function App() {
           setExpenses(data.expenses);
           saveToStorage('mre_expenses', data.expenses);
         }
+        setHasLoadedFromCloud(true);
         showToast('success', 'Tải dữ liệu mới từ Google Sheets thành công!');
       }
     } catch (err) {
@@ -907,6 +915,7 @@ export default function App() {
     setExpenses(INITIAL_EXPENSES);
     setGoals(INITIAL_GOALS);
     
+    setHasLoadedFromCloud(true);
     syncToGoogleSheets(undefined, {
       customers: INITIAL_CUSTOMERS,
       orders: INITIAL_ORDERS,
