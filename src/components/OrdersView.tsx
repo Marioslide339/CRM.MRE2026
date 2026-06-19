@@ -281,7 +281,7 @@ export default function OrdersView({
   return (
     <div className="space-y-6 animate-fade-in" id="orders_view_container">
       {/* Upper Panel */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-secondary font-sans flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-primary" />
@@ -291,17 +291,17 @@ export default function OrdersView({
             Tích hợp cơ chế tự động hóa Google Apps Script tự động cấp quyền Drive học tập và thông báo qua Gmail.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition"
             id="btn_export_orders_csv"
           >
             Xuất CSV
           </button>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
             id="btn_create_order"
           >
             <Plus className="w-4 h-4" />
@@ -337,8 +337,8 @@ export default function OrdersView({
           </select>
         </div>
 
-        {/* Table representation */}
-        <div className="overflow-x-auto">
+        {/* Table representation (desktop only) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 font-sans">
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
@@ -450,19 +450,110 @@ export default function OrdersView({
             </tbody>
           </table>
         </div>
+
+        {/* Card representation (mobile only) */}
+        <div className="block md:hidden divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map(order => (
+              <div key={order.id} className="p-4 space-y-3 hover:bg-slate-50/50 transition">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{order.id}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {order.createdAt.substring(0, 10)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-800 text-sm">{order.productName}</h4>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                    <span className="font-medium text-slate-755 text-slate-700">{order.customerName}</span>
+                    <span>•</span>
+                    <span className="text-slate-400 truncate max-w-[150px]">{order.customerEmail}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[10px] text-slate-400">Giá trị:</span>
+                  <span className="font-mono font-bold text-slate-800 text-sm">{formatVND(order.price)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[9px] text-slate-400 uppercase font-semibold">Thanh toán</span>
+                    <span className={`inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border w-full ${
+                      order.paymentStatus === 'Đã thanh toán'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-rose-50 text-rose-700 border-rose-100'
+                    }`}>
+                      {order.paymentStatus}
+                    </span>
+                    {order.paymentRecipient && (
+                      <span className="text-[9px] text-slate-500 text-center font-medium truncate">
+                        {order.paymentRecipient}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[9px] text-slate-400 uppercase font-semibold">Kích hoạt LMS</span>
+                    <span className={`inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium w-full ${
+                      order.deliveryStatus === 'Đã cấp tài khoản'
+                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                        : 'bg-slate-100 text-slate-600 border border-slate-200'
+                    }`}>
+                      {order.deliveryStatus}
+                    </span>
+                  </div>
+                </div>
+                {/* Control buttons */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  {order.paymentStatus === 'Chưa thanh toán' ? (
+                    <button
+                      onClick={() => handleMarkAsPaid(order)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold shadow-sm transition cursor-pointer"
+                    >
+                      <Coins className="w-3 h-3" />
+                      Kích hoạt
+                    </button>
+                  ) : (
+                    <span className="inline-flex gap-1 items-center text-emerald-600 text-[10px] font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Đã cấp học
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleStartEdit(order)}
+                    className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                  >
+                    Sửa
+                  </button>
+                  {onDeleteOrder && (
+                    <button
+                      onClick={() => handleDelete(order.id)}
+                      className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-12 text-center text-slate-400 font-mono">
+              <Inbox className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+              Không tìm thấy dữ liệu đơn hàng nào phù hợp
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Create Order Modal dialog popup */}
       {isAddOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="font-semibold text-slate-900 text-sm">Tạo Đơn Hàng Mới (Don_Hang)</h3>
               <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleCreateOrder} className="p-5 space-y-4 text-xs font-sans">
+            <form onSubmit={handleCreateOrder} className="p-5 space-y-4 text-xs font-sans overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Khách Hàng đăng ký*</label>
                 <select
@@ -604,8 +695,8 @@ export default function OrdersView({
 
       {/* Google Apps Script Automation Execution Step Simulator Modal */}
       {activeAutomationOrder && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-slate-900 w-full max-w-xl mx-4 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-slate-900 w-full max-w-xl rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between max-h-[90vh]">
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <div className="flex items-center gap-2">
@@ -618,7 +709,7 @@ export default function OrdersView({
             </div>
 
             {/* Content Visual steps */}
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
               <div className="space-y-1">
                 <h4 className="text-base font-bold text-white font-sans flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -747,15 +838,15 @@ export default function OrdersView({
 
       {/* Edit Order Modal dialog popup */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="font-semibold text-slate-900 text-sm">Chỉnh Sửa Đơn Hàng</h3>
               <button onClick={() => setIsEditOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleUpdate} className="p-5 space-y-4 text-xs font-sans">
+            <form onSubmit={handleUpdate} className="p-5 space-y-4 text-xs font-sans overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Khách Hàng đăng ký*</label>
                 <select
