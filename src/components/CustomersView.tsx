@@ -218,7 +218,7 @@ export default function CustomersView({
     if (totalRev < 5000000) {
       return {
         segment: 'Hạng Bạc' as const,
-        colorClass: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+        colorClass: 'bg-gradient-to-r from-slate-100 to-zinc-200 text-slate-800 border-slate-300 font-bold shadow-xs',
         text: 'Hạng Bạc'
       };
     }
@@ -226,14 +226,14 @@ export default function CustomersView({
     if (totalRev <= 10000000) {
       return {
         segment: 'Hạng Vàng' as const,
-        colorClass: 'bg-amber-50 text-amber-600 border-amber-200',
+        colorClass: 'bg-gradient-to-r from-amber-100 to-yellow-200 text-amber-900 border-amber-300 font-bold shadow-xs',
         text: 'Hạng Vàng'
       };
     }
 
     return {
       segment: 'Hạng Kim Cương' as const,
-      colorClass: 'bg-sky-50 text-sky-600 border-sky-200',
+      colorClass: 'bg-gradient-to-r from-sky-100 to-indigo-100 text-indigo-900 border-sky-300 font-bold shadow-xs',
       text: 'Hạng Kim Cương'
     };
   };
