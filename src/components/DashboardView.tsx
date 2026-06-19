@@ -521,7 +521,7 @@ export default function DashboardView({
         {/* Doanh thu tháng */}
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_month_revenue">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DT THÁNG (T6)</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DT THÁNG (T{currentDateTime.getMonth() + 1})</span>
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -537,7 +537,7 @@ export default function DashboardView({
         {/* Số khách mới */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_customers">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">KHÁCH MỚI (T6)</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">KHÁCH MỚI (T{currentDateTime.getMonth() + 1})</span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
               <Users className="w-4 h-4" />
             </div>
@@ -553,7 +553,7 @@ export default function DashboardView({
         {/* Số đơn hàng mới */}
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_orders">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN MỚI (T6)</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN MỚI (T{currentDateTime.getMonth() + 1})</span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
               <ShoppingBag className="w-4 h-4" />
             </div>
