@@ -99,7 +99,7 @@ export default function DesignsView({
   const handleStartEdit = (design: DesignService) => {
     setEditingDesign(design);
     setEditTitle(design.title);
-    setEditServiceType((design as any).serviceType || '');
+    setEditServiceType(design.serviceType || '');
     setEditCustId(design.customerId);
     setEditCtv(design.executor);
     setEditDeadline(design.deadline);
@@ -191,7 +191,7 @@ export default function DesignsView({
                     <td className="py-4 px-6 font-mono font-bold text-slate-800">{design.id}</td>
                     <td className="py-4 px-4">
                       <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {(design as any).serviceType || 'Thiết kế PowerPoint'}
+                        {design.serviceType || 'Thiết kế PowerPoint'}
                       </span>
                     </td>
                     <td className="py-4 px-4 font-semibold text-slate-800">{design.title}</td>
@@ -265,7 +265,7 @@ export default function DesignsView({
                   <div className="flex justify-between items-center">
                     <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{design.id}</span>
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                      {(design as any).serviceType || 'Thiết kế PowerPoint'}
+                      {design.serviceType || 'Thiết kế PowerPoint'}
                     </span>
                   </div>
                   <div>
