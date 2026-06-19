@@ -19,7 +19,7 @@ export interface Customer {
   lmsGrades?: { [courseId: string]: number }; // Score 0-10
   lmsCertificateEarned?: { [courseId: string]: boolean };
   aiAnalysis?: {
-    segment: 'VIP' | 'Tiềm năng' | 'Ngủ quên';
+    segment: 'Tiềm năng' | 'Hạng Bạc' | 'Hạng Vàng' | 'Hạng Kim Cương';
     summary: string;
     lastEvaluation: string;
   };
