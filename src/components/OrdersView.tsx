@@ -10,18 +10,12 @@ import {
   Coins,
   Sparkles,
   Inbox,
-  User,
-  Compass,
   Link2,
-  Calendar,
   X,
   CheckCircle2,
-  Eye,
-  ChevronRight,
-  Loader2,
-  Mail
+  Loader2
 } from 'lucide-react';
-import { Order, Customer, Course, AutomationLog } from '../types';
+import { Order, Customer, Course } from '../types';
 
 interface OrdersViewProps {
   orders: Order[];
@@ -465,7 +459,7 @@ export default function OrdersView({
                 <div>
                   <h4 className="font-semibold text-slate-800 text-sm">{order.productName}</h4>
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
-                    <span className="font-medium text-slate-755 text-slate-700">{order.customerName}</span>
+                    <span className="font-medium text-slate-700">{order.customerName}</span>
                     <span>•</span>
                     <span className="text-slate-400 truncate max-w-[150px]">{order.customerEmail}</span>
                   </div>
