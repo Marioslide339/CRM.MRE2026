@@ -41,6 +41,9 @@ export default function DesignsView({
   const [demoDeadlineFilter, setDemoDeadlineFilter] = useState<'all' | 'day' | 'week' | 'month' | 'overdue' | 'custom'>('all');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
+  const [finalDeadlineFilter, setFinalDeadlineFilter] = useState<'all' | 'day' | 'week' | 'month' | 'overdue' | 'custom'>('all');
+  const [customFinalStart, setCustomFinalStart] = useState<string>('');
+  const [customFinalEnd, setCustomFinalEnd] = useState<string>('');
 
   const currentDateTime = useMemo(() => new Date(), []);
 
@@ -98,9 +101,10 @@ export default function DesignsView({
     return `${year}-${month}-${day}`;
   }, []);
 
-  // Filter designs
+  // Filter and Sort designs
   const filteredDesigns = useMemo(() => {
-    return designs.filter(d => {
+    // 1. Filter
+    const filtered = designs.filter(d => {
       const matchSearch =
         !searchTerm ||
         d.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,9 +132,69 @@ export default function DesignsView({
         }
       }
 
-      return matchSearch && matchStatus && matchService && matchCustomer && matchDemo;
+      let matchFinal = true;
+      if (finalDeadlineFilter !== 'all') {
+        const finalDate = d.deadline;
+        if (finalDeadlineFilter === 'day') {
+          matchFinal = finalDate === todayStr;
+        } else if (finalDeadlineFilter === 'week') {
+          matchFinal = finalDate >= weekRange.start && finalDate <= weekRange.end;
+        } else if (finalDeadlineFilter === 'month') {
+          matchFinal = finalDate >= monthRange.start && finalDate <= monthRange.end;
+        } else if (finalDeadlineFilter === 'overdue') {
+          matchFinal = d.status !== 'Hoàn thành' && finalDate < todayStr;
+        } else if (finalDeadlineFilter === 'custom') {
+          matchFinal = (!customFinalStart || finalDate >= customFinalStart) && (!customFinalEnd || finalDate <= customFinalEnd);
+        }
+      }
+
+      return matchSearch && matchStatus && matchService && matchCustomer && matchDemo && matchFinal;
     });
-  }, [designs, searchTerm, statusFilter, serviceTypeFilter, customerFilter, demoDeadlineFilter, customStart, customEnd, todayStr, weekRange, monthRange]);
+
+    // 2. Sort: nearest to furthest (ascending), completed status default to bottom
+    return [...filtered].sort((a, b) => {
+      // Completed ('Hoàn thành') status always goes to the bottom
+      if (a.status === 'Hoàn thành' && b.status !== 'Hoàn thành') return 1;
+      if (a.status !== 'Hoàn thành' && b.status === 'Hoàn thành') return -1;
+
+      let dateA = '';
+      let dateB = '';
+
+      if (finalDeadlineFilter !== 'all') {
+        dateA = a.deadline || '';
+        dateB = b.deadline || '';
+      } else {
+        // By default, sort by deadlineDemo
+        dateA = a.deadlineDemo || a.deadline || '';
+        dateB = b.deadlineDemo || b.deadline || '';
+      }
+
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+
+      const compareDates = dateA.localeCompare(dateB);
+      if (compareDates !== 0) return compareDates;
+
+      // Fallback: newest project first
+      return b.id.localeCompare(a.id);
+    });
+  }, [
+    designs,
+    searchTerm,
+    statusFilter,
+    serviceTypeFilter,
+    customerFilter,
+    demoDeadlineFilter,
+    finalDeadlineFilter,
+    customStart,
+    customEnd,
+    customFinalStart,
+    customFinalEnd,
+    todayStr,
+    weekRange,
+    monthRange
+  ]);
 
   const isOverdue = (dl: string, status: string) => {
     return status !== 'Hoàn thành' && dl < todayStr;
@@ -185,8 +249,13 @@ export default function DesignsView({
     setEditServiceType(design.serviceType || '');
     setEditCustId(design.customerId);
     setEditCtv(design.executor);
-    setEditDeadline(design.deadline);
-    setEditDeadlineDemo(design.deadlineDemo || design.deadline);
+    
+    // Clean date strings to ensure strict YYYY-MM-DD format for HTML date inputs
+    const cleanDeadline = design.deadline ? design.deadline.substring(0, 10) : '';
+    const cleanDeadlineDemo = design.deadlineDemo ? design.deadlineDemo.substring(0, 10) : '';
+    
+    setEditDeadline(cleanDeadline);
+    setEditDeadlineDemo(cleanDeadlineDemo || cleanDeadline);
     setEditStatus(design.status);
     setEditAmount(design.amount !== undefined ? design.amount : '');
     setIsEditOpen(true);
@@ -251,9 +320,9 @@ export default function DesignsView({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
         {/* Filters */}
         <div className="p-4 border-b border-slate-100 flex flex-col gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             {/* Search Input */}
-            <div className="relative">
+            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
               <input
                 type="text"
                 placeholder="Tìm kiếm dự án, khách hàng, CTV..."
@@ -315,26 +384,62 @@ export default function DesignsView({
               <option value="overdue">Quá hạn demo</option>
               <option value="custom">Tùy chọn ngày</option>
             </select>
+
+            {/* Final Deadline Filter */}
+            <select
+              value={finalDeadlineFilter}
+              onChange={e => setFinalDeadlineFilter(e.target.value as any)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer"
+            >
+              <option value="all">Tất cả hạn Nghiệm thu</option>
+              <option value="day">Hôm nay</option>
+              <option value="week">Tuần này</option>
+              <option value="month">Tháng này</option>
+              <option value="overdue">Quá hạn nghiệm thu</option>
+              <option value="custom">Tùy chọn ngày</option>
+            </select>
           </div>
 
-          {/* Custom Date Range Inputs for Demo deadline */}
-          {demoDeadlineFilter === 'custom' && (
-            <div className="flex items-center gap-2 animate-fade-in self-end sm:self-auto">
-              <input
-                type="date"
-                value={customStart}
-                onChange={e => setCustomStart(e.target.value)}
-                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
-              />
-              <span className="text-slate-400 text-xs">đến</span>
-              <input
-                type="date"
-                value={customEnd}
-                onChange={e => setCustomEnd(e.target.value)}
-                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
-              />
-            </div>
-          )}
+          {/* Custom Date Range Inputs */}
+          <div className="flex flex-wrap gap-4 items-center justify-start text-xs font-sans mt-1">
+            {demoDeadlineFilter === 'custom' && (
+              <div className="flex items-center gap-2 animate-fade-in bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-slate-500 font-semibold">Hạn Demo từ:</span>
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={e => setCustomStart(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
+                />
+                <span className="text-slate-400">đến</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={e => setCustomEnd(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
+                />
+              </div>
+            )}
+
+            {finalDeadlineFilter === 'custom' && (
+              <div className="flex items-center gap-2 animate-fade-in bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <span className="text-slate-500 font-semibold">Hạn Nghiệm thu từ:</span>
+                <input
+                  type="date"
+                  value={customFinalStart}
+                  onChange={e => setCustomFinalStart(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
+                />
+                <span className="text-slate-400">đến</span>
+                <input
+                  type="date"
+                  value={customFinalEnd}
+                  onChange={e => setCustomFinalEnd(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg outline-none text-slate-700"
+                />
+              </div>
+            )}
+          </div>
         </div>
         {/* Desktop version (Table) */}
         <div className="hidden md:block overflow-x-auto">
@@ -395,15 +500,23 @@ export default function DesignsView({
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                        design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                        design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                        design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                        'bg-blue-50 text-blue-700 border-blue-100'
-                      }`}>
-                        {design.status}
-                      </span>
+                      <select
+                        value={design.status}
+                        onChange={e => onUpdateDesign(design.id, { status: e.target.value as any })}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border outline-none cursor-pointer transition ${
+                          design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                          design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}
+                      >
+                        <option value="Tiếp nhận">Tiếp nhận</option>
+                        <option value="Đang làm">Đang làm</option>
+                        <option value="Gửi demo">Gửi demo</option>
+                        <option value="Chỉnh sửa">Chỉnh sửa</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                      </select>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex justify-end gap-1.5">
@@ -475,15 +588,23 @@ export default function DesignsView({
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                      design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                      design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                      'bg-blue-50 text-blue-700 border-blue-100'
-                    }`}>
-                      {design.status}
-                    </span>
+                    <select
+                      value={design.status}
+                      onChange={e => onUpdateDesign(design.id, { status: e.target.value as any })}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border outline-none cursor-pointer transition ${
+                        design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        'bg-blue-50 text-blue-700 border-blue-200'
+                      }`}
+                    >
+                      <option value="Tiếp nhận">Tiếp nhận</option>
+                      <option value="Đang làm">Đang làm</option>
+                      <option value="Gửi demo">Gửi demo</option>
+                      <option value="Chỉnh sửa">Chỉnh sửa</option>
+                      <option value="Hoàn thành">Hoàn thành</option>
+                    </select>
                     <div className="flex gap-1.5">
                       <button
                         onClick={() => handleStartEdit(design)}
@@ -736,20 +857,7 @@ export default function DesignsView({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Trạng thái công việc*</label>
-                <select
-                  value={editStatus}
-                  onChange={e => setEditStatus(e.target.value as any)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white font-semibold text-base md:text-xs"
-                >
-                  <option value="Tiếp nhận">Tiếp nhận</option>
-                  <option value="Đang làm">Đang làm</option>
-                  <option value="Gửi demo">Gửi demo</option>
-                  <option value="Chỉnh sửa">Chỉnh sửa</option>
-                  <option value="Hoàn thành">Hoàn thành</option>
-                </select>
-              </div>
+
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
                 <button
