@@ -158,13 +158,13 @@ export default function CollaboratorsView({
                       <div className="flex justify-end gap-1.5">
                         <button
                           onClick={() => handleStartEdit(ctv)}
-                          className="px-2 py-1 bg-slate-105 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
                         >
                           Sửa
                         </button>
                         <button
                           onClick={() => handleDelete(ctv.id)}
-                          className="px-2 py-1 bg-red-50 hover:bg-red-105 text-red-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                          className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                         >
                           Xóa
                         </button>
@@ -195,7 +195,7 @@ export default function CollaboratorsView({
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px]">Lương quyết toán (30%):</span>
-                      <span className="font-semibold text-indigo-650 font-mono bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block">{formatVND(ctv.salary)}</span>
+                      <span className="font-semibold text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block">{formatVND(ctv.salary)}</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-slate-100">
@@ -218,7 +218,7 @@ export default function CollaboratorsView({
                       </button>
                       <button
                         onClick={() => handleDelete(ctv.id)}
-                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-250 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                       >
                         Xóa
                       </button>
@@ -445,3 +445,4 @@ export default function CollaboratorsView({
     </div>
   );
 }
+
