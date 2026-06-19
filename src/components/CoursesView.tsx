@@ -341,3 +341,4 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
     </div>
   );
 }
+
