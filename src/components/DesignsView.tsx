@@ -54,7 +54,13 @@ export default function DesignsView({
   const [editStatus, setEditStatus] = useState<'Tiếp nhận' | 'Đang làm' | 'Gửi demo' | 'Chỉnh sửa' | 'Hoàn thành'>('Tiếp nhận');
   const [editAmount, setEditAmount] = useState<number | ''>('');
 
-  const todayStr = '2026-06-18'; // Mock current date
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
 
   const isOverdue = (dl: string, status: string) => {
     return status !== 'Hoàn thành' && dl < todayStr;
