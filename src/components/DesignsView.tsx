@@ -241,7 +241,7 @@ export default function DesignsView({
                         {onDeleteDesign && (
                           <button
                             onClick={() => handleDelete(design.id)}
-                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                            className="px-2 py-1 bg-red-50 hover:bg-red-105 border border-red-200 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                           >
                             Xóa
                           </button>
@@ -299,7 +299,7 @@ export default function DesignsView({
                       design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                       design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                       design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-100 border border-rose-200 text-rose-650' :
                       'bg-blue-50 text-blue-700 border-blue-100'
                     }`}>
                       {design.status}
@@ -593,4 +593,3 @@ export default function DesignsView({
     </div>
   );
 }
-
