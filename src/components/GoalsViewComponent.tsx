@@ -39,7 +39,7 @@ interface GoalsViewComponentProps {
 
 const MONTH_LABELS = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
 
-const CURRENT_MONTH = 6; // June 2026
+const CURRENT_MONTH = new Date().getMonth() + 1; // Dynamic current month (1-12)
 
 const formatVND = (value: number): string =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
