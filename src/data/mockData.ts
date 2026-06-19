@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Customer, Course, Order, DesignService, Collaborator, AutomationLog, MarketingCampaign } from '../types';
+import { Customer, Course, Order, DesignService, Collaborator, AutomationLog, MarketingCampaign, YearlyGoal } from '../types';
 
 export const INITIAL_COURSES: Course[] = [
   { id: 'KC0001', title: 'Khóa học AI Giáo dục', driveFolderId: '1aBc_AI_Edu_2026_xyz', price: 1250000, lessonsCount: 15 },
@@ -296,3 +296,83 @@ export const INITIAL_EXPENSES = [
   { id: 'CP0003', date: '2026-06-18', category: 'Văn phòng phẩm', amount: 280000, description: 'Mua giấy in hóa đơn và bút dạ viết bảng họp' },
   { id: 'CP0004', date: '2026-06-18', category: 'Thuế VAT', amount: 125000, description: 'Nộp thuế VAT tháng phát sinh hóa đơn đỏ' }
 ];
+
+export const INITIAL_GOALS: YearlyGoal[] = [
+  {
+    id: 'GOAL2026',
+    year: 2026,
+    months: [
+      {
+        month: 1,
+        revenueTarget: 80000000, revenueCourseTarget: 32000000, revenueDesignTarget: 48000000,
+        expenseAdsTarget: 24000000, expenseStaffTarget: 4000000, profitTarget: 52000000,
+        actualRevenue: 74700000, actualRevenueCourse: 47400000, actualRevenueDesign: 27300000,
+        actualExpenseOther: 19760000, actualExpenseAds: 30174716, actualProfit: 24765284
+      },
+      {
+        month: 2,
+        revenueTarget: 50000000, revenueCourseTarget: 20000000, revenueDesignTarget: 30000000,
+        expenseAdsTarget: 15000000, expenseStaffTarget: 4000000, profitTarget: 31000000,
+        actualRevenue: 80150000, actualRevenueCourse: 41400000, actualRevenueDesign: 38750000,
+        actualExpenseOther: 2786000, actualExpenseAds: 23478365, actualProfit: 53885635
+      },
+      {
+        month: 3,
+        revenueTarget: 150000000, revenueCourseTarget: 90000000, revenueDesignTarget: 60000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000,
+        actualRevenue: 96250000, actualRevenueCourse: 36850000, actualRevenueDesign: 59400000,
+        actualExpenseOther: 0, actualExpenseAds: 35091382, actualProfit: 61158618
+      },
+      {
+        month: 4,
+        revenueTarget: 80000000, revenueCourseTarget: 48000000, revenueDesignTarget: 32000000,
+        expenseAdsTarget: 24000000, expenseStaffTarget: 4000000, profitTarget: 52000000,
+        actualRevenue: 81650000, actualRevenueCourse: 36750000, actualRevenueDesign: 44900000,
+        actualExpenseOther: 2300000, actualExpenseAds: 19337952, actualProfit: 60012048
+      },
+      {
+        month: 5,
+        revenueTarget: 50000000, revenueCourseTarget: 40000000, revenueDesignTarget: 10000000,
+        expenseAdsTarget: 15000000, expenseStaffTarget: 4000000, profitTarget: 31000000,
+        actualRevenue: 50200000, actualRevenueCourse: 26600000, actualRevenueDesign: 23600000,
+        actualExpenseOther: 0, actualExpenseAds: 22114264, actualProfit: 28085736
+      },
+      {
+        month: 6,
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
+      },
+      {
+        month: 7,
+        revenueTarget: 150000000, revenueCourseTarget: 105000000, revenueDesignTarget: 45000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 101000000
+      },
+      {
+        month: 8,
+        revenueTarget: 180000000, revenueCourseTarget: 126000000, revenueDesignTarget: 54000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 131000000
+      },
+      {
+        month: 9,
+        revenueTarget: 200000000, revenueCourseTarget: 140000000, revenueDesignTarget: 60000000,
+        expenseAdsTarget: 45000000, expenseStaffTarget: 4000000, profitTarget: 151000000
+      },
+      {
+        month: 10,
+        revenueTarget: 250000000, revenueCourseTarget: 175000000, revenueDesignTarget: 75000000,
+        expenseAdsTarget: 80000000, expenseStaffTarget: 4000000, profitTarget: 166000000
+      },
+      {
+        month: 11,
+        revenueTarget: 250000000, revenueCourseTarget: 175000000, revenueDesignTarget: 75000000,
+        expenseAdsTarget: 75000000, expenseStaffTarget: 4000000, profitTarget: 171000000
+      },
+      {
+        month: 12,
+        revenueTarget: 120000000, revenueCourseTarget: 84000000, revenueDesignTarget: 36000000,
+        expenseAdsTarget: 36000000, expenseStaffTarget: 4000000, profitTarget: 80000000
+      }
+    ]
+  }
+];
+
