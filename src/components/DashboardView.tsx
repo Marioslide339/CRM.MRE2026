@@ -289,30 +289,104 @@ export default function DashboardView({
 
   // 2. Charts Data Prep
   // Revenue structure breakdown (courses & design services)
-  const productRevenueData = useMemo(() => {
-    const counts: { [name: string]: number } = {};
+  const revenueStructureData = useMemo(() => {
+    const courseItemsMap: { [name: string]: number } = {};
+    const designItemsMap: { [name: string]: number } = {};
 
     // 1. Accumulate paid courses (orders)
     filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .forEach(o => {
-        const displayName = `[Khóa học] ${o.productName}`;
-        counts[displayName] = (counts[displayName] || 0) + o.price;
+        courseItemsMap[o.productName] = (courseItemsMap[o.productName] || 0) + o.price;
       });
 
     // 2. Accumulate design services
     filteredDesigns.forEach(d => {
       const serviceName = d.serviceType || 'Thiết kế PowerPoint';
-      const displayName = `[Thiết kế] ${serviceName}`;
-      counts[displayName] = (counts[displayName] || 0) + (d.amount || 0);
+      designItemsMap[serviceName] = (designItemsMap[serviceName] || 0) + (d.amount || 0);
     });
 
-    return Object.keys(counts)
-      .map(key => ({
-        name: key,
-        value: counts[key]
+    // Convert to sorted arrays
+    const sortedCourseItems = Object.keys(courseItemsMap)
+      .map(name => ({
+        name,
+        value: courseItemsMap[name],
+        type: 'course' as const
       }))
       .sort((a, b) => b.value - a.value);
+
+    const sortedDesignItems = Object.keys(designItemsMap)
+      .map(name => ({
+        name,
+        value: designItemsMap[name],
+        type: 'design' as const
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    const totalCourseRev = sortedCourseItems.reduce((sum, item) => sum + item.value, 0);
+    const totalDesignRev = sortedDesignItems.reduce((sum, item) => sum + item.value, 0);
+
+    // Outer Ring Data (2 main colors: Course & Design)
+    const outerRingData = [];
+    if (totalCourseRev > 0) {
+      outerRingData.push({
+        name: 'Khóa học',
+        value: totalCourseRev,
+        type: 'course' as const,
+        color: '#6366F1' // Premium Indigo
+      });
+    }
+    if (totalDesignRev > 0) {
+      outerRingData.push({
+        name: 'Thiết kế',
+        value: totalDesignRev,
+        type: 'design' as const,
+        color: '#F97316' // Premium Orange
+      });
+    }
+
+    // Assign matching shades to inner ring items
+    const courseShades = [
+      '#4F46E5', // indigo-600
+      '#6366F1', // indigo-500
+      '#818CF8', // indigo-400
+      '#A5B4FC', // indigo-300
+      '#C7D2FE', // indigo-200
+      '#E0E7FF'  // indigo-100
+    ];
+
+    const designShades = [
+      '#EA580C', // orange-600
+      '#F97316', // orange-500
+      '#FB923C', // orange-400
+      '#FDBA74', // orange-300
+      '#FED7AA', // orange-200
+      '#FFEDD5'  // orange-100
+    ];
+
+    const innerRingData: { name: string; value: number; type: 'course' | 'design'; color: string; displayName: string }[] = [];
+
+    sortedCourseItems.forEach((item, index) => {
+      innerRingData.push({
+        ...item,
+        color: courseShades[index % courseShades.length],
+        displayName: `[Khóa học] ${item.name}`
+      });
+    });
+
+    sortedDesignItems.forEach((item, index) => {
+      innerRingData.push({
+        ...item,
+        color: designShades[index % designShades.length],
+        displayName: `[Thiết kế] ${item.name}`
+      });
+    });
+
+    return {
+      outerRingData,
+      innerRingData,
+      totalRevenue: totalCourseRev + totalDesignRev
+    };
   }, [filteredOrders, filteredDesigns]);
 
   // Operational Expenses Breakdown
@@ -1013,40 +1087,88 @@ export default function DashboardView({
             <p className="text-xs text-slate-400 font-sans">Doanh thu khóa học & thiết kế custom</p>
           </div>
           <div className="h-56 flex items-center justify-center mt-4">
-            {productRevenueData.length > 0 ? (
+            {revenueStructureData.innerRingData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  {/* Vòng trong (Inner Ring) - sản phẩm & dịch vụ */}
                   <Pie
-                    data={productRevenueData}
+                    data={revenueStructureData.innerRingData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    innerRadius={45}
+                    outerRadius={65}
+                    paddingAngle={2}
                     dataKey="value"
                   >
-                    {productRevenueData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {revenueStructureData.innerRingData.map((entry, index) => (
+                      <Cell key={`cell-inner-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => [formatVND(value), 'Doanh thu']} />
+                  {/* Vòng ngoài (Outer Ring) - khoá học & thiết kế */}
+                  <Pie
+                    data={revenueStructureData.outerRingData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={75}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {revenueStructureData.outerRingData.map((entry, index) => (
+                      <Cell key={`cell-outer-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: any, name: any, props: any) => {
+                      const entry = props.payload;
+                      const displayName = entry.displayName || entry.name;
+                      return [formatVND(value), displayName];
+                    }}
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      fontSize: '12px',
+                      fontFamily: 'sans-serif'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
               <p className="text-xs text-slate-400 font-mono">Chưa ghi nhận doanh thu phát sinh</p>
             )}
           </div>
-          <div className="mt-4 space-y-2">
-            {productRevenueData.slice(0, 5).map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                  <span className="truncate max-w-[140px] text-slate-600 font-sans font-medium">{item.name}</span>
-                </div>
-                <span className="text-slate-800 font-mono font-semibold">{formatVND(item.value)}</span>
+          {revenueStructureData.innerRingData.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {/* Category Summaries */}
+              <div className="flex gap-2 justify-between border-b border-slate-100 pb-2 text-[10px] font-sans">
+                {revenueStructureData.outerRingData.map(cat => (
+                  <div key={cat.name} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-100">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }}></span>
+                    <span className="font-semibold text-slate-700">{cat.name}:</span>
+                    <span className="font-mono text-slate-600">{formatVND(cat.value)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              
+              {/* Detailed Breakdown */}
+              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                {[...revenueStructureData.innerRingData]
+                  .sort((a, b) => b.value - a.value)
+                  .slice(0, 6)
+                  .map((item) => (
+                    <div key={item.displayName} className="flex items-center justify-between text-[11px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
+                        <span className="truncate text-slate-600 font-sans font-medium">{item.displayName}</span>
+                      </div>
+                      <span className="text-slate-800 font-mono font-semibold ml-2 shrink-0">{formatVND(item.value)}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Chi phí theo danh mục */}
