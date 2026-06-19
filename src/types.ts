@@ -53,6 +53,7 @@ export interface Course {
 export interface DesignService {
   id: string; // TK0001...
   title: string;
+  serviceType?: string;
   customerId: string;
   customerName: string;
   executor: string; // Collaborator name
