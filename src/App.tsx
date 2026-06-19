@@ -45,7 +45,7 @@ import MarketingView from './components/MarketingView';
 import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
-import GoalsViewComponent from './components/GoalsViewComponent';
+import GoalsViewComponent from './components/GoalsViewComponent.tsx';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 
@@ -1020,6 +1020,7 @@ export default function App() {
             collaborators={collaborators}
             logs={logs}
             expenses={expenses}
+            goals={goals}
             onNavigate={(tab) => setActiveTab(tab)}
             googleSheetUrl={GOOGLE_SHEET_URL}
             isSyncing={isSyncing}
