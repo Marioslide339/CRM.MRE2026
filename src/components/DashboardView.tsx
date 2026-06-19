@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -75,68 +75,141 @@ export default function DashboardView({
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
-  const todayStr = '2026-06-18'; // Simulated current date based on context
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTodayStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = useMemo(() => {
+    return getTodayStr(currentDateTime);
+  }, [currentDateTime]);
+
+  const weekRange = useMemo(() => {
+    const d = new Date(currentDateTime);
+    const day = d.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return {
+      start: getTodayStr(monday),
+      end: getTodayStr(sunday)
+    };
+  }, [currentDateTime]);
+
+  const monthRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    const month = currentDateTime.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return {
+      start: getTodayStr(firstDay),
+      end: getTodayStr(lastDay)
+    };
+  }, [currentDateTime]);
+
+  const quarterRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    const month = currentDateTime.getMonth();
+    const quarter = Math.floor(month / 3);
+    const firstDay = new Date(year, quarter * 3, 1);
+    const lastDay = new Date(year, (quarter + 1) * 3, 0);
+    return {
+      start: getTodayStr(firstDay),
+      end: getTodayStr(lastDay)
+    };
+  }, [currentDateTime]);
+
+  const yearRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    return {
+      start: `${year}-01-01`,
+      end: `${year}-12-31`
+    };
+  }, [currentDateTime]);
+
+  const formattedDateTime = useMemo(() => {
+    const day = String(currentDateTime.getDate()).padStart(2, '0');
+    const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
+    const year = currentDateTime.getFullYear();
+    const hours = String(currentDateTime.getHours()).padStart(2, '0');
+    const minutes = String(currentDateTime.getMinutes()).padStart(2, '0');
+    const seconds = String(currentDateTime.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  }, [currentDateTime]);
 
   // Filter lists based on time range
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       const d = o.createdAt.substring(0, 10);
       if (timeFilter === 'day') return d === todayStr;
-      if (timeFilter === 'week') return d >= '2026-06-15' && d <= '2026-06-21';
-      if (timeFilter === 'month') return d >= '2026-06-01' && d <= '2026-06-30';
-      if (timeFilter === 'quarter') return d >= '2026-04-01' && d <= '2026-06-30';
-      if (timeFilter === 'year') return d >= '2026-01-01' && d <= '2026-12-31';
+      if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
+      if (timeFilter === 'month') return d >= monthRange.start && d <= monthRange.end;
+      if (timeFilter === 'quarter') return d >= quarterRange.start && d <= quarterRange.end;
+      if (timeFilter === 'year') return d >= yearRange.start && d <= yearRange.end;
       if (timeFilter === 'custom') {
         return (!customStart || d >= customStart) && (!customEnd || d <= customEnd);
       }
       return true;
     });
-  }, [orders, timeFilter, customStart, customEnd]);
+  }, [orders, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, quarterRange, yearRange]);
 
   const filteredDesigns = useMemo(() => {
     return designs.filter(d => {
       const dateStr = d.createdAt ? d.createdAt.substring(0, 10) : d.deadline;
       if (timeFilter === 'day') return dateStr === todayStr;
-      if (timeFilter === 'week') return dateStr >= '2026-06-15' && dateStr <= '2026-06-21';
-      if (timeFilter === 'month') return dateStr >= '2026-06-01' && dateStr <= '2026-06-30';
-      if (timeFilter === 'quarter') return dateStr >= '2026-04-01' && dateStr <= '2026-06-30';
-      if (timeFilter === 'year') return dateStr >= '2026-01-01' && dateStr <= '2026-12-31';
+      if (timeFilter === 'week') return dateStr >= weekRange.start && dateStr <= weekRange.end;
+      if (timeFilter === 'month') return dateStr >= monthRange.start && dateStr <= monthRange.end;
+      if (timeFilter === 'quarter') return dateStr >= quarterRange.start && dateStr <= quarterRange.end;
+      if (timeFilter === 'year') return dateStr >= yearRange.start && dateStr <= yearRange.end;
       if (timeFilter === 'custom') {
         return (!customStart || dateStr >= customStart) && (!customEnd || dateStr <= customEnd);
       }
       return true;
     });
-  }, [designs, timeFilter, customStart, customEnd]);
+  }, [designs, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, quarterRange, yearRange]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       const d = e.date;
       if (timeFilter === 'day') return d === todayStr;
-      if (timeFilter === 'week') return d >= '2026-06-15' && d <= '2026-06-21';
-      if (timeFilter === 'month') return d >= '2026-06-01' && d <= '2026-06-30';
-      if (timeFilter === 'quarter') return d >= '2026-04-01' && d <= '2026-06-30';
-      if (timeFilter === 'year') return d >= '2026-01-01' && d <= '2026-12-31';
+      if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
+      if (timeFilter === 'month') return d >= monthRange.start && d <= monthRange.end;
+      if (timeFilter === 'quarter') return d >= quarterRange.start && d <= quarterRange.end;
+      if (timeFilter === 'year') return d >= yearRange.start && d <= yearRange.end;
       if (timeFilter === 'custom') {
         return (!customStart || d >= customStart) && (!customEnd || d <= customEnd);
       }
       return true;
     });
-  }, [expenses, timeFilter, customStart, customEnd]);
+  }, [expenses, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, quarterRange, yearRange]);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter(c => {
       const d = c.createdAt.substring(0, 10);
       if (timeFilter === 'day') return d === todayStr;
-      if (timeFilter === 'week') return d >= '2026-06-15' && d <= '2026-06-21';
-      if (timeFilter === 'month') return d >= '2026-06-01' && d <= '2026-06-30';
-      if (timeFilter === 'quarter') return d >= '2026-04-01' && d <= '2026-06-30';
-      if (timeFilter === 'year') return d >= '2026-01-01' && d <= '2026-12-31';
+      if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
+      if (timeFilter === 'month') return d >= monthRange.start && d <= monthRange.end;
+      if (timeFilter === 'quarter') return d >= quarterRange.start && d <= quarterRange.end;
+      if (timeFilter === 'year') return d >= yearRange.start && d <= yearRange.end;
       if (timeFilter === 'custom') {
         return (!customStart || d >= customStart) && (!customEnd || d <= customEnd);
       }
       return true;
     });
-  }, [customers, timeFilter, customStart, customEnd]);
+  }, [customers, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, quarterRange, yearRange]);
 
   // Financial KPIs
   const totalRevenue = useMemo(() => {
@@ -167,39 +240,52 @@ export default function DashboardView({
     return Math.round((paidCount / filteredOrders.length) * 100);
   }, [filteredOrders]);
 
+  const currentMonthStr = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }, [currentDateTime]);
+
   // Extra KPI definitions
   const monthRevenue = useMemo(() => {
     const orderMonthRev = orders
-      .filter(o => o.paymentStatus === 'Đã thanh toán' && o.createdAt.substring(0, 7) === '2026-06')
+      .filter(o => o.paymentStatus === 'Đã thanh toán' && o.createdAt.substring(0, 7) === currentMonthStr)
       .reduce((sum, o) => sum + o.price, 0);
     const designMonthRev = designs
       .filter(d => {
         const dateStr = d.createdAt ? d.createdAt.substring(0, 7) : d.deadline.substring(0, 7);
-        return dateStr === '2026-06';
+        return dateStr === currentMonthStr;
       })
       .reduce((sum, d) => sum + (d.amount || 0), 0);
     return orderMonthRev + designMonthRev;
-  }, [orders, designs]);
+  }, [orders, designs, currentMonthStr]);
 
   const currentMonthCustomers = useMemo(() => {
-    return customers.filter(c => c.createdAt.substring(0, 7) === '2026-06').length;
-  }, [customers]);
+    return customers.filter(c => c.createdAt.substring(0, 7) === currentMonthStr).length;
+  }, [customers, currentMonthStr]);
 
   const currentMonthOrders = useMemo(() => {
-    return orders.filter(o => o.createdAt.substring(0, 7) === '2026-06').length;
-  }, [orders]);
+    return orders.filter(o => o.createdAt.substring(0, 7) === currentMonthStr).length;
+  }, [orders, currentMonthStr]);
 
   const activeDesigns = useMemo(() => {
     return designs.filter(d => d.status === 'Đang làm' || d.status === 'Chỉnh sửa').length;
   }, [designs]);
 
   const upcomingDeadlines = useMemo(() => {
+    // Current date and next 3 days
+    const dates = [];
+    for (let i = 0; i <= 3; i++) {
+      const d = new Date(currentDateTime);
+      d.setDate(currentDateTime.getDate() + i);
+      dates.push(getTodayStr(d));
+    }
     return designs.filter(d => {
       if (d.status === 'Hoàn thành') return false;
       const dl = d.deadline;
-      return dl >= '2026-06-18' && dl <= '2026-06-21';
+      return dl && dates.includes(dl);
     }).length;
-  }, [designs]);
+  }, [designs, currentDateTime]);
 
   // 2. Charts Data Prep
   // Revenue by product (course)
@@ -299,7 +385,7 @@ export default function DashboardView({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 font-mono text-xs font-semibold text-slate-650">
             <Calendar className="w-3.5 h-3.5 text-primary" />
-            <span>Hôm nay: 18/06/2026</span>
+            <span>Hôm nay: {formattedDateTime}</span>
           </div>
           {isSyncing ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-600 rounded-xl text-xs font-bold font-sans border border-amber-500/20 animate-pulse">
