@@ -33,6 +33,42 @@ export default function DesignsView({
   const [deadlineDemo, setDeadlineDemo] = useState('');
   const [newAmount, setNewAmount] = useState<number | ''>('');
 
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [demoDeadlineFilter, setDemoDeadlineFilter] = useState<'all' | 'day' | 'week' | 'month' | 'overdue' | 'custom'>('all');
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
+
+  const currentDateTime = useMemo(() => new Date(), []);
+
+  const weekRange = useMemo(() => {
+    const d = new Date(currentDateTime);
+    const day = d.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return {
+      start: `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`,
+      end: `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, '0')}-${String(sunday.getDate()).padStart(2, '0')}`
+    };
+  }, [currentDateTime]);
+
+  const monthRange = useMemo(() => {
+    const year = currentDateTime.getFullYear();
+    const month = currentDateTime.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    return {
+      start: `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`,
+      end: `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`
+    };
+  }, [currentDateTime]);
+
   const SERVICE_TYPES = [
     'Thiết kế PowerPoint',
     'Thiết kế E-Learning',
@@ -61,6 +97,40 @@ export default function DesignsView({
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }, []);
+
+  // Filter designs
+  const filteredDesigns = useMemo(() => {
+    return designs.filter(d => {
+      const matchSearch =
+        !searchTerm ||
+        d.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.executor.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchStatus = !statusFilter || d.status === statusFilter;
+      const matchService = !serviceTypeFilter || d.serviceType === serviceTypeFilter;
+      const matchCustomer = !customerFilter || d.customerId === customerFilter;
+
+      let matchDemo = true;
+      if (demoDeadlineFilter !== 'all') {
+        const demoDate = d.deadlineDemo || d.deadline;
+        if (demoDeadlineFilter === 'day') {
+          matchDemo = demoDate === todayStr;
+        } else if (demoDeadlineFilter === 'week') {
+          matchDemo = demoDate >= weekRange.start && demoDate <= weekRange.end;
+        } else if (demoDeadlineFilter === 'month') {
+          matchDemo = demoDate >= monthRange.start && demoDate <= monthRange.end;
+        } else if (demoDeadlineFilter === 'overdue') {
+          matchDemo = d.status !== 'Hoàn thành' && demoDate < todayStr;
+        } else if (demoDeadlineFilter === 'custom') {
+          matchDemo = (!customStart || demoDate >= customStart) && (!customEnd || demoDate <= customEnd);
+        }
+      }
+
+      return matchSearch && matchStatus && matchService && matchCustomer && matchDemo;
+    });
+  }, [designs, searchTerm, statusFilter, serviceTypeFilter, customerFilter, demoDeadlineFilter, customStart, customEnd, todayStr, weekRange, monthRange]);
 
   const isOverdue = (dl: string, status: string) => {
     return status !== 'Hoàn thành' && dl < todayStr;
@@ -166,6 +236,93 @@ export default function DesignsView({
 
       {/* Grid of designs */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+        {/* Filters */}
+        <div className="p-4 border-b border-slate-100 flex flex-col gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm dự án, khách hàng, CTV..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
+              />
+              <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="Tiếp nhận">Tiếp nhận</option>
+              <option value="Đang làm">Đang làm</option>
+              <option value="Gửi demo">Gửi demo</option>
+              <option value="Chỉnh sửa">Chỉnh sửa</option>
+              <option value="Hoàn thành">Hoàn thành</option>
+            </select>
+
+            {/* Service Type Filter */}
+            <select
+              value={serviceTypeFilter}
+              onChange={e => setServiceTypeFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer truncate"
+            >
+              <option value="">Tất cả dịch vụ</option>
+              {SERVICE_TYPES.map(st => (
+                <option key={st} value={st}>{st}</option>
+              ))}
+            </select>
+
+            {/* Customer Filter */}
+            <select
+              value={customerFilter}
+              onChange={e => setCustomerFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer truncate"
+            >
+              <option value="">Tất cả khách hàng</option>
+              {customers.map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+              ))}
+            </select>
+
+            {/* Demo Deadline Filter */}
+            <select
+              value={demoDeadlineFilter}
+              onChange={e => setDemoDeadlineFilter(e.target.value as any)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans cursor-pointer"
+            >
+              <option value="all">Tất cả hạn Demo</option>
+              <option value="day">Hạn hôm nay</option>
+              <option value="week">Hạn tuần này</option>
+              <option value="month">Hạn tháng này</option>
+              <option value="overdue">Quá hạn demo</option>
+              <option value="custom">Tùy chọn ngày</option>
+            </select>
+          </div>
+
+          {/* Custom Date Range Inputs for Demo deadline */}
+          {demoDeadlineFilter === 'custom' && (
+            <div className="flex items-center gap-2 animate-fade-in self-end sm:self-auto">
+              <input
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
+              />
+              <span className="text-slate-400 text-xs">đến</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none text-slate-700 font-sans"
+              />
+            </div>
+          )}
+        </div>
         {/* Desktop version (Table) */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 font-sans">
@@ -184,7 +341,7 @@ export default function DesignsView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {designs.map(design => {
+              {filteredDesigns.map(design => {
                 const overdue = isOverdue(design.deadline, design.status);
                 return (
                   <tr key={design.id} className="hover:bg-slate-50/40 transition">
@@ -241,7 +398,7 @@ export default function DesignsView({
                         {onDeleteDesign && (
                           <button
                             onClick={() => handleDelete(design.id)}
-                            className="px-2 py-1 bg-red-50 hover:bg-red-105 border border-red-200 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                           >
                             Xóa
                           </button>
@@ -257,8 +414,8 @@ export default function DesignsView({
 
         {/* Mobile version (Cards) */}
         <div className="block md:hidden divide-y divide-slate-100 max-h-[600px] overflow-y-auto" id="designs_cards_mobile">
-          {designs.length > 0 ? (
-            designs.map(design => {
+          {filteredDesigns.length > 0 ? (
+            filteredDesigns.map(design => {
               const overdue = isOverdue(design.deadline, design.status);
               return (
                 <div key={design.id} className="p-4 space-y-3 hover:bg-slate-50/40 transition">
@@ -299,7 +456,7 @@ export default function DesignsView({
                       design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                       design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                       design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-100 border border-rose-200 text-rose-650' :
+                      design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
                       'bg-blue-50 text-blue-700 border-blue-100'
                     }`}>
                       {design.status}
@@ -593,3 +750,4 @@ export default function DesignsView({
     </div>
   );
 }
+
