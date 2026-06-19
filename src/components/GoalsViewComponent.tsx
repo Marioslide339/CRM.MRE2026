@@ -137,6 +137,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<YearlyGoal | null>(null);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
+  const [expandedEditMonth, setExpandedEditMonth] = useState<number | null>(6);
 
   // Get current year goal
   const currentGoal = useMemo(() => {
@@ -463,7 +464,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
             Chi Tiết Mục Tiêu Theo Tháng — {selectedYear}
           </h3>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
@@ -583,6 +584,113 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
             </tbody>
           </table>
         </div>
+
+        {/* Mobile card list for monthly details */}
+        <div className="block md:hidden p-4 space-y-3" id="goals_monthly_cards_mobile">
+          {months.map((m, idx) => {
+            const hasActual = m.actualRevenue !== undefined;
+            const pct = hasActual && m.revenueTarget > 0
+              ? Math.round(((m.actualRevenue || 0) / m.revenueTarget) * 100)
+              : null;
+            const clampedPct = pct !== null ? Math.min(pct, 100) : 0;
+            return (
+              <div
+                key={m.month}
+                className={`p-4 rounded-xl border border-slate-200 space-y-3 bg-white ${
+                  m.month === CURRENT_MONTH ? 'ring-2 ring-primary/20' : ''
+                }`}
+              >
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span className="font-bold text-slate-700 text-sm">
+                    Tháng {m.month} {m.month === CURRENT_MONTH ? '(Hiện tại)' : ''}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {getStatusIcon(pct)}
+                    {pct !== null && <span className={`font-bold font-mono text-xs ${getPctColor(pct)}`}>{pct}%</span>}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">DT Mục tiêu:</span>
+                    <span className="font-semibold text-slate-700 font-mono">{formatVND(m.revenueTarget)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">DT Thực đạt:</span>
+                    <span className="font-semibold text-slate-800 font-mono">{hasActual ? formatVND(m.actualRevenue!) : '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">CP QC Mục tiêu:</span>
+                    <span className="font-semibold text-slate-700 font-mono">{formatVND(m.expenseAdsTarget)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">CP QC Thực:</span>
+                    <span className="font-semibold text-slate-800 font-mono">{m.actualExpenseAds !== undefined ? formatVND(m.actualExpenseAds) : '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">LN Mục tiêu:</span>
+                    <span className="font-semibold text-slate-700 font-mono">{formatVND(m.profitTarget)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">LN Thực:</span>
+                    <span className={`font-semibold font-mono ${m.actualProfit !== undefined && m.actualProfit < 0 ? 'text-red-500' : 'text-slate-800'}`}>
+                      {m.actualProfit !== undefined ? formatVND(m.actualProfit) : '—'}
+                    </span>
+                  </div>
+                </div>
+                
+                {pct !== null && (
+                  <div className="space-y-1">
+                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        style={{ width: `${clampedPct}%` }}
+                        className={`h-1.5 rounded-full ${getPctBg(pct)}`}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          
+          {/* Total card for mobile */}
+          <div className="p-4 rounded-xl bg-slate-900 text-white space-y-3 shadow-md" id="goals_total_card_mobile">
+            <div className="font-bold text-sm border-b border-slate-800 pb-2 flex justify-between">
+              <span>TỔNG CỘNG CẢ NĂM</span>
+              <span className="text-xs text-primary font-mono font-bold">
+                {yearlyTotals.revenueTarget > 0 ? `${Math.round((yearlyTotals.actualRevenue / yearlyTotals.revenueTarget) * 100)}%` : '—'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng DT Mục tiêu:</span>
+                <span className="font-semibold text-slate-200 font-mono">{formatVND(yearlyTotals.revenueTarget)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng DT Thực đạt:</span>
+                <span className="font-semibold text-emerald-400 font-mono">{formatVND(yearlyTotals.actualRevenue)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng CP QC Mục tiêu:</span>
+                <span className="font-semibold text-slate-200 font-mono">{formatVND(yearlyTotals.expenseAdsTarget)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng CP QC Thực:</span>
+                <span className="font-semibold text-slate-200 font-mono">{formatVND(yearlyTotals.actualExpenseAds)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng LN Mục tiêu:</span>
+                <span className="font-semibold text-slate-200 font-mono">{formatVND(yearlyTotals.profitTarget)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Tổng LN Thực đạt:</span>
+                <span className={`font-semibold font-mono ${yearlyTotals.actualProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {formatVND(yearlyTotals.actualProfit)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ───── Edit Modal ───── */}
@@ -610,7 +718,7 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
             </div>
 
             {/* Modal body */}
-            <div className="p-6 overflow-x-auto">
+            <div className="hidden md:block p-6 overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
@@ -659,6 +767,150 @@ export default function GoalsViewComponent({ goals, onUpdateGoals }: GoalsViewCo
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Modal Body - Accordion style */}
+            <div className="block md:hidden p-4 max-h-[60vh] overflow-y-auto space-y-2 bg-slate-50" id="goals_edit_accordion_mobile">
+              {editingGoal.months.map((m, idx) => {
+                const isOpen = expandedEditMonth === m.month;
+                return (
+                  <div key={m.month} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    {/* Header bar */}
+                    <button
+                      onClick={() => setExpandedEditMonth(isOpen ? null : m.month)}
+                      className="w-full flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 transition text-left cursor-pointer"
+                    >
+                      <span className="font-bold text-slate-700 text-xs">
+                        Tháng {m.month} ({MONTH_LABELS[m.month - 1]})
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Content panels */}
+                    {isOpen && (
+                      <div className="p-4 space-y-4 bg-white animate-fade-in text-[11px]">
+                        {/* Section: Mục tiêu */}
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-primary border-b border-primary/10 pb-1 uppercase tracking-wide text-[10px]">Chỉ tiêu mục tiêu</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-slate-400 block mb-1">DT Tổng:</label>
+                              <input
+                                type="number"
+                                value={m.revenueTarget}
+                                onChange={e => handleEditFieldChange(idx, 'revenueTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">DT Khóa học:</label>
+                              <input
+                                type="number"
+                                value={m.revenueCourseTarget}
+                                onChange={e => handleEditFieldChange(idx, 'revenueCourseTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">DT Thiết kế:</label>
+                              <input
+                                type="number"
+                                value={m.revenueDesignTarget}
+                                onChange={e => handleEditFieldChange(idx, 'revenueDesignTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">CP Quảng cáo:</label>
+                              <input
+                                type="number"
+                                value={m.expenseAdsTarget}
+                                onChange={e => handleEditFieldChange(idx, 'expenseAdsTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">CP Nhân sự:</label>
+                              <input
+                                type="number"
+                                value={m.expenseStaffTarget}
+                                onChange={e => handleEditFieldChange(idx, 'expenseStaffTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">Lợi nhuận:</label>
+                              <input
+                                type="number"
+                                value={m.profitTarget}
+                                onChange={e => handleEditFieldChange(idx, 'profitTarget', e.target.value)}
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Section: Thực tế đạt */}
+                        <div className="space-y-3 pt-2">
+                          <h4 className="font-bold text-emerald-600 border-b border-emerald-500/10 pb-1 uppercase tracking-wide text-[10px]">Số liệu thực đạt</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-slate-400 block mb-1">DT Thực:</label>
+                              <input
+                                type="number"
+                                value={m.actualRevenue ?? ''}
+                                onChange={e => handleEditFieldChange(idx, 'actualRevenue', e.target.value)}
+                                placeholder="—"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">KH Thực:</label>
+                              <input
+                                type="number"
+                                value={m.actualRevenueCourse ?? ''}
+                                onChange={e => handleEditFieldChange(idx, 'actualRevenueCourse', e.target.value)}
+                                placeholder="—"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">TK Thực:</label>
+                              <input
+                                type="number"
+                                value={m.actualRevenueDesign ?? ''}
+                                onChange={e => handleEditFieldChange(idx, 'actualRevenueDesign', e.target.value)}
+                                placeholder="—"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-slate-400 block mb-1">CP QC Thực:</label>
+                              <input
+                                type="number"
+                                value={m.actualExpenseAds ?? ''}
+                                onChange={e => handleEditFieldChange(idx, 'actualExpenseAds', e.target.value)}
+                                placeholder="—"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <label className="text-slate-400 block mb-1">LN Thực:</label>
+                              <input
+                                type="number"
+                                value={m.actualProfit ?? ''}
+                                onChange={e => handleEditFieldChange(idx, 'actualProfit', e.target.value)}
+                                placeholder="—"
+                                className="w-full p-2 bg-emerald-50/10 border border-emerald-500/15 rounded-lg text-xs font-mono text-slate-700 outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Modal footer */}
