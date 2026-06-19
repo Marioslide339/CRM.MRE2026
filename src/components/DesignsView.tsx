@@ -136,6 +136,19 @@ export default function DesignsView({
     return status !== 'Hoàn thành' && dl < todayStr;
   };
 
+  const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const date = d.toLocaleDateString('vi-VN');
+      const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      return `${date} ${time}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newServiceType || !selectedCustId || !selectedCtv || !deadline) return;
@@ -153,7 +166,7 @@ export default function DesignsView({
       deadlineDemo: deadlineDemo || deadline,
       status: 'Tiếp nhận',
       amount: newAmount === '' ? 0 : Number(newAmount),
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString()
     });
 
     setIsAddOpen(false);
@@ -345,7 +358,12 @@ export default function DesignsView({
                 const overdue = isOverdue(design.deadline, design.status);
                 return (
                   <tr key={design.id} className="hover:bg-slate-50/40 transition">
-                    <td className="py-4 px-6 font-mono font-bold text-slate-800">{design.id}</td>
+                    <td className="py-4 px-6 space-y-0.5">
+                      <p className="font-mono font-bold text-slate-800">{design.id}</p>
+                      <p className="text-[9px] text-slate-400 font-mono font-medium block">
+                        {design.createdAt ? formatDateTime(design.createdAt) : '-'}
+                      </p>
+                    </td>
                     <td className="py-4 px-4">
                       <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                         {design.serviceType || 'Thiết kế PowerPoint'}
@@ -420,7 +438,12 @@ export default function DesignsView({
               return (
                 <div key={design.id} className="p-4 space-y-3 hover:bg-slate-50/40 transition">
                   <div className="flex justify-between items-center">
-                    <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{design.id}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{design.id}</span>
+                      <span className="text-[9px] text-slate-400 font-mono">
+                        {design.createdAt ? formatDateTime(design.createdAt) : ''}
+                      </span>
+                    </div>
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                       {design.serviceType || 'Thiết kế PowerPoint'}
                     </span>
