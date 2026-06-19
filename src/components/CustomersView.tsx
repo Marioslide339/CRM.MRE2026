@@ -68,7 +68,7 @@ export default function CustomersView({
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<'lms' | 'orders' | 'designs'>('lms');
+  const [sidebarTab, setSidebarTab] = useState<'orders' | 'designs'>('orders');
 
   const customerOrders = useMemo(() => {
     if (!selectedCustomer) return [];
@@ -135,7 +135,7 @@ export default function CustomersView({
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setNotesEdit(customer.notes || '');
-    setSidebarTab('lms');
+    setSidebarTab('orders');
   };
 
   const handleSaveNotes = () => {
@@ -193,32 +193,85 @@ export default function CustomersView({
     setEditCustTags(editCustTags.filter((_, i) => i !== index));
   };
 
+  const getCustomerSegment = (customer: Customer) => {
+    const courseRev = orders
+      .filter(o => o.customerId === customer.id && o.paymentStatus === 'Đã thanh toán')
+      .reduce((sum, o) => sum + o.price, 0);
+
+    const designRev = designs
+      .filter(d => d.customerId === customer.id)
+      .reduce((sum, d) => sum + (d.amount || 0), 0);
+
+    const totalRev = courseRev + designRev;
+
+    const purchasedCount = (customer.coursesPurchased || []).length;
+    const hasDesigns = designs.some(d => d.customerId === customer.id);
+
+    if (purchasedCount === 0 && !hasDesigns) {
+      return {
+        segment: 'Tiềm năng' as const,
+        colorClass: 'bg-slate-50 text-slate-500 border-slate-200',
+        text: 'Tiềm năng'
+      };
+    }
+
+    if (totalRev < 5000000) {
+      return {
+        segment: 'Hạng Bạc' as const,
+        colorClass: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+        text: 'Hạng Bạc'
+      };
+    }
+
+    if (totalRev <= 10000000) {
+      return {
+        segment: 'Hạng Vàng' as const,
+        colorClass: 'bg-amber-50 text-amber-600 border-amber-200',
+        text: 'Hạng Vàng'
+      };
+    }
+
+    return {
+      segment: 'Hạng Kim Cương' as const,
+      colorClass: 'bg-sky-50 text-sky-600 border-sky-200',
+      text: 'Hạng Kim Cương'
+    };
+  };
+
   const handleAssessSegment = () => {
     if (!selectedCustomer) return;
     setIsEvaluating(true);
 
-    // AI assessment simulated locally (in sync with user tags and order totals)
     setTimeout(() => {
-      let segment: 'VIP' | 'Tiềm năng' | 'Ngủ quên' = 'Tiềm năng';
-      let summary = '';
-      const purchasedCount = (selectedCustomer.coursesPurchased || []).length;
-      const progressValues = selectedCustomer.lmsProgress ? Object.values(selectedCustomer.lmsProgress) as number[] : [];
-      const averageProgress = progressValues.length > 0
-        ? progressValues.reduce((acc, c) => acc + c, 0) / progressValues.length
-        : 0;
+      const courseRev = orders
+        .filter(o => o.customerId === selectedCustomer.id && o.paymentStatus === 'Đã thanh toán')
+        .reduce((sum, o) => sum + o.price, 0);
 
-      if (purchasedCount >= 2 || ((selectedCustomer.tags || []).includes('Khách VIP'))) {
-        segment = 'VIP';
-        summary = `Phân khúc VIP: Đã mua ${purchasedCount} khóa học. Thành viên học tập tích cực, cần duy trì chính sách hỗ trợ và CSKH ưu đãi đặc quyền.`;
-      } else if (purchasedCount === 0) {
+      const designRev = designs
+        .filter(d => d.customerId === selectedCustomer.id)
+        .reduce((sum, d) => sum + (d.amount || 0), 0);
+
+      const totalRev = courseRev + designRev;
+
+      const purchasedCount = (selectedCustomer.coursesPurchased || []).length;
+      const hasDesigns = designs.some(d => d.customerId === selectedCustomer.id);
+
+      let segment: 'Tiềm năng' | 'Hạng Bạc' | 'Hạng Vàng' | 'Hạng Kim Cương' = 'Tiềm năng';
+      let summary = '';
+      const formattedRev = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalRev);
+
+      if (purchasedCount === 0 && !hasDesigns) {
         segment = 'Tiềm năng';
-        summary = 'Khách mới sử dụng hoặc chỉ mua dịch vụ ngoài/Thiết kế Slide. Cần tiếp thị chéo các gói học cơ bản.';
-      } else if (averageProgress === 0) {
-        segment = 'Ngủ quên';
-        summary = 'Khách hàng có nguy cơ rời bỏ hệ thống. Đã mua khóa nhưng chưa mở bài học nào trong hơn 30 ngày.';
+        summary = 'Khách mới có thông tin nhưng chưa đăng ký bất kỳ khóa học hay dự án thiết kế nào.';
+      } else if (totalRev < 5000000) {
+        segment = 'Hạng Bạc';
+        summary = `Hạng Bạc: Khách hàng đã đăng ký dịch vụ với tổng doanh thu tích lũy đạt ${formattedRev} (dưới 5 triệu VND).`;
+      } else if (totalRev <= 10000000) {
+        segment = 'Hạng Vàng';
+        summary = `Hạng Vàng: Khách hàng thân thiết có tổng doanh thu tích lũy đạt ${formattedRev} (từ 5 đến 10 triệu VND).`;
       } else {
-        segment = 'Tiềm năng';
-        summary = `Tiến độ học trung bình ${Math.round(averageProgress)}%. Học tập khá ổn, thích hợp tư vấn nâng lên gói Mario Slide Premium.`;
+        segment = 'Hạng Kim Cương';
+        summary = `Hạng Kim Cương: Khách hàng đặc biệt VIP có tổng doanh thu tích lũy đạt ${formattedRev} (trên 10 triệu VND).`;
       }
 
       const updatedAI = {
@@ -278,7 +331,7 @@ export default function CustomersView({
   };
 
   const handleExportCSV = () => {
-    const headers = ["Mã KH", "Họ và Tên", "Email", "Điện thoại", "Khu vực", "Xã/Phường", "Ghi chú", "Ngày tạo", "Phân khúc AI"];
+    const headers = ["Mã KH", "Họ và Tên", "Email", "Điện thoại", "Khu vực", "Xã/Phường", "Ghi chú", "Ngày tạo", "Phân hạng"];
     const rows = filteredCustomers.map(c => [
       c.id,
       c.name,
@@ -288,7 +341,7 @@ export default function CustomersView({
       c.ward || "",
       c.notes,
       c.createdAt.substring(0, 10),
-      c.aiAnalysis?.segment || "Chưa đánh giá"
+      getCustomerSegment(c).text
     ]);
 
     const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))].join("\n");
@@ -401,11 +454,14 @@ export default function CustomersView({
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-800">{c.name}</span>
-                          {c.aiAnalysis?.segment === 'VIP' && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
-                              VIP
-                            </span>
-                          )}
+                          {(() => {
+                            const seg = getCustomerSegment(c);
+                            return (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.colorClass}`}>
+                                {seg.text}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
                           <span>Tạo:</span>
@@ -470,18 +526,14 @@ export default function CustomersView({
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      {c.aiAnalysis?.segment === 'VIP' && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
-                          VIP
-                        </span>
-                      )}
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                        c.aiAnalysis?.segment === 'VIP' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                        c.aiAnalysis?.segment === 'Ngủ quên' ? 'bg-red-50 text-red-700 border border-red-100' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {c.aiAnalysis?.segment || 'Chưa đánh giá'}
-                      </span>
+                      {(() => {
+                        const seg = getCustomerSegment(c);
+                        return (
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.colorClass}`}>
+                            {seg.text}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div>
@@ -542,13 +594,14 @@ export default function CustomersView({
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span className={`px-2 py-1 rounded-lg text-[9px] font-bold font-sans uppercase ${
-                    selectedCustomer.aiAnalysis?.segment === 'VIP' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                    selectedCustomer.aiAnalysis?.segment === 'Ngủ quên' ? 'bg-red-50 text-red-700 border border-red-100' :
-                    'bg-slate-100 text-slate-700'
-                  }`}>
-                    {selectedCustomer.aiAnalysis?.segment || 'CẦN ĐÁNH GIÁ'}
-                  </span>
+                  {(() => {
+                    const seg = getCustomerSegment(selectedCustomer);
+                    return (
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-bold font-sans uppercase border ${seg.colorClass}`}>
+                        {seg.text}
+                      </span>
+                    );
+                  })()}
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => handleStartEdit(selectedCustomer)}
@@ -607,15 +660,6 @@ export default function CustomersView({
                 <div className="flex border-b border-slate-200 mb-3 text-xs font-semibold">
                   <button
                     type="button"
-                    onClick={() => setSidebarTab('lms')}
-                    className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'lms' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
-                    }`}
-                  >
-                    LMS ({(selectedCustomer.coursesPurchased || []).length})
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setSidebarTab('orders')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
                       sidebarTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -634,72 +678,7 @@ export default function CustomersView({
                   </button>
                 </div>
 
-                {sidebarTab === 'lms' && (
-                  <div className="space-y-3">
-                    <h5 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                      <BookOpen className="w-3 h-3 text-indigo-500" />
-                      Tiến độ học tập LMS
-                    </h5>
-                    {(selectedCustomer.coursesPurchased || []).length > 0 ? (
-                      (selectedCustomer.coursesPurchased || []).map(cid => {
-                        const c = (courses || []).find(course => course.id === cid);
-                        const progress = (selectedCustomer.lmsProgress || {})[cid] ?? 0;
-                        const score = (selectedCustomer.lmsGrades || {})[cid];
-                        const cert = (selectedCustomer.lmsCertificateEarned || {})[cid];
-
-                        return (
-                          <div key={cid} className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-xs">
-                            <div className="flex justify-between items-center">
-                              <span className="font-semibold text-slate-700">{c?.title || cid}</span>
-                              <span className="font-mono font-medium text-[10px] text-slate-400">{cid}</span>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-[10px] text-slate-500">
-                                <span>Tiến độ</span>
-                                <span className="font-mono font-bold text-slate-700">{progress}%</span>
-                              </div>
-                              <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-slate-900 transition-all duration-500"
-                                  style={{ width: `${progress}%` }}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 pt-1 text-[10px] text-slate-500">
-                              {score !== undefined && (
-                                <span className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-medium">
-                                  Điểm thi: {score}/10
-                                </span>
-                              )}
-                              {cert ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
-                                  <Award className="w-3 h-3" />
-                                  Chứng nhận
-                                </span>
-                              ) : progress === 100 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updatedCerts = { ...(selectedCustomer.lmsCertificateEarned || {}), [cid]: true };
-                                    onUpdateCustomer(selectedCustomer.id, { lmsCertificateEarned: updatedCerts });
-                                    setSelectedCustomer(prev => prev ? { ...prev, lmsCertificateEarned: updatedCerts } : null);
-                                  }}
-                                  className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
-                                >
-                                  Cấp chứng nhận
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        <p className="text-[11px] text-slate-400 font-sans">Chưa mua khóa học nào trên hệ thống.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* LMS tab content removed */}
 
                 {sidebarTab === 'orders' && (
                   <div className="space-y-3">
