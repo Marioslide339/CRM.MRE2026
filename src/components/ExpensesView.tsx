@@ -197,7 +197,7 @@ export default function ExpensesView({
                 <option value="Thuế TNDN">Thuế TNDN</option>
                 <option value="Khác">Khác</option>
               </select>
-              <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-450 pointer-events-none" />
+              <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function ExpensesView({
                     <td className="py-4 px-6 text-right space-x-2">
                       <button
                         onClick={() => handleOpenEdit(exp)}
-                        className="p-1 px-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-655 font-bold rounded-lg transition text-[10px] cursor-pointer"
+                        className="p-1 px-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
                       >
                         Sửa
                       </button>
@@ -286,12 +286,12 @@ export default function ExpensesView({
                 </div>
                 <div className="flex justify-between items-center pt-1">
                   <span className="text-[10px] text-slate-400">Số tiền:</span>
-                  <span className="font-mono font-bold text-red-655 text-red-600 text-sm">{formatVND(exp.amount)}</span>
+                  <span className="font-mono font-bold text-red-600 text-sm">{formatVND(exp.amount)}</span>
                 </div>
                 <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => handleOpenEdit(exp)}
-                    className="p-1 px-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-655 font-bold rounded-lg transition text-[10px] cursor-pointer"
+                    className="p-1 px-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
                   >
                     Sửa
                   </button>
@@ -320,7 +320,7 @@ export default function ExpensesView({
               <h3 className="font-semibold text-slate-900 text-sm">
                 {editingExpense ? 'Cập Nhật Khoản Chi Phí' : 'Ghi Nhận Chi Phí Vận Hành Mới'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-slate-450 hover:text-slate-655 hover:text-slate-650 transition text-lg font-bold">
+              <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-600 transition text-lg font-bold">
                 ×
               </button>
             </div>
