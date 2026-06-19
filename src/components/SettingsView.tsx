@@ -180,7 +180,7 @@ export default function SettingsView({
 
             <div className="space-y-3 pt-1">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-750">Mã API Gemini #1 (Hoạt động chính)*</label>
+                <label className="block text-xs font-semibold text-slate-700">Mã API Gemini #1 (Hoạt động chính)*</label>
                 <input
                   type="password"
                   placeholder="AIzaSy..."
@@ -191,7 +191,7 @@ export default function SettingsView({
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-750">Mã API Gemini #2 (Dự phòng)*</label>
+                <label className="block text-xs font-semibold text-slate-700">Mã API Gemini #2 (Dự phòng)*</label>
                 <input
                   type="password"
                   placeholder="AIzaSy..."
@@ -202,7 +202,7 @@ export default function SettingsView({
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-750">Mã API Gemini #3 (Dự phòng)*</label>
+                <label className="block text-xs font-semibold text-slate-700">Mã API Gemini #3 (Dự phòng)*</label>
                 <input
                   type="password"
                   placeholder="AIzaSy..."
@@ -239,7 +239,7 @@ export default function SettingsView({
               {/* Export JSON backup button */}
               <button
                 onClick={handleExport}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-150 transition text-xs font-semibold text-slate-700 text-left cursor-pointer"
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition text-xs font-semibold text-slate-700 text-left cursor-pointer"
               >
                 <span className="flex items-center gap-2">
                   <FileJson className="w-4 h-4 text-primary" />
@@ -293,7 +293,7 @@ export default function SettingsView({
               <Sparkles className="w-4 h-4 text-amber-400" />
               MRE CRM 2026 Edition v2.0
             </h3>
-            <p className="text-xs text-slate-350 leading-relaxed font-sans">
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
               Hệ quản trị hỗ trợ live-sync Google Sheets, tích hợp cơ chế xoay vòng 3 API Keys, phân rã đơn hàng và chi phí theo từng sheet tháng, tăng tính bảo mật, ổn định và năng lực hoạt động ngoại tuyến.
             </p>
           </div>
@@ -302,3 +302,4 @@ export default function SettingsView({
     </div>
   );
 }
+
