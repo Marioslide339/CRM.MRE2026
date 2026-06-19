@@ -791,20 +791,6 @@ export default function CustomersView({
                 <button
                   onClick={handleSaveNotes}
                   className="w-full text-center py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-200 transition cursor-pointer"
-                >
-                  Lưu Ghi Chú
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center py-20 text-slate-400 font-mono">
-              <User className="w-12 h-12 text-slate-200 mb-2" />
-              Chọn khách hàng ở bảng danh sách để cập nhật tiến trình đào tạo LMS và đánh giá AI.
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Add New Customer Popup Form Modal */}
       {isAddOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
@@ -824,7 +810,7 @@ export default function CustomersView({
                   placeholder="Nhập họ tên đầy đủ"
                   value={newCustName}
                   onChange={e => setNewCustName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                 />
               </div>
 
@@ -836,7 +822,7 @@ export default function CustomersView({
                     placeholder="abc@gmail.com"
                     value={newCustEmail}
                     onChange={e => setNewCustEmail(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -846,7 +832,7 @@ export default function CustomersView({
                     placeholder="Nhập SĐT của khách"
                     value={newCustPhone}
                     onChange={e => setNewCustPhone(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -857,7 +843,7 @@ export default function CustomersView({
                   <select
                     value={newCustProvince}
                     onChange={e => setNewCustProvince(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                   >
                     <option value="">Chưa chọn</option>
                     <option value="Hà Nội">Hà Nội</option>
@@ -876,7 +862,7 @@ export default function CustomersView({
                     placeholder="Nhập Xã / Phường"
                     value={newCustWard}
                     onChange={e => setNewCustWard(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -888,7 +874,7 @@ export default function CustomersView({
                   placeholder="Yêu cầu đặc biệt..."
                   value={newCustNotes}
                   onChange={e => setNewCustNotes(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                 />
               </div>
 
@@ -900,7 +886,7 @@ export default function CustomersView({
                     placeholder="Nhập tag mới rồi ấn Thêm"
                     value={tagInput}
                     onChange={e => setTagInput(e.target.value)}
-                    className="flex-1 p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="flex-1 p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                   <button
                     type="button"
@@ -959,7 +945,7 @@ export default function CustomersView({
                   placeholder="Nhập họ tên đầy đủ"
                   value={editCustName}
                   onChange={e => setEditCustName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                 />
               </div>
 
@@ -971,7 +957,7 @@ export default function CustomersView({
                     placeholder="abc@gmail.com"
                     value={editCustEmail}
                     onChange={e => setEditCustEmail(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -981,7 +967,7 @@ export default function CustomersView({
                     placeholder="Nhập SĐT của khách"
                     value={editCustPhone}
                     onChange={e => setEditCustPhone(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -992,7 +978,7 @@ export default function CustomersView({
                   <select
                     value={editCustProvince}
                     onChange={e => setEditCustProvince(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                   >
                     <option value="">Chưa chọn</option>
                     <option value="Hà Nội">Hà Nội</option>
@@ -1011,7 +997,7 @@ export default function CustomersView({
                     placeholder="Nhập Xã / Phường"
                     value={editCustWard}
                     onChange={e => setEditCustWard(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -1023,7 +1009,7 @@ export default function CustomersView({
                   placeholder="Yêu cầu đặc biệt..."
                   value={editCustNotes}
                   onChange={e => setEditCustNotes(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                 />
               </div>
 
@@ -1035,7 +1021,7 @@ export default function CustomersView({
                     placeholder="Nhập tag mới rồi ấn Thêm"
                     value={editTagInput}
                     onChange={e => setEditTagInput(e.target.value)}
-                    className="flex-1 p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                    className="flex-1 p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   />
                   <button
                     type="button"
