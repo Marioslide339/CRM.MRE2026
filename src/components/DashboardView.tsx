@@ -811,6 +811,18 @@ export default function DashboardView({
     }
   }, [timeFilter]);
 
+  const filterLabel = useMemo(() => {
+    switch (timeFilter) {
+      case 'day': return 'Hôm nay';
+      case 'week': return 'Tuần này';
+      case 'month': return 'Tháng này';
+      case 'quarter': return 'Quý này';
+      case 'year': return 'Năm nay';
+      case 'custom': return 'Tùy chọn';
+      default: return '';
+    }
+  }, [timeFilter]);
+
   return (
     <div className="space-y-4 md:space-y-8 animate-fade-in" id="dashboard_view_container">
       {/* Page Title Block */}
@@ -977,34 +989,55 @@ export default function DashboardView({
         </div>
 
         {/* Số khách mới */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_customers">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_customers">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">KHÁCH MỚI (T{currentDateTime.getMonth() + 1})</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">KHÁCH MỚI ({filterLabel})</span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
             <span className="text-2xl font-bold font-mono tracking-tight text-slate-800">
-              {currentMonthCustomers}
+              {filteredCustomers.length}
             </span>
             <p className="text-[10px] text-slate-400 mt-1 font-sans">Khách hàng đăng ký mới</p>
           </div>
         </div>
 
-        {/* Số đơn hàng mới */}
-        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_orders">
+        {/* Số đơn hàng mới (spans 2 columns) */}
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between sm:col-span-2" id="kpi_new_orders">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN MỚI (T{currentDateTime.getMonth() + 1})</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN MỚI ({filterLabel})</span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl font-bold font-mono tracking-tight text-slate-800">
-              {currentMonthOrders}
-            </span>
-            <p className="text-[10px] text-slate-400 mt-1 font-sans">Mua khóa học / Dịch vụ</p>
+          <div className="mt-4 grid grid-cols-2 gap-4 divide-x divide-slate-100">
+            {/* Left side: total */}
+            <div className="flex flex-col justify-center">
+              <span className="text-2xl font-bold font-mono tracking-tight text-slate-800">
+                {filteredOrders.length + filteredDesigns.length}
+              </span>
+              <p className="text-[10px] text-slate-400 mt-1 font-sans font-semibold uppercase tracking-wider">Tổng số đơn</p>
+            </div>
+            
+            {/* Right side: breakdown */}
+            <div className="pl-4 flex flex-col justify-center gap-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                  <span className="text-slate-500 font-sans font-medium truncate">Đơn khóa học:</span>
+                </div>
+                <span className="font-mono font-bold text-slate-800 ml-1 shrink-0">{filteredOrders.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0"></span>
+                  <span className="text-slate-500 font-sans font-medium truncate">Đơn thiết kế:</span>
+                </div>
+                <span className="font-mono font-bold text-slate-800 ml-1 shrink-0">{filteredDesigns.length}</span>
+              </div>
+            </div>
           </div>
         </div>
 
