@@ -525,7 +525,7 @@ export default function CustomersView({
                     {onDeleteCustomer && (
                       <button
                         onClick={() => handleDelete(selectedCustomer.id)}
-                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-650 rounded-md text-[10px] font-semibold transition"
+                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-[10px] font-semibold transition"
                       >
                         Xóa
                       </button>
@@ -575,7 +575,7 @@ export default function CustomersView({
                     type="button"
                     onClick={() => setSidebarTab('lms')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'lms' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-650'
+                      sidebarTab === 'lms' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     LMS ({(selectedCustomer.coursesPurchased || []).length})
@@ -584,7 +584,7 @@ export default function CustomersView({
                     type="button"
                     onClick={() => setSidebarTab('orders')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-650'
+                      sidebarTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Đơn Hàng ({customerOrders.length})
@@ -593,7 +593,7 @@ export default function CustomersView({
                     type="button"
                     onClick={() => setSidebarTab('designs')}
                     className={`flex-1 pb-2 text-center transition-all cursor-pointer border-b-2 font-bold ${
-                      sidebarTab === 'designs' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-650'
+                      sidebarTab === 'designs' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     Thiết Kế ({customerDesigns.length})
@@ -681,7 +681,7 @@ export default function CustomersView({
                             <span className="font-mono text-[10px] bg-slate-200/60 px-1.5 py-0.5 rounded font-bold">{o.id}</span>
                           </div>
                           <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-mono font-semibold text-slate-750">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(o.price)}</span>
+                            <span className="font-mono font-semibold text-slate-700">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(o.price)}</span>
                             <span className="text-slate-400 font-mono text-[10px]">{o.createdAt.substring(0, 10)}</span>
                           </div>
                           <div className="flex justify-between items-center pt-1 border-t border-slate-200/30">
@@ -715,9 +715,9 @@ export default function CustomersView({
                             <span className="font-semibold text-slate-700">{d.title}</span>
                             <span className="font-mono text-[10px] bg-slate-200/60 px-1.5 py-0.5 rounded font-bold">{d.id}</span>
                           </div>
-                          <div className="text-[11px] space-y-1 text-slate-550">
+                          <div className="text-[11px] space-y-1 text-slate-500">
                             <div><span className="text-slate-400">Người thực hiện:</span> <span className="font-medium text-slate-700">{d.executor}</span></div>
-                            <div className="flex justify-between font-mono text-[10px] text-slate-450">
+                            <div className="flex justify-between font-mono text-[10px] text-slate-400">
                               <span>Demo: {d.deadlineDemo}</span>
                               <span>Hạn: {d.deadline}</span>
                             </div>
@@ -1077,3 +1077,4 @@ export default function CustomersView({
     </div>
   );
 }
+
