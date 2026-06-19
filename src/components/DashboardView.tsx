@@ -284,9 +284,9 @@ export default function DashboardView({
   }, [filteredOrders, filteredDesigns, goals]);
 
   return (
-    <div className="space-y-8 animate-fade-in" id="dashboard_view_container">
+    <div className="space-y-4 md:space-y-8 animate-fade-in" id="dashboard_view_container">
       {/* Page Title Block */}
-      <div className="flex justify-between items-center bg-white p-5 rounded-2xl border border-slate-200 shadow-sm" id="dashboard_page_title">
+      <div className="flex justify-between items-center bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm" id="dashboard_page_title">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-secondary font-sans flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-primary" />
@@ -369,7 +369,7 @@ export default function DashboardView({
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" id="kpi_cards_grid">
         {/* Doanh thu */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_revenue">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_revenue">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DOANH THU</span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -385,7 +385,7 @@ export default function DashboardView({
         </div>
 
         {/* Chi phí */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_expense">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_expense">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">CHI PHÍ VẬN HÀNH</span>
             <div className="p-2 bg-red-50 text-red-650 rounded-xl">
@@ -401,7 +401,7 @@ export default function DashboardView({
         </div>
 
         {/* Lợi nhuận */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_profit">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_profit">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">LỢI NHUẬN RÒNG</span>
             <div className="p-2 bg-indigo-50 text-indigo-650 rounded-xl">
@@ -417,7 +417,7 @@ export default function DashboardView({
         </div>
 
         {/* Tỉ lệ lợi nhuận % */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_margin">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_margin">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">TỶ SUẤT LỢI NHUẬN</span>
             <div className="p-2 bg-blue-50 text-blue-650 rounded-xl">
@@ -433,7 +433,7 @@ export default function DashboardView({
         </div>
 
         {/* Doanh thu tháng */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_month_revenue">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_month_revenue">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DT THÁNG (T6)</span>
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -465,7 +465,7 @@ export default function DashboardView({
         </div>
 
         {/* Số đơn hàng mới */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_orders">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_new_orders">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN MỚI (T6)</span>
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl">
@@ -481,7 +481,7 @@ export default function DashboardView({
         </div>
 
         {/* Đơn đang làm */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_active_designs">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_active_designs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">ĐƠN THIẾT KẾ</span>
             <div className="p-2 bg-amber-50 text-amber-700 rounded-xl">
@@ -497,7 +497,7 @@ export default function DashboardView({
         </div>
 
         {/* Đơn sắp deadline */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_upcoming_deadlines">
+        <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_upcoming_deadlines">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">CẦN GẤP (KPI)</span>
             <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
@@ -516,7 +516,7 @@ export default function DashboardView({
       {/* Visual Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" id="charts_grid">
         {/* Doanh thu theo tháng */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_monthly_revenue">
+        <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_monthly_revenue">
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary" />
@@ -537,7 +537,7 @@ export default function DashboardView({
         </div>
 
         {/* Doanh thu theo khóa học */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_product_distribution">
+        <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_product_distribution">
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -583,7 +583,7 @@ export default function DashboardView({
         </div>
 
         {/* Chi phí theo danh mục */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_expense_distribution">
+        <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="chart_expense_distribution">
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <TrendingDown className="w-4 h-4 text-primary" />
@@ -629,7 +629,7 @@ export default function DashboardView({
         </div>
 
         {/* CTV performance */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between animate-fade-in" id="chart_ctv_performance">
+        <div className="lg:col-span-4 bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between animate-fade-in" id="chart_ctv_performance">
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
@@ -655,14 +655,14 @@ export default function DashboardView({
       {/* Sheet Activity logs & Shortcuts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="activity_and_shortcuts">
         {/* Apps Script Automation Status */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="automation_logs">
+        <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="automation_logs">
           <div>
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
                 Nhật Ký Tác Vụ Tự Động Hóa (Apps Script Simulator)
               </h3>
-              <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-mono">Real-time Triggers</span>
+              <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-mono">Real-time</span>
             </div>
             <p className="text-xs text-slate-400 font-sans">Theo dõi thời hạn và cấp quyền chia sẻ thư mục Google Drive tự động cho học viên</p>
           </div>
@@ -690,13 +690,13 @@ export default function DashboardView({
         </div>
 
         {/* Shortcuts */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="system_shortcuts">
+        <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="system_shortcuts">
           <div>
             <h3 className="text-sm font-semibold text-secondary font-sans flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-primary" />
               Lối Tắt Hành Động
             </h3>
-            <p className="text-xs text-slate-400 font-sans">Thực hiện nhanh các tác vụ CRM</p>
+            <p className="text-xs text-slate-400 font-sans">Thực hiện nhanh các CRM actions</p>
           </div>
           <div className="mt-4 space-y-2">
             <button
