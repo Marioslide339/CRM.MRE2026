@@ -349,7 +349,7 @@ export default function DesignsView({
                   required
                   value={newServiceType}
                   onChange={e => setNewServiceType(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn dịch vụ thiết kế...</option>
                   {SERVICE_TYPES.map(st => (
@@ -366,7 +366,7 @@ export default function DesignsView({
                   placeholder="Ví dụ: Thiết kế Slide khóa học y học hạt nhân"
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -376,7 +376,7 @@ export default function DesignsView({
                   required
                   value={selectedCustId}
                   onChange={e => setSelectedCustId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn khách hàng đặt mua...</option>
                   {customers.map(c => (
@@ -391,7 +391,7 @@ export default function DesignsView({
                   required
                   value={selectedCtv}
                   onChange={e => setSelectedCtv(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Phân bổ cộng tác viên...</option>
                   {collaborators.map(ctv => (
@@ -407,7 +407,7 @@ export default function DesignsView({
                   placeholder="Nhập số tiền thiết kế..."
                   value={newAmount}
                   onChange={e => setNewAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export default function DesignsView({
                     required
                     value={deadlineDemo}
                     onChange={e => setDeadlineDemo(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -429,7 +429,7 @@ export default function DesignsView({
                     required
                     value={deadline}
                     onChange={e => setDeadline(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -471,7 +471,7 @@ export default function DesignsView({
                   required
                   value={editServiceType}
                   onChange={e => setEditServiceType(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn dịch vụ thiết kế...</option>
                   {SERVICE_TYPES.map(st => (
@@ -488,7 +488,7 @@ export default function DesignsView({
                   placeholder="Ví dụ: Thiết kế Slide khóa học y học hạt nhân"
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export default function DesignsView({
                   required
                   value={editCustId}
                   onChange={e => setEditCustId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn khách hàng đặt mua...</option>
                   {customers.map(c => (
@@ -513,7 +513,7 @@ export default function DesignsView({
                   required
                   value={editCtv}
                   onChange={e => setEditCtv(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Phân bổ cộng tác viên...</option>
                   {collaborators.map(ctv => (
@@ -529,7 +529,7 @@ export default function DesignsView({
                   placeholder="Nhập số tiền thiết kế..."
                   value={editAmount}
                   onChange={e => setEditAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                 />
               </div>
 
@@ -541,7 +541,7 @@ export default function DesignsView({
                     required
                     value={editDeadlineDemo}
                     onChange={e => setEditDeadlineDemo(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
                 <div>
@@ -551,7 +551,7 @@ export default function DesignsView({
                     required
                     value={editDeadline}
                     onChange={e => setEditDeadline(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400"
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-base md:text-xs"
                   />
                 </div>
               </div>
@@ -561,7 +561,7 @@ export default function DesignsView({
                 <select
                   value={editStatus}
                   onChange={e => setEditStatus(e.target.value as any)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white font-semibold"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white font-semibold text-base md:text-xs"
                 >
                   <option value="Tiếp nhận">Tiếp nhận</option>
                   <option value="Đang làm">Đang làm</option>
