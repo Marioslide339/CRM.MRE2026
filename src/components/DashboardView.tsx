@@ -67,7 +67,7 @@ export default function DashboardView({
   isSyncing = false
 }: DashboardViewProps) {
   // Time filters: 'day' (today), 'week' (this week), 'month' (this month), 'quarter' (this quarter), 'year' (this year), 'custom' (start/end date)
-  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('month');
+  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('day');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
 
