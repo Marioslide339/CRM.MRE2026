@@ -613,7 +613,7 @@ export default function App() {
       saveToStorage('mre_orders', updatedOrders);
       showToast('success', 'Đã cập nhật thông tin đơn hàng.');
       syncToGoogleSheets(undefined, {
-        customers: updatedCusts,
+        customers: customers,
         orders: updatedOrders,
         courses,
         designs,
@@ -667,9 +667,9 @@ export default function App() {
     showToast('success', 'Chạy mô phỏng tự động cấp học thành công!');
 
     // Actual email & Drive share trigger via Apps Script
-    if (googleSheetUrl) {
+    if (GOOGLE_SHEET_URL) {
       try {
-        const response = await fetch(googleSheetUrl, {
+        const response = await fetch(GOOGLE_SHEET_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
