@@ -438,14 +438,14 @@ export default function DashboardView({
                 type="date"
                 value={customStart}
                 onChange={e => setCustomStart(e.target.value)}
-                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none text-slate-700 font-sans"
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-base md:text-xs outline-none text-slate-700 font-sans"
               />
               <span className="text-slate-400 text-xs">đến</span>
               <input
                 type="date"
                 value={customEnd}
                 onChange={e => setCustomEnd(e.target.value)}
-                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none text-slate-700 font-sans"
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-base md:text-xs outline-none text-slate-700 font-sans"
               />
             </div>
           )}
