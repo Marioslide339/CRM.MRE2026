@@ -193,7 +193,10 @@ export default function ExpensesView({
                 <option value="Văn phòng phẩm">Văn phòng phẩm</option>
                 <option value="Trả lương">Trả lương</option>
                 <option value="Phần mềm dịch vụ">Phần mềm dịch vụ</option>
-                <opti              </select>
+                <option value="Thuế VAT">Thuế VAT</option>
+                <option value="Thuế TNDN">Thuế TNDN</option>
+                <option value="Khác">Khác</option>
+              </select>
               <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-450 pointer-events-none" />
             </div>
           </div>
