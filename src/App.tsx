@@ -1215,6 +1215,9 @@ export default function App() {
           <GoalsViewComponent
             goals={goals}
             onUpdateGoals={handleUpdateGoals}
+            orders={orders}
+            designs={designs}
+            expenses={expenses}
           />
         )}
 
