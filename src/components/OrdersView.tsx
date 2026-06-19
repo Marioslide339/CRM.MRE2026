@@ -314,7 +314,7 @@ export default function OrdersView({
               placeholder="Tìm kiếm mã đơn, khách hàng, tên khóa học..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-400 transition"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition"
             />
             {/* Simple icon inside input */}
             <span className="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
@@ -323,7 +323,7 @@ export default function OrdersView({
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
           >
             <option value="">Tất cả thanh toán ({orders.length})</option>
             <option value="Đã thanh toán">Đã thanh toán</option>
@@ -554,7 +554,7 @@ export default function OrdersView({
                   required
                   value={selectedCustomerId}
                   onChange={e => setSelectedCustomerId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn khách hàng...</option>
                   {customers.map(c => (
@@ -569,7 +569,7 @@ export default function OrdersView({
                   required
                   value={selectedCourseId}
                   onChange={e => handleCourseSelection(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn kho khóa học...</option>
                   {courses.map(co => (
@@ -584,7 +584,7 @@ export default function OrdersView({
                   type="number"
                   value={orderPrice}
                   onChange={e => setOrderPrice(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   placeholder="Tiền thu"
                 />
               </div>
@@ -847,7 +847,7 @@ export default function OrdersView({
                   required
                   value={editCustomerId}
                   onChange={e => setEditCustomerId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn khách hàng...</option>
                   {customers.map(c => (
@@ -862,7 +862,7 @@ export default function OrdersView({
                   required
                   value={editCourseId}
                   onChange={e => handleEditCourseSelection(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
                 >
                   <option value="">Chọn kho khóa học...</option>
                   {courses.map(co => (
@@ -877,7 +877,7 @@ export default function OrdersView({
                   type="number"
                   value={editOrderPrice}
                   onChange={e => setEditOrderPrice(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition"
+                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
                   placeholder="Tiền thu"
                 />
               </div>
