@@ -223,9 +223,9 @@ export default function DesignsView({
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                         design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                         design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                        design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-750 border-purple-100' :
+                        design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
                         design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                        'bg-blue-50 text-blue-750 border-blue-100'
+                        'bg-blue-50 text-blue-700 border-blue-100'
                       }`}>
                         {design.status}
                       </span>
@@ -234,14 +234,14 @@ export default function DesignsView({
                       <div className="flex justify-end gap-1.5">
                         <button
                           onClick={() => handleStartEdit(design)}
-                          className="px-2 py-1 bg-slate-105 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
                         >
                           Sửa
                         </button>
                         {onDeleteDesign && (
                           <button
                             onClick={() => handleDelete(design.id)}
-                            className="px-2 py-1 bg-red-50 hover:bg-red-105 text-red-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                           >
                             Xóa
                           </button>
@@ -298,9 +298,9 @@ export default function DesignsView({
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                       design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                       design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-750 border-purple-100' :
+                      design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-100' :
                       design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                      'bg-blue-50 text-blue-750 border-blue-100'
+                      'bg-blue-50 text-blue-700 border-blue-100'
                     }`}>
                       {design.status}
                     </span>
@@ -314,7 +314,7 @@ export default function DesignsView({
                       {onDeleteDesign && (
                         <button
                           onClick={() => handleDelete(design.id)}
-                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-650 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
                         >
                           Xóa
                         </button>
@@ -593,3 +593,4 @@ export default function DesignsView({
     </div>
   );
 }
+
