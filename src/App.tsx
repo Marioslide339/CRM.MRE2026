@@ -746,47 +746,7 @@ export default function App() {
     setDesigns(updated);
     saveToStorage('mre_designs', updated);
 
-    let updatedCtvs = collaborators;
-    let updatedExpenses = expenses;
-
-    if (updatedFields.status === 'Hoàn thành' && prevDesign && prevDesign.status !== 'Hoàn thành') {
-      const ctvName = prevDesign.executor;
-      const budget = prevDesign.amount || 2000000; // Use actual design service amount, fallback to 2000000
-      const payout = Math.round(budget * 0.3); // 30% standard payout
-
-      // Update collaborator stats
-      const uCtvs = collaborators.map(c => {
-        if (c.name === ctvName) {
-          return {
-            ...c,
-            revenue: c.revenue + budget,
-            salary: c.salary + payout
-          };
-        }
-        return c;
-      });
-      setCollaborators(uCtvs);
-      updatedCtvs = uCtvs;
-      saveToStorage('mre_collaborators', uCtvs);
-
-      // Add payout expense
-      const expenseId = `CP${String(expenses.length + 1).padStart(4, '0')}`;
-      const newExpense: Expense = {
-        id: expenseId,
-        date: new Date().toISOString().split('T')[0],
-        category: 'Trả lương',
-        amount: payout,
-        description: `Quyết toán 30% hoa hồng CTV ${ctvName} - Thiết kế custom: ${prevDesign.title}`
-      };
-      const uExp = [newExpense, ...expenses];
-      setExpenses(uExp);
-      updatedExpenses = uExp;
-      saveToStorage('mre_expenses', uExp);
-
-      showToast('success', `Nghiệm thu thiết kế! Tự động quyết toán ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(payout)} hoa hồng cho ${ctvName}.`);
-    } else {
-      showToast('success', 'Đã cập nhật thông tin thiết kế.');
-    }
+    showToast('success', 'Đã cập nhật thông tin thiết kế.');
 
     setTimeout(() => {
       syncToGoogleSheets(undefined, { 
@@ -794,10 +754,10 @@ export default function App() {
         orders, 
         courses, 
         designs: updated, 
-        collaborators: updatedCtvs, 
+        collaborators, 
         campaigns, 
         logs, 
-        expenses: updatedExpenses 
+        expenses 
       });
     }, 1000);
   };
