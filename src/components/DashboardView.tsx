@@ -479,7 +479,7 @@ export default function DashboardView({
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-lg font-bold font-mono tracking-tight text-slate-800">
+            <span className="text-lg font-bold font-mono tracking-tight text-slate-808">
               {formatVND(totalExpense)}
             </span>
             <p className="text-[10px] text-slate-400 mt-1 font-sans">Chi phí quảng cáo, lương, thuê...</p>
@@ -812,4 +812,3 @@ export default function DashboardView({
     </div>
   );
 }
-
