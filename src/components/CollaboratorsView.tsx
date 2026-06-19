@@ -121,7 +121,8 @@ export default function CollaboratorsView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Collaborators Table view */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="overflow-x-auto">
+          {/* Desktop version */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600 font-sans">
               <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
                 <tr>
@@ -173,6 +174,63 @@ export default function CollaboratorsView({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile version */}
+          <div className="block md:hidden divide-y divide-slate-100 max-h-[500px] overflow-y-auto" id="collaborators_cards_mobile">
+            {collaborators.length > 0 ? (
+              collaborators.map(ctv => (
+                <div key={ctv.id} className="p-4 space-y-3 hover:bg-slate-50/40 transition">
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{ctv.id}</span>
+                    <span className="font-semibold text-slate-500 text-[10px] uppercase tracking-wider">{ctv.job}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{ctv.name}</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Doanh số đóng góp:</span>
+                      <span className="font-semibold text-slate-700 font-mono">{formatVND(ctv.revenue)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Lương quyết toán (30%):</span>
+                      <span className="font-semibold text-indigo-650 font-mono bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block">{formatVND(ctv.salary)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400 text-[10px]">KPI:</span>
+                      <span className="font-bold font-mono text-slate-800">{ctv.efficiency}%</span>
+                      <div className="w-10 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-slate-900 rounded-full"
+                          style={{ width: `${ctv.efficiency}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleStartEdit(ctv)}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ctv.id)}
+                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-250 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-12 text-center text-slate-400 font-mono text-xs">
+                Chưa đăng ký cộng tác viên nào
+              </div>
+            )}
           </div>
         </div>
 
