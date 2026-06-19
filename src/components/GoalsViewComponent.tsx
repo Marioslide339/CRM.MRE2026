@@ -1096,3 +1096,4 @@ function SummaryCard({ label, target, actual, pct, icon, hasData }: SummaryCardP
     </div>
   );
 }
+
