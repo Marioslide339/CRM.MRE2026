@@ -136,6 +136,17 @@ export default function GoalsViewComponent({
   designs = [],
   expenses = []
 }: GoalsViewComponentProps) {
+  // Convert ISO UTC date string to local YYYY-MM-DD for correct timezone comparison
+  const toLocalDateStr = (dateStr: string): string => {
+    if (!dateStr) return '';
+    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const availableYears = useMemo(() => {
     const years = goals.map(g => g.year);
     if (!years.includes(2026)) years.push(2026);
@@ -161,7 +172,7 @@ export default function GoalsViewComponent({
       // Find orders for this month & year
       const monthOrders = orders.filter(o => {
         if (o.paymentStatus !== 'Đã thanh toán') return false;
-        const d = o.createdAt.substring(0, 10);
+        const d = toLocalDateStr(o.createdAt);
         const parts = d.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -173,7 +184,7 @@ export default function GoalsViewComponent({
 
       // Find designs for this month & year
       const monthDesigns = designs.filter(d => {
-        const dateStr = d.createdAt ? d.createdAt.substring(0, 10) : d.deadline;
+        const dateStr = toLocalDateStr(d.createdAt || d.deadline || '');
         if (!dateStr) return false;
         const parts = dateStr.split('-');
         if (parts.length >= 2) {
