@@ -805,7 +805,8 @@ export default function App() {
 
   // Expense Handlers
   const handleAddExpense = (newExpense: Partial<Expense>) => {
-    const id = `CP${String(expenses.length + 1).padStart(4, '0')}`;
+    // Use timestamp-based unique ID to prevent duplicates from React StrictMode double-invocation
+    const id = `CP${Date.now().toString(36).toUpperCase()}`;
     const fullExpense: Expense = {
       ...(newExpense as Omit<Expense, 'id'>),
       id
