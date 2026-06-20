@@ -17,9 +17,20 @@ export default function ExpensesView({
 }: ExpensesViewProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper: get yesterday's local date string YYYY-MM-DD
+  const getYesterdayStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Form states
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getYesterdayStr());
   const [category, setCategory] = useState<'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác'>('Chi phí quảng cáo');
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState('');
@@ -36,12 +47,13 @@ export default function ExpensesView({
 
   const handleOpenAdd = () => {
     setEditingExpense(null);
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(getYesterdayStr());
     setCategory('Chi phí quảng cáo');
     setAmount(0);
     setDescription('');
     setHasTax(true);
     setTaxRate(11);
+    setIsSubmitting(false);
     setIsAddOpen(true);
   };
 
@@ -59,6 +71,9 @@ export default function ExpensesView({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (amount <= 0 || !description) return;
+    // Guard against double-submission
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const taxAmount = hasTax && taxRate > 0 ? Math.round(amount * taxRate / 100) : 0;
     const totalAmount = amount + taxAmount;
@@ -85,15 +100,22 @@ export default function ExpensesView({
       });
     }
     setIsAddOpen(false);
+    setIsSubmitting(false);
   };
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter(exp => {
-      const matchesSearch = exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            exp.id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory ? exp.category === selectedCategory : true;
-      return matchesSearch && matchesCategory;
-    });
+    return expenses
+      .filter(exp => {
+        const matchesSearch = exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              exp.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory ? exp.category === selectedCategory : true;
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => {
+        // Sort by date descending (newest first), then by id descending
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return b.id.localeCompare(a.id);
+      });
   }, [expenses, searchTerm, selectedCategory]);
 
   const totalExpense = useMemo(() => {
