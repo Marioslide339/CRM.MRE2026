@@ -166,9 +166,18 @@ export default function DashboardView({
     });
   }, [orders, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, quarterRange, yearRange]);
 
+  const getDesignDateStr = (d: DesignService): string => {
+    if (d.createdAt) {
+      // If createdAt is full ISO, extract date part
+      return d.createdAt.length >= 10 ? d.createdAt.substring(0, 10) : d.createdAt;
+    }
+    return d.deadline || '';
+  };
+
   const filteredDesigns = useMemo(() => {
     return designs.filter(d => {
-      const dateStr = d.createdAt ? d.createdAt.substring(0, 10) : d.deadline;
+      const dateStr = getDesignDateStr(d);
+      if (!dateStr) return false;
       if (timeFilter === 'day') return dateStr === todayStr;
       if (timeFilter === 'week') return dateStr >= weekRange.start && dateStr <= weekRange.end;
       if (timeFilter === 'month') return dateStr >= monthRange.start && dateStr <= monthRange.end;
@@ -240,33 +249,16 @@ export default function DashboardView({
     return Math.round((paidCount / filteredOrders.length) * 100);
   }, [filteredOrders]);
 
-  const currentMonthStr = useMemo(() => {
-    const year = currentDateTime.getFullYear();
-    const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
-  }, [currentDateTime]);
 
-  // Extra KPI definitions
-  const monthRevenue = useMemo(() => {
-    const orderMonthRev = orders
-      .filter(o => o.paymentStatus === 'Đã thanh toán' && o.createdAt.substring(0, 7) === currentMonthStr)
+  // Extra KPI definitions - now all use filtered data to react to time filter
+  const filteredPaidRevenue = useMemo(() => {
+    const orderRev = filteredOrders
+      .filter(o => o.paymentStatus === 'Đã thanh toán')
       .reduce((sum, o) => sum + o.price, 0);
-    const designMonthRev = designs
-      .filter(d => {
-        const dateStr = d.createdAt ? d.createdAt.substring(0, 7) : d.deadline.substring(0, 7);
-        return dateStr === currentMonthStr;
-      })
+    const designRev = filteredDesigns
       .reduce((sum, d) => sum + (d.amount || 0), 0);
-    return orderMonthRev + designMonthRev;
-  }, [orders, designs, currentMonthStr]);
-
-  const currentMonthCustomers = useMemo(() => {
-    return customers.filter(c => c.createdAt.substring(0, 7) === currentMonthStr).length;
-  }, [customers, currentMonthStr]);
-
-  const currentMonthOrders = useMemo(() => {
-    return orders.filter(o => o.createdAt.substring(0, 7) === currentMonthStr).length;
-  }, [orders, currentMonthStr]);
+    return orderRev + designRev;
+  }, [filteredOrders, filteredDesigns]);
 
   const activeDesigns = useMemo(() => {
     return designs.filter(d => d.status === 'Đang làm' || d.status === 'Chỉnh sửa').length;
@@ -972,19 +964,19 @@ export default function DashboardView({
           </div>
         </div>
 
-        {/* Doanh thu tháng */}
+        {/* Doanh thu theo bộ lọc */}
         <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between" id="kpi_month_revenue">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DT THÁNG (T{currentDateTime.getMonth() + 1})</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">DT ĐÃ THANH TOÁN ({filterLabel})</span>
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
             <span className="text-lg font-bold font-mono tracking-tight text-slate-800">
-              {formatVND(monthRevenue)}
+              {formatVND(filteredPaidRevenue)}
             </span>
-            <p className="text-[10px] text-emerald-600 mt-1 font-sans">Tự động đối soát Apps Script</p>
+            <p className="text-[10px] text-emerald-600 mt-1 font-sans">Tổng doanh thu đơn đã thanh toán</p>
           </div>
         </div>
 
