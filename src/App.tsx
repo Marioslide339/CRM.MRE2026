@@ -725,6 +725,7 @@ export default function App() {
     const fullDesign: DesignService = {
       ...(newDesign as Omit<DesignService, 'id'>),
       id,
+      createdAt: newDesign.createdAt || new Date().toISOString(),
       deadlineDemo: newDesign.deadlineDemo || newDesign.deadline || new Date().toISOString().split('T')[0],
       status: newDesign.status || 'Tiếp nhận'
     } as DesignService;
