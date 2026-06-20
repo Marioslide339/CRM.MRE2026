@@ -51,6 +51,15 @@ export default function OrdersView({
     return `${year}-${month}-${day}`;
   };
 
+  // Convert ISO UTC date string to local YYYY-MM-DD for correct timezone comparison
+  const toLocalDateStr = (dateStr: string): string => {
+    if (!dateStr) return '';
+    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
+    return getTodayStr(d);
+  };
+
   const todayStr = useMemo(() => getTodayStr(currentDateTime), [currentDateTime]);
 
   const weekRange = useMemo(() => {
@@ -306,7 +315,7 @@ export default function OrdersView({
       
       let matchTime = true;
       if (timeFilter !== 'all') {
-        const d = o.createdAt.substring(0, 10);
+        const d = toLocalDateStr(o.createdAt);
         if (timeFilter === 'day') {
           matchTime = d === todayStr;
         } else if (timeFilter === 'week') {
@@ -333,7 +342,7 @@ export default function OrdersView({
       o.productName,
       o.price,
       o.paymentRecipient || "",
-      o.createdAt.substring(0, 10),
+      toLocalDateStr(o.createdAt),
       o.paymentStatus,
       o.deliveryStatus
     ]);
