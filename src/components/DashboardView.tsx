@@ -91,6 +91,18 @@ export default function DashboardView({
     return `${year}-${month}-${day}`;
   };
 
+  // Convert any date string (ISO UTC or plain YYYY-MM-DD) to local date string YYYY-MM-DD
+  // This fixes timezone issues: new Date().toISOString() stores UTC, but we compare with local date
+  const toLocalDateStr = (dateStr: string): string => {
+    if (!dateStr) return '';
+    // If it's already a plain date (YYYY-MM-DD, 10 chars, no T), return as-is
+    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
+    // Parse as Date object and use LOCAL time methods
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
+    return getTodayStr(d);
+  };
+
   const todayStr = useMemo(() => {
     return getTodayStr(currentDateTime);
   }, [currentDateTime]);
@@ -150,10 +162,10 @@ export default function DashboardView({
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   }, [currentDateTime]);
 
-  // Filter lists based on time range
+  // Filter lists based on time range (using local date conversion)
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const d = o.createdAt.substring(0, 10);
+      const d = toLocalDateStr(o.createdAt);
       if (timeFilter === 'day') return d === todayStr;
       if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
       if (timeFilter === 'month') return d >= monthRange.start && d <= monthRange.end;
@@ -168,8 +180,7 @@ export default function DashboardView({
 
   const getDesignDateStr = (d: DesignService): string => {
     if (d.createdAt) {
-      // If createdAt is full ISO, extract date part
-      return d.createdAt.length >= 10 ? d.createdAt.substring(0, 10) : d.createdAt;
+      return toLocalDateStr(d.createdAt);
     }
     return d.deadline || '';
   };
@@ -207,7 +218,7 @@ export default function DashboardView({
 
   const filteredCustomers = useMemo(() => {
     return customers.filter(c => {
-      const d = c.createdAt.substring(0, 10);
+      const d = toLocalDateStr(c.createdAt);
       if (timeFilter === 'day') return d === todayStr;
       if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
       if (timeFilter === 'month') return d >= monthRange.start && d <= monthRange.end;
@@ -683,7 +694,7 @@ export default function DashboardView({
 
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
-          const oDateStr = o.createdAt.substring(0, 10);
+          const oDateStr = toLocalDateStr(o.createdAt);
           const bin = bins.find(b => b.dateStr === oDateStr);
           if (bin) {
             bin['Doanh thu'] += o.price;
@@ -692,7 +703,7 @@ export default function DashboardView({
       });
 
       filteredDesigns.forEach(d => {
-        const dateStr = (d.createdAt || d.deadline).substring(0, 10);
+        const dateStr = toLocalDateStr(d.createdAt || d.deadline);
         const bin = bins.find(b => b.dateStr === dateStr);
         if (bin) {
           bin['Doanh thu'] += d.amount || 0;
@@ -733,7 +744,7 @@ export default function DashboardView({
 
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
-          const ym = o.createdAt.substring(0, 7);
+          const ym = toLocalDateStr(o.createdAt).substring(0, 7);
           const bin = bins.find(b => b.yearMonth === ym);
           if (bin) {
             bin['Doanh thu'] += o.price;
@@ -743,7 +754,7 @@ export default function DashboardView({
 
       filteredDesigns.forEach(d => {
         const dateStr = d.createdAt || d.deadline;
-        const ym = dateStr.substring(0, 7);
+        const ym = toLocalDateStr(dateStr).substring(0, 7);
         const bin = bins.find(b => b.yearMonth === ym);
         if (bin) {
           bin['Doanh thu'] += d.amount || 0;
