@@ -52,6 +52,16 @@ import GoalsViewComponent from './components/GoalsViewComponent';
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
 
+const cleanLocationField = (val: any): string => {
+  if (val === null || val === undefined) return '';
+  const str = String(val).trim();
+  const lower = str.toLowerCase();
+  if (lower === '' || lower === 'undefined' || lower === 'null' || lower === 'chưa chọn' || lower === 'trống' || lower === '-') {
+    return '';
+  }
+  return str;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -90,6 +100,8 @@ export default function App() {
   const sanitizeCustomers = (custs: Customer[]): Customer[] => {
     return custs.map(c => ({
       ...c,
+      province: cleanLocationField(c.province),
+      ward: cleanLocationField(c.ward),
       coursesPurchased: c.coursesPurchased || [],
       lmsProgress: c.lmsProgress || {},
       lmsGrades: c.lmsGrades || {},
@@ -663,8 +675,8 @@ export default function App() {
             name: c.name,
             email: c.email || '',
             phone: c.phone || '',
-            province: c.province || 'Chưa chọn',
-            ward: c.ward || '',
+            province: cleanLocationField(c.province),
+            ward: cleanLocationField(c.ward),
             tags: ['Sheet Import'],
             notes: `Tự động nhập từ Google Sheet Đăng ký học viên vào ${new Date().toLocaleString('vi-VN')}`,
             createdAt: new Date().toISOString(),
