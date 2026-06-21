@@ -50,7 +50,7 @@ import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
-const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9T4UH_OKvVwO2prLEwC-6Uf1_nCwFKG2dtdHmw6mVDQTqHG4i5vpjlNddNY9FAJiq/exec';
+const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
