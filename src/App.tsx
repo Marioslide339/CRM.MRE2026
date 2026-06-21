@@ -62,6 +62,45 @@ const cleanLocationField = (val: any): string => {
   return str;
 };
 
+const getValueByPossibleKeys = (obj: any, possibleKeys: string[], defaultValue: any = ''): any => {
+  if (!obj) return defaultValue;
+  
+  for (const pk of possibleKeys) {
+    if (obj[pk] !== undefined && obj[pk] !== null) {
+      return obj[pk];
+    }
+  }
+
+  const keys = Object.keys(obj);
+  const normalize = (str: string) => 
+    str.toLowerCase()
+       .trim()
+       .replace(/\s+/g, '')
+       .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, "a")
+       .replace(/[èéẹẻẽêềếệểễ]/g, "e")
+       .replace(/[ìíịỉĩ]/g, "i")
+       .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, "o")
+       .replace(/[ùúụủũưừứựửữ]/g, "u")
+       .replace(/[ỳýỵỷỹ]/g, "y")
+       .replace(/đ/g, "d")
+       .replace(/[^a-z0-9]/g, "");
+
+  const normalizedPossible = possibleKeys.map(normalize);
+
+  for (const key of keys) {
+    const normKey = normalize(key);
+    for (const np of normalizedPossible) {
+      if (normKey.includes(np) || np.includes(normKey)) {
+        if (obj[key] !== undefined && obj[key] !== null) {
+          return obj[key];
+        }
+      }
+    }
+  }
+
+  return defaultValue;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -98,21 +137,36 @@ export default function App() {
   };
 
   const sanitizeCustomers = (custs: Customer[]): Customer[] => {
-    return custs.map(c => ({
-      ...c,
-      province: cleanLocationField(c.province),
-      ward: cleanLocationField(c.ward),
-      coursesPurchased: c.coursesPurchased || [],
-      lmsProgress: c.lmsProgress || {},
-      lmsGrades: c.lmsGrades || {},
-      lmsCertificateEarned: c.lmsCertificateEarned || {},
-      tags: c.tags || [],
-      aiAnalysis: c.aiAnalysis || {
-        segment: 'Tiềm năng',
-        summary: 'Thành viên mới tạo trên hệ thống CRM.',
-        lastEvaluation: new Date().toISOString()
-      }
-    }));
+    return custs.map(c => {
+      const name = getValueByPossibleKeys(c, ['name', 'hovaten', 'hoten', 'ten', 'khachhang', 'studentName'], '');
+      const email = getValueByPossibleKeys(c, ['email', 'mail'], '');
+      const phone = getValueByPossibleKeys(c, ['phone', 'sdt', 'zalo', 'dienthoai', 'sozalo'], '');
+      const province = getValueByPossibleKeys(c, ['province', 'tinh', 'thanhpho', 'city'], '');
+      const ward = getValueByPossibleKeys(c, ['ward', 'xa', 'phuong', 'commune', 'district'], '');
+      const notes = getValueByPossibleKeys(c, ['notes', 'ghichu'], '');
+      const createdAt = getValueByPossibleKeys(c, ['createdAt', 'ngaytao', 'thoigiantao'], new Date().toISOString());
+
+      return {
+        id: c.id,
+        name: name || c.name || '',
+        email: email || c.email || '',
+        phone: phone || c.phone || '',
+        province: cleanLocationField(province || c.province),
+        ward: cleanLocationField(ward || c.ward),
+        notes: notes || c.notes || '',
+        createdAt: createdAt || c.createdAt || new Date().toISOString(),
+        coursesPurchased: c.coursesPurchased || [],
+        lmsProgress: c.lmsProgress || {},
+        lmsGrades: c.lmsGrades || {},
+        lmsCertificateEarned: c.lmsCertificateEarned || {},
+        tags: c.tags || [],
+        aiAnalysis: c.aiAnalysis || {
+          segment: 'Tiềm năng',
+          summary: 'Thành viên mới tạo trên hệ thống CRM.',
+          lastEvaluation: new Date().toISOString()
+        }
+      };
+    });
   };
 
   // Load from local storage on component mount, then auto-sync from Google Sheets
@@ -651,14 +705,14 @@ export default function App() {
       
       const pendingCustomers = resData.customers || [];
       if (pendingCustomers.length === 0) {
-        showToast('info', 'Không có khách hàng đăng ký mới nào cần xác nhận.');
+        showToast('info', 'Không có đăng ký mới nào cần quét.');
         return;
       }
-      
-      // Step 2: Auto-create customers in APP CRM
+
       let updatedCustomers = [...customers];
       const rowNumsToConfirm: number[] = [];
       let newCount = 0;
+      let updateCount = 0;
       
       pendingCustomers.forEach((c: any) => {
         // Check if customer already exists by phone or email
@@ -672,7 +726,7 @@ export default function App() {
           const nextIdStr = `KH${String(nextIdNum).padStart(4, '0')}`;
           const newCust: Customer = {
             id: nextIdStr,
-            name: c.name,
+            name: c.name || '',
             email: c.email || '',
             phone: c.phone || '',
             province: cleanLocationField(c.province),
@@ -692,11 +746,31 @@ export default function App() {
           };
           updatedCustomers.push(newCust);
           newCount++;
+        } else {
+          // If customer already exists, let's update their province/ward fields if they have new content
+          let changed = false;
+          const cleanProv = cleanLocationField(c.province);
+          const cleanWrd = cleanLocationField(c.ward);
+          
+          if (cleanProv && dup.province !== cleanProv) {
+            dup.province = cleanProv;
+            changed = true;
+          }
+          if (cleanWrd && dup.ward !== cleanWrd) {
+            dup.ward = cleanWrd;
+            changed = true;
+          }
+          if (changed) {
+            updatedCustomers = updatedCustomers.map(existing => 
+              existing.id === dup.id ? { ...existing, province: dup.province, ward: dup.ward } : existing
+            );
+            updateCount++;
+          }
         }
         rowNumsToConfirm.push(c.rowNum);
       });
       
-      if (newCount === 0) {
+      if (newCount === 0 && updateCount === 0) {
         // All registrations are already in CRM, but we should still confirm them on registration sheet to clean up
         const confirmRes = await fetch(REGISTRATION_SHEET_URL, {
           method: 'POST',
@@ -730,11 +804,11 @@ export default function App() {
       
       // Step 4: Save to local storage and state
       setCustomers(updatedCustomers);
-      localStorage.setItem('mre_customers', JSON.stringify(updatedCustomers));
+      saveToStorage('mre_customers', updatedCustomers);
       
-      const message = `[Quét Web] Quét và nhập thành công ${newCount} khách hàng mới đăng ký từ web`;
+      const message = `[Quét Web] Quét và nhập thành công: ${newCount} khách mới, cập nhật thông tin tỉnh/thành cho ${updateCount} khách cũ.`;
       const updatedLogs = addActivityLog(message, 'success', 'QUET_WEB');
-
+ 
       // Step 5: Sync to CRM Database (Script 2)
       await syncToGoogleSheets(undefined, {
         customers: updatedCustomers,
@@ -748,7 +822,7 @@ export default function App() {
         goals
       });
       
-      showToast('success', `Đã quét và thêm thành công ${newCount} khách hàng mới vào CRM!`);
+      showToast('success', `Đã quét và thêm thành công ${newCount} khách hàng mới, cập nhật vị trí cho ${updateCount} khách hàng!`);
     } catch (err: any) {
       console.error('Scan registration error:', err);
       showToast('error', `Lỗi khi quét khách hàng mới: ${err.message || err}`);
@@ -758,6 +832,8 @@ export default function App() {
   };
 
   // State modifiers and sync
+  
+
   const handleAddCustomer = (newCustomer: Partial<Customer>) => {
     const id = `KH${String(customers.length + 1).padStart(4, '0')}`;
     const fullCustomer: Customer = {
