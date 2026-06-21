@@ -104,6 +104,31 @@ export default function OrdersView({
   const [paymentRecipient, setPaymentRecipient] = useState<'Tiền mặt' | 'TK công ty'>('TK công ty');
   const [orderType, setOrderType] = useState<'Đăng ký mới' | 'Gửi lại'>('Đăng ký mới');
 
+  // Customer search states inside Add Modal
+  const [custSearch, setCustSearch] = useState('');
+  const [isCustDropdownOpen, setIsCustDropdownOpen] = useState(false);
+
+  // Sort and filter customers for selection modal (newest first, limit 5 if no search term)
+  const sortedCustomersForSelect = useMemo(() => {
+    return [...customers].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (dateB !== dateA) return dateB - dateA;
+      return b.id.localeCompare(a.id);
+    });
+  }, [customers]);
+
+  const filteredSearchCustomers = useMemo(() => {
+    if (!custSearch.trim()) {
+      return sortedCustomersForSelect.slice(0, 5);
+    }
+    const term = custSearch.toLowerCase().trim();
+    return sortedCustomersForSelect.filter(c =>
+      c.id.toLowerCase().includes(term) ||
+      c.name.toLowerCase().includes(term)
+    );
+  }, [sortedCustomersForSelect, custSearch]);
+
   // Edit order status
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -179,6 +204,7 @@ export default function OrdersView({
     setPaymentStatus('Chưa thanh toán');
     setPaymentRecipient('TK công ty');
     setOrderType('Đăng ký mới');
+    setCustSearch('');
   };
 
   const handleMarkAsPaid = (order: Order) => {
@@ -387,7 +413,11 @@ export default function OrdersView({
             Xuất CSV
           </button>
           <button
-            onClick={() => setIsAddOpen(true)}
+            onClick={() => {
+              setIsAddOpen(true);
+              setSelectedCustomerId('');
+              setCustSearch('');
+            }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
             id="btn_create_order"
           >
@@ -676,24 +706,58 @@ export default function OrdersView({
           <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="font-semibold text-slate-900 text-sm">Tạo Đơn Hàng Mới (Don_Hang)</h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+              <button onClick={() => { setIsAddOpen(false); setSelectedCustomerId(''); setCustSearch(''); }} className="text-slate-400 hover:text-slate-600 transition">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleCreateOrder} className="p-5 space-y-4 text-xs font-sans overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Khách Hàng đăng ký*</label>
-                <select
-                  required
-                  value={selectedCustomerId}
-                  onChange={e => setSelectedCustomerId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.id} - {c.name} ({c.email})</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Tìm theo mã KH hoặc tên..."
+                    value={custSearch}
+                    onChange={e => {
+                      setCustSearch(e.target.value);
+                      setIsCustDropdownOpen(true);
+                      if (!e.target.value) {
+                        setSelectedCustomerId('');
+                      }
+                    }}
+                    onFocus={() => setIsCustDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsCustDropdownOpen(false), 250)}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
+                  />
+                  <input type="hidden" required value={selectedCustomerId} />
+                  
+                  {isCustDropdownOpen && (
+                    <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100">
+                      {filteredSearchCustomers.length > 0 ? (
+                        filteredSearchCustomers.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCustomerId(c.id);
+                              setCustSearch(`${c.id} - ${c.name}`);
+                              setIsCustDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 transition flex flex-col ${
+                              selectedCustomerId === c.id ? 'bg-slate-50 font-semibold' : ''
+                            }`}
+                          >
+                            <span className="text-slate-800">{c.id} - {c.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono font-medium">{c.email || c.phone || 'Không có email/sđt'}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-slate-400 text-[10px]">Không tìm thấy khách hàng nào</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -803,7 +867,7 @@ export default function OrdersView({
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddOpen(false)}
+                  onClick={() => { setIsAddOpen(false); setSelectedCustomerId(''); setCustSearch(''); }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition"
                 >
                   Hủy
