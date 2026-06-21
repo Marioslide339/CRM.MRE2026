@@ -49,7 +49,7 @@ import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9T4UH_OKvVwO2prLEwC-6Uf1_nCwFKG2dtdHmw6mVDQTqHG4i5vpjlNddNY9FAJiq/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -225,6 +225,11 @@ export default function App() {
       const result = await response.json();
       if (!result.success) {
         throw new Error(result.error || 'Failed to sync data');
+      }
+      if (result.updatedCustomers) {
+        const sanitized = sanitizeCustomers(result.updatedCustomers);
+        setCustomers(sanitized);
+        saveToStorage('mre_customers', sanitized);
       }
       showToast('success', 'Đồng bộ dữ liệu lên Google Sheets thành công!');
     } catch (err) {
