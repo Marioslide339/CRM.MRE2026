@@ -56,7 +56,7 @@ const cleanLocationField = (val: any): string => {
   if (val === null || val === undefined) return '';
   const str = String(val).trim();
   const lower = str.toLowerCase();
-  if (lower === '' || lower === 'undefined' || lower === 'null' || lower === 'chưa chọn' || lower === 'trống' || lower === '-') {
+  if (lower === '' || lower === 'undefined' || lower === 'null') {
     return '';
   }
   return str;
