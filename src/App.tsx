@@ -49,7 +49,7 @@ import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9T4UH_OKvVwO2prLEwC-6Uf1_nCwFKG2dtdHmw6mVDQTqHG4i5vpjlNddNY9FAJiq/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
