@@ -499,7 +499,7 @@ export default function CustomersView({
                         </div>
                       </td>
                       <td className="py-4 px-4 font-medium text-slate-700">
-                        {c.ward ? `${c.ward}, ${c.province}` : c.province}
+                        {c.ward && c.province ? `${c.ward}, ${c.province}` : (c.ward || c.province || '—')}
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-1">
