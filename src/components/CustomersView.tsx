@@ -134,6 +134,10 @@ export default function CustomersView({
       const matchProvince = selectedProvince ? c.province === selectedProvince : true;
       const matchTag = selectedTag ? (c.tags || []).includes(selectedTag) : true;
       return matchSearch && matchProvince && matchTag;
+    }).sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
     });
   }, [customers, searchTerm, selectedProvince, selectedTag]);
 
@@ -363,7 +367,7 @@ export default function CustomersView({
   return (
     <div className="space-y-6" id="customers_view_container">
       {/* Title block */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-secondary font-sans flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
@@ -406,9 +410,9 @@ export default function CustomersView({
       {/* Filter and Table Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main List Table */}
-        <div className={`xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between ${selectedCustomer ? 'hidden xl:flex' : 'flex'}`}>
+        <div className={`xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col ${selectedCustomer ? 'hidden xl:flex' : 'flex'} max-h-[calc(100vh-12rem)]`}>
           {/* Filtering row */}
-          <div className="p-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3 sticky top-0 z-10 bg-white">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
               <input
@@ -446,7 +450,7 @@ export default function CustomersView({
           </div>
 
           {/* Table display (desktop only) */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1">
             <table className="w-full text-left text-xs text-slate-600 font-sans">
               <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
                 <tr>
@@ -584,7 +588,7 @@ export default function CustomersView({
         </div>
 
         {/* Customer Detail Side-Panel / Workspace */}
-        <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between ${!selectedCustomer ? 'hidden xl:flex' : 'flex'}`}>
+        <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col overflow-y-auto ${!selectedCustomer ? 'hidden xl:flex' : 'flex'} max-h-[calc(100vh-12rem)]`}>
           {selectedCustomer ? (
             <div className="space-y-6 animate-fade-in" id="customer_detail_sidebar">
               {/* Header profile */}
