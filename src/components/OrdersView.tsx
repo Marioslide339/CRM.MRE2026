@@ -311,7 +311,14 @@ export default function OrdersView({
         o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = statusFilter ? o.paymentStatus === statusFilter : true;
+      let matchStatus = true;
+      if (statusFilter === 'Chưa thanh toán') {
+        matchStatus = o.paymentStatus === 'Chưa thanh toán';
+      } else if (statusFilter === 'TK công ty') {
+        matchStatus = o.paymentStatus === 'Đã thanh toán' && o.paymentRecipient === 'TK công ty';
+      } else if (statusFilter === 'Tiền mặt') {
+        matchStatus = o.paymentStatus === 'Đã thanh toán' && o.paymentRecipient === 'Tiền mặt';
+      }
       
       let matchTime = true;
       if (timeFilter !== 'all') {
@@ -413,7 +420,8 @@ export default function OrdersView({
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans"
             >
               <option value="">Tất cả thanh toán ({orders.length})</option>
-              <option value="Đã thanh toán">Đã thanh toán</option>
+              <option value="TK công ty">Thụ hưởng: TK công ty</option>
+              <option value="Tiền mặt">Thụ hưởng: Tiền mặt</option>
               <option value="Chưa thanh toán">Chưa thanh toán</option>
             </select>
 
