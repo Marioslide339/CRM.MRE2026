@@ -259,7 +259,7 @@ export default function DesignsView({
   return (
     <div className="space-y-6 animate-fade-in" id="designs_view_container">
       {/* Title */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-secondary font-sans flex items-center gap-2">
             <PenTool className="w-5 h-5 text-primary" />
@@ -280,9 +280,9 @@ export default function DesignsView({
       </div>
 
       {/* Grid of designs */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[calc(100vh-12rem)]">
         {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col gap-3">
+        <div className="p-4 border-b border-slate-100 flex flex-col gap-3 sticky top-0 z-10 bg-white">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             {/* Search Input */}
             <div className="col-span-1 sm:col-span-2 lg:col-span-1">
@@ -349,7 +349,7 @@ export default function DesignsView({
           </div>
         </div>
         {/* Desktop version (Table) */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1">
           <table className="w-full text-left text-xs text-slate-600 font-sans">
             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100 font-semibold">
               <tr>
