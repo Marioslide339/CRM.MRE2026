@@ -127,7 +127,36 @@ export default function App() {
       setLogs(storedLogs ? JSON.parse(storedLogs) : []);
       setExpenses(storedExpenses ? JSON.parse(storedExpenses) : []);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
-      setGoals(storedGoals ? JSON.parse(storedGoals) : INITIAL_GOALS);
+      if (storedGoals) {
+        try {
+          const parsed = JSON.parse(storedGoals) as YearlyGoal[];
+          const aligned = parsed.map(g => {
+            const initialGoalForYear = INITIAL_GOALS.find(ig => ig.year === g.year);
+            if (!initialGoalForYear) return g;
+            return {
+              ...g,
+              months: g.months.map(m => {
+                const initialMonth = initialGoalForYear.months.find(im => im.month === m.month);
+                if (!initialMonth) return m;
+                return {
+                  ...m,
+                  revenueTarget: initialMonth.revenueTarget,
+                  revenueCourseTarget: initialMonth.revenueCourseTarget,
+                  revenueDesignTarget: initialMonth.revenueDesignTarget,
+                  expenseAdsTarget: initialMonth.expenseAdsTarget,
+                  expenseStaffTarget: initialMonth.expenseStaffTarget,
+                  profitTarget: initialMonth.profitTarget
+                };
+              })
+            };
+          });
+          setGoals(aligned);
+        } catch (e) {
+          setGoals(INITIAL_GOALS);
+        }
+      } else {
+        setGoals(INITIAL_GOALS);
+      }
     } catch (e) {
       console.error('Failed to parse cached database:', e);
     }
@@ -380,11 +409,6 @@ export default function App() {
     currentDesigns: DesignService[],
     currentExpenses: Expense[]
   ): YearlyGoal[] => {
-    const todayStr = (() => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    })();
-
     const toLocalDateStr = (dateStr: string): string => {
       if (!dateStr) return '';
       if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
@@ -394,28 +418,57 @@ export default function App() {
     };
 
     return currentGoals.map(g => {
+      const initialGoalForYear = INITIAL_GOALS.find(ig => ig.year === g.year);
+
       const updatedMonths = g.months.map(m => {
-        // Filter orders: paid, matching month/year, and created BEFORE today (up to yesterday)
+        const initialMonth = initialGoalForYear?.months.find(im => im.month === m.month);
+
+        // Always align target values with INITIAL_GOALS to correct any wrong/stale targets from DB
+        const revenueTarget = initialMonth?.revenueTarget ?? m.revenueTarget;
+        const revenueCourseTarget = initialMonth?.revenueCourseTarget ?? m.revenueCourseTarget;
+        const revenueDesignTarget = initialMonth?.revenueDesignTarget ?? m.revenueDesignTarget;
+        const expenseAdsTarget = initialMonth?.expenseAdsTarget ?? m.expenseAdsTarget;
+        const expenseStaffTarget = initialMonth?.expenseStaffTarget ?? m.expenseStaffTarget;
+        const profitTarget = initialMonth?.profitTarget ?? m.profitTarget;
+
+        // For historical months T1-T5 of year 2026, keep the exact static actuals from INITIAL_GOALS
+        if (g.year === 2026 && m.month < 6) {
+          return {
+            ...m,
+            revenueTarget,
+            revenueCourseTarget,
+            revenueDesignTarget,
+            expenseAdsTarget,
+            expenseStaffTarget,
+            profitTarget,
+            actualRevenue: initialMonth?.actualRevenue ?? m.actualRevenue,
+            actualRevenueCourse: initialMonth?.actualRevenueCourse ?? m.actualRevenueCourse,
+            actualRevenueDesign: initialMonth?.actualRevenueDesign ?? m.actualRevenueDesign,
+            actualExpenseAds: initialMonth?.actualExpenseAds ?? m.actualExpenseAds,
+            actualExpenseOther: initialMonth?.actualExpenseOther ?? m.actualExpenseOther,
+            actualProfit: initialMonth?.actualProfit ?? m.actualProfit
+          };
+        }
+
+        // For month 6 and later, calculate dynamically from live data up to current time (no yesterday limit)
         const monthOrders = currentOrders.filter(o => {
           if (o.paymentStatus !== 'Đã thanh toán') return false;
           const d = toLocalDateStr(o.createdAt);
-          if (!d || d >= todayStr) return false; // Strictly before today
+          if (!d) return false;
           const parts = d.split('-');
           return parseInt(parts[0], 10) === g.year && parseInt(parts[1], 10) === m.month;
         });
 
-        // Filter designs: matching month/year, created BEFORE today
         const monthDesigns = currentDesigns.filter(d => {
           const dateStr = toLocalDateStr(d.createdAt || d.deadline || '');
-          if (!dateStr || dateStr >= todayStr) return false;
+          if (!dateStr) return false;
           const parts = dateStr.split('-');
           return parseInt(parts[0], 10) === g.year && parseInt(parts[1], 10) === m.month;
         });
 
-        // Filter expenses: matching month/year, date BEFORE today
         const monthExpenses = currentExpenses.filter(e => {
           const d = e.date; // YYYY-MM-DD
-          if (!d || d >= todayStr) return false;
+          if (!d) return false;
           const parts = d.split('-');
           return parseInt(parts[0], 10) === g.year && parseInt(parts[1], 10) === m.month;
         });
@@ -427,16 +480,20 @@ export default function App() {
         const dynamicTotalExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
         const dynamicProfitActual = dynamicRevenueActual - dynamicTotalExpense;
 
-        const hasDynamicData = dynamicRevenueActual > 0 || dynamicTotalExpense > 0;
-
         return {
           ...m,
-          actualRevenue: hasDynamicData ? dynamicRevenueActual : m.actualRevenue,
-          actualRevenueCourse: hasDynamicData ? dynamicCourseActual : m.actualRevenueCourse,
-          actualRevenueDesign: hasDynamicData ? dynamicDesignActual : m.actualRevenueDesign,
-          actualExpenseAds: hasDynamicData ? dynamicExpenseAds : m.actualExpenseAds,
-          actualExpenseOther: hasDynamicData ? (dynamicTotalExpense - dynamicExpenseAds) : m.actualExpenseOther,
-          actualProfit: hasDynamicData ? dynamicProfitActual : m.actualProfit
+          revenueTarget,
+          revenueCourseTarget,
+          revenueDesignTarget,
+          expenseAdsTarget,
+          expenseStaffTarget,
+          profitTarget,
+          actualRevenue: dynamicRevenueActual,
+          actualRevenueCourse: dynamicCourseActual,
+          actualRevenueDesign: dynamicDesignActual,
+          actualExpenseAds: dynamicExpenseAds,
+          actualExpenseOther: dynamicTotalExpense - dynamicExpenseAds,
+          actualProfit: dynamicProfitActual
         };
       });
 
@@ -1156,11 +1213,12 @@ export default function App() {
 
   // Goals Handlers
   const handleUpdateGoals = (updatedGoals: YearlyGoal[]) => {
-    setGoals(updatedGoals);
-    saveToStorage('mre_goals', updatedGoals);
+    const finalGoals = computeGoalsWithActuals(updatedGoals, orders, designs, expenses);
+    setGoals(finalGoals);
+    saveToStorage('mre_goals', finalGoals);
     showToast('success', 'Đã cập nhật mục tiêu thành công.');
     const updatedLogs = addActivityLog(`[Mục tiêu] Cập nhật số liệu mục tiêu kinh doanh năm`, 'info', 'MUC_TIEU');
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: updatedGoals });
+    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
   };
 
   const handleDeleteExpense = (id: string) => {
