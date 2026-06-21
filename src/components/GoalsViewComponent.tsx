@@ -168,11 +168,17 @@ export default function GoalsViewComponent({
   const months = useMemo(() => {
     if (!currentGoal) return [];
 
+    const todayStr = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })();
+
     return currentGoal.months.map(m => {
       // Find orders for this month & year
       const monthOrders = orders.filter(o => {
         if (o.paymentStatus !== 'Đã thanh toán') return false;
         const d = toLocalDateStr(o.createdAt);
+        if (!d || d >= todayStr) return false; // Exclude today's data (yesterday and earlier only)
         const parts = d.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -185,7 +191,7 @@ export default function GoalsViewComponent({
       // Find designs for this month & year
       const monthDesigns = designs.filter(d => {
         const dateStr = toLocalDateStr(d.createdAt || d.deadline || '');
-        if (!dateStr) return false;
+        if (!dateStr || dateStr >= todayStr) return false; // Exclude today's data
         const parts = dateStr.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -198,7 +204,7 @@ export default function GoalsViewComponent({
       // Find expenses for this month & year
       const monthExpenses = expenses.filter(e => {
         const d = e.date;
-        if (!d) return false;
+        if (!d || d >= todayStr) return false; // Exclude today's data
         const parts = d.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
