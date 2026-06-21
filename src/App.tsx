@@ -172,12 +172,57 @@ export default function App() {
           setExpenses(cloudExpenses);
           localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
 
-          const cloudGoals = data.goals || INITIAL_GOALS;
+          let cloudGoals = data.goals;
+          let shouldForceSyncGoals = false;
+          if (!cloudGoals || !Array.isArray(cloudGoals) || cloudGoals.length === 0) {
+            cloudGoals = INITIAL_GOALS;
+            shouldForceSyncGoals = true;
+          }
           setGoals(cloudGoals);
           localStorage.setItem('mre_goals', JSON.stringify(cloudGoals));
 
           setHasLoadedFromCloud(true);
           console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
+
+          if (shouldForceSyncGoals) {
+            console.log('Forcing sync of initial goals back to Google Sheet database...');
+            // Wait slightly for state flag to register, then sync
+            setTimeout(() => {
+              const payload = {
+                customers: cloudCustomers,
+                orders: cloudOrders,
+                courses: cloudCourses,
+                designs: cloudDesigns,
+                collaborators: cloudCollaborators,
+                campaigns: cloudCampaigns,
+                logs: cloudLogs,
+                expenses: cloudExpenses,
+                goals: INITIAL_GOALS
+              };
+              
+              // We call the POST sync API directly to avoid using the state which hasn't updated yet
+              fetch(GOOGLE_SHEET_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                  action: 'sync',
+                  data: payload
+                })
+              })
+              .then(res => res.json())
+              .then(resData => {
+                if (resData && resData.success) {
+                  console.log('Successfully restored and synchronized initial goals to Google Sheets database!');
+                  showToast('success', 'Đã tự động khôi phục và đồng bộ số liệu mục tiêu lên Database!');
+                } else {
+                  console.warn('Failed to auto-sync restored goals:', resData.error);
+                }
+              })
+              .catch(syncErr => {
+                console.error('Error auto-syncing restored goals:', syncErr);
+              });
+            }, 1000);
+          }
         }
       } catch (err) {
         console.log('Auto-sync skipped (offline or error):', err);
