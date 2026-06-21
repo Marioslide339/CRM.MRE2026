@@ -13,6 +13,7 @@ import {
   MapPin,
   Tag,
   BookOpen,
+  RefreshCw,
   Award,
   CircleCheck,
   Sparkles,
@@ -34,6 +35,8 @@ interface CustomersViewProps {
   onAddCustomer: (newCustomer: Partial<Customer>) => void;
   onUpdateCustomer: (id: string, updated: Partial<Customer>) => void;
   onDeleteCustomer?: (id: string) => void;
+  isSyncing?: boolean;
+  onScanCourseRegistration?: () => Promise<void>;
 }
 
 export default function CustomersView({
@@ -43,7 +46,9 @@ export default function CustomersView({
   designs,
   onAddCustomer,
   onUpdateCustomer,
-  onDeleteCustomer
+  onDeleteCustomer,
+  isSyncing = false,
+  onScanCourseRegistration
 }: CustomersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -369,6 +374,17 @@ export default function CustomersView({
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {onScanCourseRegistration && (
+            <button
+              onClick={onScanCourseRegistration}
+              disabled={isSyncing}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold cursor-pointer shadow transition"
+              id="btn_scan_course_registration"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              Quét Web Khóa Học
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition"
