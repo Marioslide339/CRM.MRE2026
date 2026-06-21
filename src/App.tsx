@@ -1273,30 +1273,48 @@ export default function App() {
 
   // Expense Handlers
   const handleAddExpense = (newExpense: Partial<Expense>) => {
-    // Use timestamp-based unique ID to prevent duplicates from React StrictMode double-invocation
-    const id = `CP${Date.now().toString(36).toUpperCase()}`;
-    const fullExpense: Expense = {
-      ...(newExpense as Omit<Expense, 'id'>),
-      id
-    } as Expense;
-    const updated = [fullExpense, ...expenses];
-    setExpenses(updated);
-    saveToStorage('mre_expenses', updated);
-    showToast('success', 'Đã ghi nhận chi phí vận hành mới.');
-    const updatedLogs = addActivityLog(`[Chi phí] Ghi nhận chi phí vận hành mới: ${fullExpense.description} (${id})`, 'success', id);
-    const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+    setExpenses(prevExpenses => {
+      // Find the max numeric suffix for CPxxxxx
+      let maxNum = 0;
+      prevExpenses.forEach(e => {
+        if (e.id && e.id.startsWith('CP')) {
+          const numPart = e.id.substring(2);
+          if (/^\d+$/.test(numPart)) {
+            const num = parseInt(numPart, 10);
+            if (num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
+      });
+      const nextNum = maxNum + 1;
+      const id = `CP${String(nextNum).padStart(5, '0')}`;
+
+      const fullExpense: Expense = {
+        ...(newExpense as Omit<Expense, 'id'>),
+        id
+      } as Expense;
+      const updated = [fullExpense, ...prevExpenses];
+      saveToStorage('mre_expenses', updated);
+      showToast('success', 'Đã ghi nhận chi phí vận hành mới.');
+      const updatedLogs = addActivityLog(`[Chi phí] Ghi nhận chi phí vận hành mới: ${fullExpense.description} (${id})`, 'success', id);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
+      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      return updated;
+    });
   };
 
   const handleUpdateExpense = (id: string, updatedFields: Partial<Expense>) => {
-    const prevExpense = expenses.find(e => e.id === id);
-    const updated = expenses.map(e => (e.id === id ? { ...e, ...updatedFields } : e));
-    setExpenses(updated);
-    saveToStorage('mre_expenses', updated);
-    showToast('success', 'Đã cập nhật chi phí vận hành.');
-    const updatedLogs = addActivityLog(`[Chi phí] Cập nhật chi phí: ${prevExpense?.description || ''} (${id})`, 'info', id);
-    const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+    setExpenses(prevExpenses => {
+      const prevExpense = prevExpenses.find(e => e.id === id);
+      const updated = prevExpenses.map(e => (e.id === id ? { ...e, ...updatedFields } : e));
+      saveToStorage('mre_expenses', updated);
+      showToast('success', 'Đã cập nhật chi phí vận hành.');
+      const updatedLogs = addActivityLog(`[Chi phí] Cập nhật chi phí: ${prevExpense?.description || ''} (${id})`, 'info', id);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
+      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      return updated;
+    });
   };
 
   // Goals Handlers
@@ -1310,14 +1328,16 @@ export default function App() {
   };
 
   const handleDeleteExpense = (id: string) => {
-    const prevExpense = expenses.find(e => e.id === id);
-    const updated = expenses.filter(e => e.id !== id);
-    setExpenses(updated);
-    saveToStorage('mre_expenses', updated);
-    showToast('success', 'Đã xóa chi phí vận hành.');
-    const updatedLogs = addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
-    const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+    setExpenses(prevExpenses => {
+      const prevExpense = prevExpenses.find(e => e.id === id);
+      const updated = prevExpenses.filter(e => e.id !== id);
+      saveToStorage('mre_expenses', updated);
+      showToast('success', 'Đã xóa chi phí vận hành.');
+      const updatedLogs = addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
+      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      return updated;
+    });
   };
 
   // Systems controls
