@@ -61,10 +61,15 @@ export default function ExpensesView({
     setEditingExpense(exp);
     setDate(exp.date);
     setCategory(exp.category);
-    setAmount(exp.amount);
+    // Base amount is total amount minus tax amount, or calculated back if taxAmount is missing
+    const baseAmount = exp.taxAmount !== undefined
+      ? exp.amount - exp.taxAmount
+      : (exp.hasTax && exp.taxRate ? Math.round(exp.amount / (1 + exp.taxRate / 100)) : exp.amount);
+    setAmount(baseAmount);
     setDescription(exp.description);
     setHasTax(exp.hasTax ?? (exp.category === 'Chi phí quảng cáo'));
     setTaxRate(exp.taxRate ?? (exp.category === 'Chi phí quảng cáo' ? 11 : 0));
+    setIsSubmitting(false);
     setIsAddOpen(true);
   };
 
@@ -75,32 +80,39 @@ export default function ExpensesView({
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    const taxAmount = hasTax && taxRate > 0 ? Math.round(amount * taxRate / 100) : 0;
-    const totalAmount = amount + taxAmount;
+    try {
+      const taxAmount = hasTax && taxRate > 0 ? Math.round(amount * taxRate / 100) : 0;
+      const totalAmount = amount + taxAmount;
 
-    if (editingExpense) {
-      onUpdateExpense(editingExpense.id, {
-        date,
-        category,
-        amount: totalAmount,
-        description,
-        hasTax,
-        taxRate: hasTax ? taxRate : 0,
-        taxAmount
-      });
-    } else {
-      onAddExpense({
-        date,
-        category,
-        amount: totalAmount,
-        description,
-        hasTax,
-        taxRate: hasTax ? taxRate : 0,
-        taxAmount
-      });
+      if (editingExpense) {
+        onUpdateExpense(editingExpense.id, {
+          date,
+          category,
+          amount: totalAmount,
+          description,
+          hasTax,
+          taxRate: hasTax ? taxRate : 0,
+          taxAmount
+        });
+      } else {
+        onAddExpense({
+          date,
+          category,
+          amount: totalAmount,
+          description,
+          hasTax,
+          taxRate: hasTax ? taxRate : 0,
+          taxAmount
+        });
+      }
+      setIsAddOpen(false);
+      // Reset submitting status after 1 second to prevent immediate double-click submits
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 1000);
+    } catch (err) {
+      setIsSubmitting(false);
     }
-    setIsAddOpen(false);
-    setIsSubmitting(false);
   };
 
   const filteredExpenses = useMemo(() => {
