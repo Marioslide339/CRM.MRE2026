@@ -50,6 +50,7 @@ import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
+const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz9T4UH_OKvVwO2prLEwC-6Uf1_nCwFKG2dtdHmw6mVDQTqHG4i5vpjlNddNY9FAJiq/exec';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -403,6 +404,125 @@ export default function App() {
         saveToStorage('mre_logs', u);
         return u;
       });
+    }
+  };
+
+  const handleScanCourseRegistration = async () => {
+    if (!REGISTRATION_SHEET_URL) {
+      showToast('error', 'Chưa cấu hình URL quét khách hàng đăng ký!');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      // Step 1: Fetch pending customers from registration sheet
+      const response = await fetch(`${REGISTRATION_SHEET_URL}?action=getPending`);
+      const resData = await response.json();
+      if (!resData.success) {
+        throw new Error(resData.error || 'Lỗi không xác định từ Script Đăng ký.');
+      }
+      
+      const pendingCustomers = resData.customers || [];
+      if (pendingCustomers.length === 0) {
+        showToast('info', 'Không có khách hàng đăng ký mới nào cần xác nhận.');
+        return;
+      }
+      
+      // Step 2: Auto-create customers in APP CRM
+      let updatedCustomers = [...customers];
+      const rowNumsToConfirm: number[] = [];
+      let newCount = 0;
+      
+      pendingCustomers.forEach((c: any) => {
+        // Check if customer already exists by phone or email
+        const dup = updatedCustomers.find(existing => 
+          (c.phone && existing.phone === c.phone) || 
+          (c.email && existing.email === c.email)
+        );
+        
+        if (!dup) {
+          const nextIdNum = updatedCustomers.length + 1;
+          const nextIdStr = `KH${String(nextIdNum).padStart(4, '0')}`;
+          const newCust: Customer = {
+            id: nextIdStr,
+            name: c.name,
+            email: c.email || '',
+            phone: c.phone || '',
+            province: c.province || 'Chưa chọn',
+            ward: c.ward || '',
+            tags: ['Sheet Import'],
+            notes: `Tự động nhập từ Google Sheet Đăng ký học viên vào ${new Date().toLocaleString('vi-VN')}`,
+            createdAt: new Date().toISOString(),
+            coursesPurchased: [],
+            lmsProgress: {},
+            lmsGrades: {},
+            lmsCertificateEarned: {},
+            aiAnalysis: {
+              segment: 'Tiềm năng',
+              summary: 'Khách hàng tự động quét từ Web Khóa học.',
+              lastEvaluation: new Date().toISOString()
+            }
+          };
+          updatedCustomers.push(newCust);
+          newCount++;
+        }
+        rowNumsToConfirm.push(c.rowNum);
+      });
+      
+      if (newCount === 0) {
+        // All registrations are already in CRM, but we should still confirm them on registration sheet to clean up
+        const confirmRes = await fetch(REGISTRATION_SHEET_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'confirmRows',
+            rows: rowNumsToConfirm
+          })
+        });
+        const confirmData = await confirmRes.json();
+        if (!confirmData.success) {
+          throw new Error(confirmData.error || 'Không thể chuyển trạng thái Đã xác nhận trên Sheet Đăng ký.');
+        }
+        showToast('info', 'Các học viên đăng ký đã tồn tại trong hệ thống. Đã đánh dấu xác nhận trên Sheet đăng ký.');
+        return;
+      }
+      
+      // Step 3: Call Script 1 to confirm rows as "Đã xác nhận"
+      const confirmRes = await fetch(REGISTRATION_SHEET_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'confirmRows',
+          rows: rowNumsToConfirm
+        })
+      });
+      const confirmData = await confirmRes.json();
+      if (!confirmData.success) {
+        throw new Error(confirmData.error || 'Không thể chuyển trạng thái Đã xác nhận trên Sheet Đăng ký.');
+      }
+      
+      // Step 4: Save to local storage and state
+      setCustomers(updatedCustomers);
+      localStorage.setItem('mre_customers', JSON.stringify(updatedCustomers));
+      
+      // Step 5: Sync to CRM Database (Script 2)
+      await syncToGoogleSheets(undefined, {
+        customers: updatedCustomers,
+        orders,
+        courses,
+        designs,
+        collaborators,
+        campaigns,
+        logs,
+        expenses,
+        goals
+      });
+      
+      showToast('success', `Đã quét và thêm thành công ${newCount} khách hàng mới vào CRM!`);
+    } catch (err: any) {
+      console.error('Scan registration error:', err);
+      showToast('error', `Lỗi khi quét khách hàng mới: ${err.message || err}`);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -1121,6 +1241,8 @@ export default function App() {
             onAddCustomer={handleAddCustomer}
             onUpdateCustomer={handleUpdateCustomer}
             onDeleteCustomer={handleDeleteCustomer}
+            isSyncing={isSyncing}
+            onScanCourseRegistration={handleScanCourseRegistration}
           />
         )}
 
