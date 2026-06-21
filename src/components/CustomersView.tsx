@@ -867,20 +867,13 @@ export default function CustomersView({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành</label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="Nhập tỉnh / thành phố"
                     value={newCustProvince}
                     onChange={e => setNewCustProvince(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
-                  >
-                    <option value="">Chưa chọn</option>
-                    <option value="Hà Nội">Hà Nội</option>
-                    <option value="Hồ Chí Minh">Hồ Chí Minh</option>
-                    <option value="Đà Nẵng">Đà Nẵng</option>
-                    <option value="Cần Thơ">Cần Thơ</option>
-                    <option value="Hải Phòng">Hải Phòng</option>
-                    <option value="Đồng Nai">Đồng Nai</option>
-                    <option value="Quảng Ninh">Quảng Ninh</option>
-                  </select>
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Xã / Phường</label>
@@ -1002,20 +995,13 @@ export default function CustomersView({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực Tỉnh thành</label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="Nhập tỉnh / thành phố"
                     value={editCustProvince}
                     onChange={e => setEditCustProvince(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
-                  >
-                    <option value="">Chưa chọn</option>
-                    <option value="Hà Nội">Hà Nội</option>
-                    <option value="Hồ Chí Minh">Hồ Chí Minh</option>
-                    <option value="Đà Nẵng">Đà Nẵng</option>
-                    <option value="Cần Thơ">Cần Thơ</option>
-                    <option value="Hải Phòng">Hải Phòng</option>
-                    <option value="Đồng Nai">Đồng Nai</option>
-                    <option value="Quảng Ninh">Quảng Ninh</option>
-                  </select>
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 transition text-base md:text-xs"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Xã / Phường</label>
