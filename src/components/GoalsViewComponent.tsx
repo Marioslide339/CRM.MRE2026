@@ -168,17 +168,18 @@ export default function GoalsViewComponent({
   const months = useMemo(() => {
     if (!currentGoal) return [];
 
-    const todayStr = (() => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    })();
-
     return currentGoal.months.map(m => {
+      // For historical months T1-T5 of year 2026, keep the exact static actuals from database (no dynamic override)
+      if (selectedYear === 2026 && m.month < 6) {
+        return m;
+      }
+
+      // For month 6 and later, calculate dynamically from live data up to current time (no yesterday limit)
       // Find orders for this month & year
       const monthOrders = orders.filter(o => {
         if (o.paymentStatus !== 'Đã thanh toán') return false;
         const d = toLocalDateStr(o.createdAt);
-        if (!d || d >= todayStr) return false; // Exclude today's data (yesterday and earlier only)
+        if (!d) return false;
         const parts = d.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -191,7 +192,7 @@ export default function GoalsViewComponent({
       // Find designs for this month & year
       const monthDesigns = designs.filter(d => {
         const dateStr = toLocalDateStr(d.createdAt || d.deadline || '');
-        if (!dateStr || dateStr >= todayStr) return false; // Exclude today's data
+        if (!dateStr) return false;
         const parts = dateStr.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -204,7 +205,7 @@ export default function GoalsViewComponent({
       // Find expenses for this month & year
       const monthExpenses = expenses.filter(e => {
         const d = e.date;
-        if (!d || d >= todayStr) return false; // Exclude today's data
+        if (!d) return false;
         const parts = d.split('-');
         if (parts.length >= 2) {
           const year = parseInt(parts[0], 10);
@@ -228,36 +229,20 @@ export default function GoalsViewComponent({
         .filter(e => e.category === 'Chi phí quảng cáo')
         .reduce((sum, e) => sum + e.amount, 0);
 
-      // Expense actual - Other
-      const dynamicExpenseOther = monthExpenses
-        .filter(e => e.category !== 'Chi phí quảng cáo')
-        .reduce((sum, e) => sum + e.amount, 0);
-
       // Total Expense actual
       const dynamicTotalExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
       // Profit actual (LN Thực)
       const dynamicProfitActual = dynamicRevenueActual - dynamicTotalExpense;
 
-      // If we have dynamic transactions (revenue actual > 0 or expense actual > 0), we use the dynamic calculations.
-      // Otherwise, we fallback to the static values already defined in the goals database (which might be pre-populated mock values for T1-T5).
-      const hasDynamicData = dynamicRevenueActual > 0 || dynamicTotalExpense > 0;
-
-      const actualRevenue = hasDynamicData ? dynamicRevenueActual : m.actualRevenue;
-      const actualRevenueCourse = hasDynamicData ? dynamicCourseActual : m.actualRevenueCourse;
-      const actualRevenueDesign = hasDynamicData ? dynamicDesignActual : m.actualRevenueDesign;
-      const actualExpenseAds = hasDynamicData ? dynamicExpenseAds : m.actualExpenseAds;
-      const actualExpenseOther = hasDynamicData ? dynamicExpenseOther : m.actualExpenseOther;
-      const actualProfit = hasDynamicData ? dynamicProfitActual : m.actualProfit;
-
       return {
         ...m,
-        actualRevenue,
-        actualRevenueCourse,
-        actualRevenueDesign,
-        actualExpenseAds,
-        actualExpenseOther,
-        actualProfit
+        actualRevenue: dynamicRevenueActual,
+        actualRevenueCourse: dynamicCourseActual,
+        actualRevenueDesign: dynamicDesignActual,
+        actualExpenseAds: dynamicExpenseAds,
+        actualExpenseOther: dynamicTotalExpense - dynamicExpenseAds,
+        actualProfit: dynamicProfitActual
       };
     });
   }, [currentGoal, selectedYear, orders, designs, expenses]);
