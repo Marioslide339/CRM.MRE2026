@@ -165,6 +165,7 @@ export default function DashboardView({
   // Filter lists based on time range (using local date conversion)
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
+      if (o.orderType === 'Gửi lại') return false;
       const d = toLocalDateStr(o.createdAt);
       if (timeFilter === 'day') return d === todayStr;
       if (timeFilter === 'week') return d >= weekRange.start && d <= weekRange.end;
@@ -272,7 +273,7 @@ export default function DashboardView({
   }, [filteredOrders, filteredDesigns]);
 
   const activeDesigns = useMemo(() => {
-    return designs.filter(d => d.status === 'Đang làm' || d.status === 'Chỉnh sửa').length;
+    return designs.filter(d => d.status !== 'Hoàn thành').length;
   }, [designs]);
 
   const upcomingDeadlines = useMemo(() => {
@@ -1019,7 +1020,7 @@ export default function DashboardView({
             {/* Left side: total */}
             <div className="flex flex-col justify-center">
               <span className="text-2xl font-bold font-mono tracking-tight text-slate-800">
-                {filteredOrders.length + filteredDesigns.length}
+                {filteredOrders.length + filteredDesigns.filter(d => d.status !== 'Hoàn thành').length}
               </span>
               <p className="text-[10px] text-slate-400 mt-1 font-sans font-semibold uppercase tracking-wider">Tổng số đơn</p>
             </div>
@@ -1038,7 +1039,7 @@ export default function DashboardView({
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0"></span>
                   <span className="text-slate-500 font-sans font-medium truncate">Đơn thiết kế:</span>
                 </div>
-                <span className="font-mono font-bold text-slate-800 ml-1 shrink-0">{filteredDesigns.length}</span>
+                <span className="font-mono font-bold text-slate-800 ml-1 shrink-0">{filteredDesigns.filter(d => d.status !== 'Hoàn thành').length}</span>
               </div>
             </div>
           </div>
