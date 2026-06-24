@@ -104,6 +104,23 @@ const getValueByPossibleKeys = (obj: any, possibleKeys: string[], defaultValue: 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      setCurrentTime(`${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`);
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const selectTab = (tabName: string) => {
     setActiveTab(tabName);
@@ -336,10 +353,14 @@ export default function App() {
 
   // Live Sync to Google Sheet
   const syncToGoogleSheets = async (urlToUse?: string, forcedData?: any) => {
+    // Chỉ chặn đồng bộ nếu chưa tải từ cloud VÀ không có dữ liệu cache local (tránh đè database trống lên sheet)
     if (!hasLoadedFromCloud) {
-      console.warn('Sync to Google Sheets blocked: Cloud data has not been loaded on this device yet.');
-      showToast('error', 'Chưa hoàn thành tải dữ liệu từ Google Sheets. Vui lòng đợi trong giây lát!');
-      return;
+      const hasLocalCache = localStorage.getItem('mre_customers') || localStorage.getItem('mre_orders') || localStorage.getItem('mre_expenses');
+      if (!hasLocalCache) {
+        console.warn('Sync to Google Sheets blocked: Cloud data has not been loaded and no local cache exists.');
+        showToast('error', 'Chưa hoàn thành tải dữ liệu từ Google Sheets. Vui lòng đợi trong giây lát!');
+        return;
+      }
     }
     const url = urlToUse || GOOGLE_SHEET_URL;
     setIsSyncing(true);
@@ -1405,7 +1426,7 @@ export default function App() {
             MR
           </div>
           <span className="font-extrabold text-white text-sm tracking-wide font-sans">
-            MRE <span className="text-primary">CÔNG NGHỆ</span>
+            CRM <span className="text-primary">MRE EDU</span>
           </span>
         </div>
         <button
@@ -1437,9 +1458,9 @@ export default function App() {
               </div>
               <div>
                 <span className="font-extrabold text-white text-sm tracking-wide font-sans block">
-                  MRE <span className="text-primary">CÔNG NGHỆ</span>
+                  CRM <span className="text-primary">MRE EDU</span>
                 </span>
-                <span className="text-[10px] text-slate-400 block font-mono font-bold">● Active Sandbox</span>
+                <span className="text-[10px] text-slate-400 block font-mono font-bold">{currentTime}</span>
               </div>
             </div>
             {/* Close button on Mobile */}
