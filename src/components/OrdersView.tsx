@@ -129,6 +129,21 @@ export default function OrdersView({
     );
   }, [sortedCustomersForSelect, custSearch]);
 
+  // Customer search states inside Edit Modal
+  const [editCustSearch, setEditCustSearch] = useState('');
+  const [isEditCustDropdownOpen, setIsEditCustDropdownOpen] = useState(false);
+
+  const filteredEditSearchCustomers = useMemo(() => {
+    if (!editCustSearch.trim() || editCustSearch.includes(' - ')) {
+      return sortedCustomersForSelect.slice(0, 5);
+    }
+    const term = editCustSearch.toLowerCase().trim();
+    return sortedCustomersForSelect.filter(c =>
+      c.id.toLowerCase().includes(term) ||
+      c.name.toLowerCase().includes(term)
+    );
+  }, [sortedCustomersForSelect, editCustSearch]);
+
   // Edit order status
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -284,6 +299,8 @@ export default function OrdersView({
     setEditPaymentRecipient(order.paymentRecipient || 'TK công ty');
     setEditOrderType(order.orderType || 'Đăng ký mới');
     setEditDeliveryStatus(order.deliveryStatus);
+    setEditCustSearch(`${order.customerId} - ${order.customerName}`);
+    setIsEditCustDropdownOpen(false);
     setIsEditOpen(true);
   };
 
@@ -1040,17 +1057,51 @@ export default function OrdersView({
             <form onSubmit={handleUpdate} className="p-5 space-y-4 text-xs font-sans overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Khách Hàng đăng ký*</label>
-                <select
-                  required
-                  value={editCustomerId}
-                  onChange={e => setEditCustomerId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.id} - {c.name} ({c.email})</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Tìm theo mã KH hoặc tên..."
+                    value={editCustSearch}
+                    onChange={e => {
+                      setEditCustSearch(e.target.value);
+                      setIsEditCustDropdownOpen(true);
+                      if (!e.target.value) {
+                        setEditCustomerId('');
+                      }
+                    }}
+                    onFocus={() => setIsEditCustDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsEditCustDropdownOpen(false), 250)}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 bg-white text-base md:text-xs"
+                  />
+                  <input type="hidden" required value={editCustomerId} />
+                  
+                  {isEditCustDropdownOpen && (
+                    <div className="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100 font-sans">
+                      {filteredEditSearchCustomers.length > 0 ? (
+                        filteredEditSearchCustomers.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setEditCustomerId(c.id);
+                              setEditCustSearch(`${c.id} - ${c.name}`);
+                              setIsEditCustDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 transition flex flex-col ${
+                              editCustomerId === c.id ? 'bg-slate-50 font-semibold' : ''
+                            }`}
+                          >
+                            <span className="text-slate-800">{c.id} - {c.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono font-medium">{c.email || c.phone || 'Không có email/sđt'}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-slate-400 text-[10px]">Không tìm thấy khách hàng nào</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
