@@ -455,10 +455,8 @@ export default function OrdersView({
                 placeholder="Tìm kiếm mã đơn, khách hàng, tên khóa học..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
+                className="w-full pl-4 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition font-sans"
               />
-              {/* Simple icon inside input */}
-              <span className="absolute left-3 top-2 text-slate-400 text-xs">🔍</span>
             </div>
 
             <select
