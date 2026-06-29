@@ -11,7 +11,7 @@ interface CollaboratorsViewProps {
   collaborators: Collaborator[];
   onAddCollaborator: (newCtv: Collaborator) => void;
   onUpdateCollaborator: (id: string, updated: Partial<Collaborator>) => void;
-  onDeleteCollaborator: (id: string) => void;
+  onDeleteCollaborator?: (id: string) => void;
 }
 
 export default function CollaboratorsView({
@@ -161,12 +161,14 @@ export default function CollaboratorsView({
                         >
                           Sửa
                         </button>
-                        <button
-                          onClick={() => handleDelete(ctv.id)}
-                          className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
-                        >
-                          Xóa
-                        </button>
+                        {onDeleteCollaborator && (
+                          <button
+                            onClick={() => handleDelete(ctv.id)}
+                            className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                          >
+                            Xóa
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -215,12 +217,14 @@ export default function CollaboratorsView({
                       >
                         Sửa
                       </button>
-                      <button
-                        onClick={() => handleDelete(ctv.id)}
-                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
-                      >
-                        Xóa
-                      </button>
+                      {onDeleteCollaborator && (
+                        <button
+                          onClick={() => handleDelete(ctv.id)}
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                        >
+                          Xóa
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
