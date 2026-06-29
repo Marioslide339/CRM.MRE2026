@@ -1354,9 +1354,8 @@ export default function App() {
       const updated = prevExpenses.filter(e => e.id !== id);
       saveToStorage('mre_expenses', updated);
       showToast('success', 'Đã xóa chi phí vận hành.');
-      const updatedLogs = addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
-      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
+      updateGoalsWithLiveActuals(goals, orders, designs, updated);
       return updated;
     });
   };
@@ -1634,7 +1633,6 @@ export default function App() {
             designs={designs}
             onAddCustomer={handleAddCustomer}
             onUpdateCustomer={handleUpdateCustomer}
-            onDeleteCustomer={handleDeleteCustomer}
             isSyncing={isSyncing}
             onScanCourseRegistration={handleScanCourseRegistration}
           />
@@ -1647,7 +1645,6 @@ export default function App() {
             courses={courses}
             onAddOrder={handleAddOrder}
             onUpdateOrder={handleUpdateOrder}
-            onDeleteOrder={handleDeleteOrder}
             onTriggerAutomation={handleTriggerAutomation}
           />
         )}
@@ -1657,7 +1654,6 @@ export default function App() {
             courses={courses}
             onAddCourse={handleAddCourse}
             onUpdateCourse={handleUpdateCourse}
-            onDeleteCourse={handleDeleteCourse}
           />
         )}
 
@@ -1668,7 +1664,6 @@ export default function App() {
             collaborators={collaborators}
             onAddDesign={handleAddDesign}
             onUpdateDesign={handleUpdateDesign}
-            onDeleteDesign={handleDeleteDesign}
           />
         )}
 
@@ -1677,7 +1672,6 @@ export default function App() {
             collaborators={collaborators}
             onAddCollaborator={handleAddCollaborator}
             onUpdateCollaborator={handleUpdateCollaborator}
-            onDeleteCollaborator={handleDeleteCollaborator}
           />
         )}
 
@@ -1726,7 +1720,6 @@ export default function App() {
           <SettingsView
             geminiKeys={geminiKeys}
             onSaveGeminiKeys={handleSaveGeminiKeys}
-            onResetDatabase={handleResetDatabase}
             onExportJSON={handleExportJSON}
             isSyncing={isSyncing}
             onTriggerSync={handleTriggerSync}
