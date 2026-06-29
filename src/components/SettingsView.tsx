@@ -4,7 +4,7 @@ import { Database, FileJson, Check, RotateCcw, ShieldAlert, Sparkles, LayoutGrid
 interface SettingsViewProps {
   geminiKeys: string[];
   onSaveGeminiKeys: (keys: string[]) => void;
-  onResetDatabase: () => void;
+  onResetDatabase?: () => void;
   onExportJSON: () => void;
   isSyncing: boolean;
   onTriggerSync: () => Promise<void>;
@@ -50,7 +50,7 @@ export default function SettingsView({
   };
 
   const handleReset = () => {
-    onResetDatabase();
+    onResetDatabase?.();
     setResetConfirm(false);
     showNotice('Đã khôi phục cơ sở dữ liệu mô phỏng thành công!');
   };
@@ -248,43 +248,7 @@ export default function SettingsView({
                 <span>⟶</span>
               </button>
 
-              {/* Reset simulator system database button */}
-              {resetConfirm ? (
-                <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl space-y-3 text-xs">
-                  <p className="font-bold text-rose-800 flex items-center gap-1">
-                    <ShieldAlert className="w-4 h-4" />
-                    Xác nhận xóa trắng toàn bộ dữ liệu tự tạo?
-                  </p>
-                  <p className="text-rose-600 leading-relaxed text-[11px]">
-                    Hành động này sẽ khôi phục dữ liệu ban đầu gồm các học viên mẫu cực kỳ lý tưởng để thuyết trình.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleReset}
-                      className="px-3 py-1.5 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-700 transition cursor-pointer text-[10px]"
-                    >
-                      Đồng ý đặt lại
-                    </button>
-                    <button
-                      onClick={() => setResetConfirm(false)}
-                      className="px-3 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition cursor-pointer text-[10px]"
-                    >
-                      Hủy bỏ
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setResetConfirm(true)}
-                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-50 hover:bg-rose-50 hover:border-rose-100 transition text-xs font-semibold text-slate-700 text-left cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <RotateCcw className="w-4 h-4 text-rose-500" />
-                    Cài đặt lại Mock Database
-                  </span>
-                  <span>⟶</span>
-                </button>
-              )}
+
             </div>
           </div>
 
