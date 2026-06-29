@@ -438,12 +438,12 @@ export default function DesignsView({
                        {design.amount ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(design.amount) : '0 ₫'}
                      </td>
                      <td className="py-4 px-4 font-mono font-semibold text-slate-700">
-                       {design.deadlineDemo ? new Date(design.deadlineDemo).toLocaleDateString('vi-VN') : '-'}
+                       {design.deadlineDemo && !isNaN(new Date(design.deadlineDemo).getTime()) ? new Date(design.deadlineDemo).toLocaleDateString('vi-VN') : '-'}
                      </td>
                     <td className="py-4 px-4 font-mono">
                       <div className="space-y-0.5">
                         <span className={`text-xs font-semibold ${overdue ? 'text-rose-600' : 'text-slate-700'}`}>
-                          {new Date(design.deadline).toLocaleDateString('vi-VN')}
+                          {design.deadline && !isNaN(new Date(design.deadline).getTime()) ? new Date(design.deadline).toLocaleDateString('vi-VN') : '-'}
                         </span>
                         {overdue && (
                           <span className="flex items-center gap-1 text-[9px] text-rose-500 font-bold font-sans">
@@ -537,7 +537,7 @@ export default function DesignsView({
                     <div className="flex flex-col">
                       <span className="text-slate-400">Hạn nghiệm thu:</span>
                       <span className={`font-semibold font-mono ${overdue ? 'text-rose-600' : 'text-slate-700'}`}>
-                        {new Date(design.deadline).toLocaleDateString('vi-VN')}
+                        {design.deadline && !isNaN(new Date(design.deadline).getTime()) ? new Date(design.deadline).toLocaleDateString('vi-VN') : '-'}
                       </span>
                     </div>
                   </div>
