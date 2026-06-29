@@ -62,6 +62,35 @@ const cleanLocationField = (val: any): string => {
   return str;
 };
 
+const sanitizeDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  if (dateStr.includes('T')) {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return dateStr.substring(0, 10);
+};
+
+const sanitizeExpenses = (exps: Expense[]): Expense[] => {
+  return (exps || []).map(e => ({
+    ...e,
+    date: sanitizeDate(e.date)
+  }));
+};
+
+const sanitizeDesigns = (ds: DesignService[]): DesignService[] => {
+  return (ds || []).map(d => ({
+    ...d,
+    deadline: sanitizeDate(d.deadline),
+    deadlineDemo: d.deadlineDemo ? sanitizeDate(d.deadlineDemo) : ''
+  }));
+};
+
 const getValueByPossibleKeys = (obj: any, possibleKeys: string[], defaultValue: any = ''): any => {
   if (!obj) return defaultValue;
   
@@ -204,11 +233,11 @@ export default function App() {
       setCustomers(storedCustomers ? sanitizeCustomers(JSON.parse(storedCustomers)) : []);
       setOrders(storedOrders ? JSON.parse(storedOrders) : []);
       setCourses(storedCourses ? JSON.parse(storedCourses) : []);
-      setDesigns(storedDesigns ? JSON.parse(storedDesigns) : []);
+      setDesigns(storedDesigns ? sanitizeDesigns(JSON.parse(storedDesigns)) : []);
       setCollaborators(storedCollaborators ? JSON.parse(storedCollaborators) : []);
       setCampaigns(storedCampaigns ? JSON.parse(storedCampaigns) : []);
       setLogs(storedLogs ? JSON.parse(storedLogs) : []);
-      setExpenses(storedExpenses ? JSON.parse(storedExpenses) : []);
+      setExpenses(storedExpenses ? sanitizeExpenses(JSON.parse(storedExpenses)) : []);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
       if (storedGoals) {
         try {
@@ -264,7 +293,7 @@ export default function App() {
           setCourses(cloudCourses);
           localStorage.setItem('mre_courses', JSON.stringify(cloudCourses));
 
-          const cloudDesigns = data.designs || [];
+          const cloudDesigns = sanitizeDesigns(data.designs || []);
           setDesigns(cloudDesigns);
           localStorage.setItem('mre_designs', JSON.stringify(cloudDesigns));
 
@@ -280,7 +309,7 @@ export default function App() {
           setLogs(cloudLogs);
           localStorage.setItem('mre_logs', JSON.stringify(cloudLogs));
 
-          const cloudExpenses = data.expenses || [];
+          const cloudExpenses = sanitizeExpenses(data.expenses || []);
           setExpenses(cloudExpenses);
           localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
 
@@ -424,8 +453,9 @@ export default function App() {
           saveToStorage('mre_courses', data.courses);
         }
         if (data.designs) {
-          setDesigns(data.designs);
-          saveToStorage('mre_designs', data.designs);
+          const cloudDesigns = sanitizeDesigns(data.designs);
+          setDesigns(cloudDesigns);
+          saveToStorage('mre_designs', cloudDesigns);
         }
         if (data.collaborators) {
           setCollaborators(data.collaborators);
@@ -440,8 +470,9 @@ export default function App() {
           saveToStorage('mre_logs', data.logs);
         }
         if (data.expenses) {
-          setExpenses(data.expenses);
-          saveToStorage('mre_expenses', data.expenses);
+          const cloudExpenses = sanitizeExpenses(data.expenses);
+          setExpenses(cloudExpenses);
+          saveToStorage('mre_expenses', cloudExpenses);
         }
 
         const cloudGoals = (data.goals && Array.isArray(data.goals) && data.goals.length > 0) ? data.goals : INITIAL_GOALS;
@@ -1201,7 +1232,8 @@ export default function App() {
       ...(newDesign as Omit<DesignService, 'id'>),
       id,
       createdAt: newDesign.createdAt || new Date().toISOString(),
-      deadlineDemo: newDesign.deadlineDemo || newDesign.deadline || new Date().toISOString().split('T')[0],
+      deadline: sanitizeDate(newDesign.deadline || ''),
+      deadlineDemo: sanitizeDate(newDesign.deadlineDemo || newDesign.deadline || ''),
       status: newDesign.status || 'Tiếp nhận'
     } as DesignService;
     const updated = [fullDesign, ...designs];
@@ -1215,9 +1247,14 @@ export default function App() {
 
   const handleUpdateDesign = (id: string, updatedFields: Partial<DesignService>) => {
     const prevDesign = designs.find(d => d.id === id);
+    const updatedFieldsSanitized = {
+      ...updatedFields,
+      deadline: updatedFields.deadline ? sanitizeDate(updatedFields.deadline) : undefined,
+      deadlineDemo: updatedFields.deadlineDemo ? sanitizeDate(updatedFields.deadlineDemo) : undefined
+    };
     const updated = designs.map(d => {
       if (d.id === id) {
-        return { ...d, ...updatedFields };
+        return { ...d, ...updatedFieldsSanitized };
       }
       return d;
     });
@@ -1313,6 +1350,7 @@ export default function App() {
 
       const fullExpense: Expense = {
         ...(newExpense as Omit<Expense, 'id'>),
+        date: sanitizeDate(newExpense.date || ''),
         id
       } as Expense;
       const updated = [fullExpense, ...prevExpenses];
@@ -1328,7 +1366,11 @@ export default function App() {
   const handleUpdateExpense = (id: string, updatedFields: Partial<Expense>) => {
     setExpenses(prevExpenses => {
       const prevExpense = prevExpenses.find(e => e.id === id);
-      const updated = prevExpenses.map(e => (e.id === id ? { ...e, ...updatedFields } : e));
+      const updatedFieldsSanitized = {
+        ...updatedFields,
+        date: updatedFields.date ? sanitizeDate(updatedFields.date) : undefined
+      };
+      const updated = prevExpenses.map(e => (e.id === id ? { ...e, ...updatedFieldsSanitized } : e));
       saveToStorage('mre_expenses', updated);
       showToast('success', 'Đã cập nhật chi phí vận hành.');
       const updatedLogs = addActivityLog(`[Chi phí] Cập nhật chi phí: ${prevExpense?.description || ''} (${id})`, 'info', id);
