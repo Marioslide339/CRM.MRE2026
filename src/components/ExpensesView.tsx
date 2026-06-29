@@ -275,7 +275,7 @@ export default function ExpensesView({
                         Sửa
                       </button>
                       <button
-                        onClick={() => onDeleteExpense(exp.id)}
+                        onClick={() => { if (window.confirm('⚠️ Bạn có chắc chắn muốn xóa khoản chi phí này? Hành động này chỉ xóa trên CRM, dữ liệu trên Database gốc vẫn được giữ nguyên.')) { onDeleteExpense(exp.id); } }}
                         className="p-1 px-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
                       >
                         Xóa
@@ -329,7 +329,7 @@ export default function ExpensesView({
                     Sửa
                   </button>
                   <button
-                    onClick={() => onDeleteExpense(exp.id)}
+                    onClick={() => { if (window.confirm('⚠️ Bạn có chắc chắn muốn xóa khoản chi phí này? Hành động này chỉ xóa trên CRM, dữ liệu trên Database gốc vẫn được giữ nguyên.')) { onDeleteExpense(exp.id); } }}
                     className="p-1 px-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-lg transition text-[10px] cursor-pointer"
                   >
                     Xóa
