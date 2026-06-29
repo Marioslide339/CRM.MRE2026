@@ -11,7 +11,7 @@ interface CoursesViewProps {
   courses: Course[];
   onAddCourse: (newCourse: Course) => void;
   onUpdateCourse: (id: string, updated: Partial<Course>) => void;
-  onDeleteCourse: (id: string) => void;
+  onDeleteCourse?: (id: string) => void;
 }
 
 export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDeleteCourse }: CoursesViewProps) {
@@ -118,16 +118,18 @@ export default function CoursesView({ courses, onAddCourse, onUpdateCourse, onDe
                   >
                     Sửa
                   </button>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
-                        onDeleteCourse(course.id);
-                      }
-                    }}
-                    className="p-1 px-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer text-xs font-semibold"
-                  >
-                    Xóa
-                  </button>
+                  {onDeleteCourse && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+                          onDeleteCourse(course.id);
+                        }
+                      }}
+                      className="p-1 px-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition cursor-pointer text-xs font-semibold"
+                    >
+                      Xóa
+                    </button>
+                  )}
                 </div>
               </div>
 
