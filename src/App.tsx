@@ -64,6 +64,8 @@ const cleanLocationField = (val: any): string => {
 
 const sanitizeDate = (dateStr: string): string => {
   if (!dateStr) return '';
+  const lower = dateStr.toLowerCase();
+  if (lower.includes('invalid') || lower === 'null' || lower === 'undefined') return '';
   if (dateStr.includes('T')) {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
@@ -1247,11 +1249,13 @@ export default function App() {
 
   const handleUpdateDesign = (id: string, updatedFields: Partial<DesignService>) => {
     const prevDesign = designs.find(d => d.id === id);
-    const updatedFieldsSanitized = {
-      ...updatedFields,
-      deadline: updatedFields.deadline ? sanitizeDate(updatedFields.deadline) : undefined,
-      deadlineDemo: updatedFields.deadlineDemo ? sanitizeDate(updatedFields.deadlineDemo) : undefined
-    };
+    const updatedFieldsSanitized: Partial<DesignService> = { ...updatedFields };
+    if (updatedFields.deadline !== undefined) {
+      updatedFieldsSanitized.deadline = sanitizeDate(updatedFields.deadline);
+    }
+    if (updatedFields.deadlineDemo !== undefined) {
+      updatedFieldsSanitized.deadlineDemo = sanitizeDate(updatedFields.deadlineDemo);
+    }
     const updated = designs.map(d => {
       if (d.id === id) {
         return { ...d, ...updatedFieldsSanitized };
@@ -1366,10 +1370,10 @@ export default function App() {
   const handleUpdateExpense = (id: string, updatedFields: Partial<Expense>) => {
     setExpenses(prevExpenses => {
       const prevExpense = prevExpenses.find(e => e.id === id);
-      const updatedFieldsSanitized = {
-        ...updatedFields,
-        date: updatedFields.date ? sanitizeDate(updatedFields.date) : undefined
-      };
+      const updatedFieldsSanitized: Partial<Expense> = { ...updatedFields };
+      if (updatedFields.date !== undefined) {
+        updatedFieldsSanitized.date = sanitizeDate(updatedFields.date);
+      }
       const updated = prevExpenses.map(e => (e.id === id ? { ...e, ...updatedFieldsSanitized } : e));
       saveToStorage('mre_expenses', updated);
       showToast('success', 'Đã cập nhật chi phí vận hành.');
