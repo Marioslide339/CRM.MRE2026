@@ -19,10 +19,9 @@ export default function ExpensesView({
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper: get yesterday's local date string YYYY-MM-DD
-  const getYesterdayStr = () => {
+  // Helper: get today's local date string YYYY-MM-DD
+  const getTodayStr = () => {
     const d = new Date();
-    d.setDate(d.getDate() - 1);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -30,7 +29,7 @@ export default function ExpensesView({
   };
 
   // Form states
-  const [date, setDate] = useState(getYesterdayStr());
+  const [date, setDate] = useState(getTodayStr());
   const [category, setCategory] = useState<'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác'>('Chi phí quảng cáo');
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState('');
@@ -47,7 +46,7 @@ export default function ExpensesView({
 
   const handleOpenAdd = () => {
     setEditingExpense(null);
-    setDate(getYesterdayStr());
+    setDate(getTodayStr());
     setCategory('Chi phí quảng cáo');
     setAmount(0);
     setDescription('');
@@ -379,6 +378,9 @@ export default function ExpensesView({
                     if (val === 'Chi phí quảng cáo') {
                       setHasTax(true);
                       setTaxRate(11);
+                    } else {
+                      setHasTax(false);
+                      setTaxRate(0);
                     }
                   }}
                   className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-slate-700 bg-white text-base md:text-xs"
