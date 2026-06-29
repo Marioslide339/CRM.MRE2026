@@ -78,7 +78,7 @@ export default function DesignsView({
   const [statusFilter, setStatusFilter] = useState('');
   const [serviceTypeFilter, setServiceTypeFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
-  const [sortBy, setSortBy] = useState<string>('created-desc');
+  const [sortBy, setSortBy] = useState<string>('deadline-asc');
 
   const SERVICE_TYPES = [
     'Thiết kế PowerPoint',
