@@ -98,7 +98,7 @@ export default function DesignsView({
   const [editCtv, setEditCtv] = useState('');
   const [editDeadline, setEditDeadline] = useState('');
   const [editDeadlineDemo, setEditDeadlineDemo] = useState('');
-  const [editStatus, setEditStatus] = useState<'Tiếp nhận' | 'Đang làm' | 'Gửi demo' | 'Chỉnh sửa' | 'Hoàn thành'>('Tiếp nhận');
+  const [editStatus, setEditStatus] = useState<'Tiếp nhận' | 'Đang làm' | 'Đã xong Demo' | 'Gửi demo' | 'Chỉnh sửa' | 'Đã sửa xong' | 'Hoàn thành'>('Tiếp nhận');
   const [editAmount, setEditAmount] = useState<number | ''>('');
   
   const todayStr = useMemo(() => {
@@ -351,8 +351,10 @@ export default function DesignsView({
               <option value="">Tất cả trạng thái</option>
               <option value="Tiếp nhận">Tiếp nhận</option>
               <option value="Đang làm">Đang làm</option>
+              <option value="Đã xong Demo">Đã xong Demo</option>
               <option value="Gửi demo">Gửi demo</option>
               <option value="Chỉnh sửa">Chỉnh sửa</option>
+              <option value="Đã sửa xong">Đã sửa xong</option>
               <option value="Hoàn thành">Hoàn thành</option>
             </select>
 
@@ -460,15 +462,19 @@ export default function DesignsView({
                         className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border outline-none cursor-pointer transition ${
                           design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                           design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          design.status === 'Đã xong Demo' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
                           design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                           design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          design.status === 'Đã sửa xong' ? 'bg-teal-50 text-teal-700 border-teal-200' :
                           'bg-blue-50 text-blue-700 border-blue-200'
                         }`}
                       >
                         <option value="Tiếp nhận">Tiếp nhận</option>
                         <option value="Đang làm">Đang làm</option>
+                        <option value="Đã xong Demo">Đã xong Demo</option>
                         <option value="Gửi demo">Gửi demo</option>
                         <option value="Chỉnh sửa">Chỉnh sửa</option>
+                        <option value="Đã sửa xong">Đã sửa xong</option>
                         <option value="Hoàn thành">Hoàn thành</option>
                       </select>
                     </td>
@@ -548,15 +554,19 @@ export default function DesignsView({
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border outline-none cursor-pointer transition ${
                         design.status === 'Hoàn thành' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                         design.status === 'Đang làm' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        design.status === 'Đã xong Demo' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
                         design.status === 'Gửi demo' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                         design.status === 'Chỉnh sửa' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        design.status === 'Đã sửa xong' ? 'bg-teal-50 text-teal-700 border-teal-200' :
                         'bg-blue-50 text-blue-700 border-blue-200'
                       }`}
                     >
                       <option value="Tiếp nhận">Tiếp nhận</option>
                       <option value="Đang làm">Đang làm</option>
+                      <option value="Đã xong Demo">Đã xong Demo</option>
                       <option value="Gửi demo">Gửi demo</option>
                       <option value="Chỉnh sửa">Chỉnh sửa</option>
+                      <option value="Đã sửa xong">Đã sửa xong</option>
                       <option value="Hoàn thành">Hoàn thành</option>
                     </select>
                     <div className="flex gap-1.5">
