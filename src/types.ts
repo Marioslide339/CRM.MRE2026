@@ -59,7 +59,7 @@ export interface DesignService {
   executor: string; // Collaborator name
   deadline: string; // YYYY-MM-DD
   deadlineDemo: string; // YYYY-MM-DD
-  status: 'Tiếp nhận' | 'Đang làm' | 'Gửi demo' | 'Chỉnh sửa' | 'Hoàn thành';
+  status: 'Tiếp nhận' | 'Đang làm' | 'Đã xong Demo' | 'Gửi demo' | 'Chỉnh sửa' | 'Đã sửa xong' | 'Hoàn thành';
   amount?: number;
   createdAt?: string;
 }
