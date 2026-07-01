@@ -66,11 +66,12 @@ export default function DashboardView({
   googleSheetUrl = '',
   isSyncing = false
 }: DashboardViewProps) {
-  // Time filters: 'day' (today), 'week' (this week), 'month' (this month), 'year' (this year), 'custom' (start/end date)
-  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('day');
+  // Time filters: 'day' (today), 'week' (this week), 'month' (this month), 'quarter' (this quarter), 'year' (this year), 'custom' (start/end date)
+  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('day');
   const [selectedDayOption, setSelectedDayOption] = useState<'today' | 'yesterday' | '7days' | '30days'>('today');
   const [selectedWeekOption, setSelectedWeekOption] = useState<1 | 2 | 3 | 4>(1);
   const [selectedMonthOption, setSelectedMonthOption] = useState<number>(new Date().getMonth() + 1);
+  const [selectedQuarterOption, setSelectedQuarterOption] = useState<1 | 2 | 3 | 4>(1);
   const [selectedYearOption, setSelectedYearOption] = useState<number>(new Date().getFullYear());
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
@@ -170,6 +171,19 @@ export default function DashboardView({
         start: getTodayStr(firstDay),
         end: getTodayStr(lastDay)
       };
+    }
+    
+    if (timeFilter === 'quarter') {
+      const year = selectedYearOption;
+      if (selectedQuarterOption === 1) {
+        return { start: `${year}-01-01`, end: `${year}-03-31` };
+      } else if (selectedQuarterOption === 2) {
+        return { start: `${year}-04-01`, end: `${year}-06-30` };
+      } else if (selectedQuarterOption === 3) {
+        return { start: `${year}-07-01`, end: `${year}-09-30` };
+      } else {
+        return { start: `${year}-10-01`, end: `${year}-12-31` };
+      }
     }
     
     if (timeFilter === 'year') {
@@ -429,7 +443,6 @@ export default function DashboardView({
     });
   }, [collaborators, filteredExpenses]);
 
-  // Dynamic Financial Chart Data (Revenue, Expenses, Profit based on active timeFilter)
   const trendChartData = useMemo(() => {
     // 1. Hourly breakdown (for today / yesterday)
     if (timeFilter === 'day' && (selectedDayOption === 'today' || selectedDayOption === 'yesterday')) {
@@ -524,6 +537,50 @@ export default function DashboardView({
         if (b.month >= activeMonthNum) {
           b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
         }
+      });
+
+      return bins;
+    }
+
+    // 2b. Quarterly breakdown (for quarter filter)
+    if (timeFilter === 'quarter') {
+      const year = selectedYearOption;
+      const quarterStartMonth = (selectedQuarterOption - 1) * 3; // 0, 3, 6, 9
+
+      const bins = Array.from({ length: 3 }, (_, i) => {
+        const mNum = quarterStartMonth + i + 1;
+        return {
+          name: `Tháng ${String(mNum).padStart(2, '0')}`,
+          month: mNum,
+          'Doanh thu': 0,
+          'Chi phí': 0,
+          'Lợi nhuận': 0
+        };
+      });
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const m = new Date(o.createdAt).getMonth() + 1;
+          const bin = bins.find(b => b.month === m);
+          if (bin) bin['Doanh thu'] += o.price;
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dateStr = d.createdAt || d.deadline;
+        const m = new Date(dateStr).getMonth() + 1;
+        const bin = bins.find(b => b.month === m);
+        if (bin) bin['Doanh thu'] += d.amount || 0;
+      });
+
+      filteredExpenses.forEach(e => {
+        const m = new Date(e.date).getMonth() + 1;
+        const bin = bins.find(b => b.month === m);
+        if (bin) bin['Chi phí'] += e.amount;
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
       });
 
       return bins;
@@ -688,6 +745,9 @@ export default function DashboardView({
     } else if (timeFilter === 'month') {
       title = `Biểu Đồ Tài Chính (Tháng ${selectedMonthOption}/${selectedYearOption})`;
       desc = 'Doanh thu, chi phí và lợi nhuận các ngày trong tháng';
+    } else if (timeFilter === 'quarter') {
+      title = `Biểu Đồ Tài Chính (Quý ${selectedQuarterOption} - Năm ${selectedYearOption})`;
+      desc = 'Doanh thu, chi phí và lợi nhuận chi tiết theo các tháng trong quý';
     } else if (timeFilter === 'year') {
       title = `Biểu Đồ Tài Chính (Năm ${selectedYearOption})`;
       desc = 'Doanh thu, chi phí và lợi nhuận các tháng trong năm';
@@ -710,6 +770,9 @@ export default function DashboardView({
     }
     if (timeFilter === 'month') {
       return `Tháng ${selectedMonthOption}/${selectedYearOption}`;
+    }
+    if (timeFilter === 'quarter') {
+      return `Quý ${selectedQuarterOption}/${selectedYearOption}`;
     }
     if (timeFilter === 'year') {
       return `Năm ${selectedYearOption}`;
@@ -763,7 +826,7 @@ export default function DashboardView({
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-slate-50 p-1 border border-slate-100 rounded-xl">
-            {(['day', 'week', 'month', 'year', 'custom'] as const).map(f => (
+            {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setTimeFilter(f)}
@@ -774,6 +837,7 @@ export default function DashboardView({
                 {f === 'day' ? 'Ngày' :
                  f === 'week' ? 'Tuần' :
                  f === 'month' ? 'Tháng' :
+                 f === 'quarter' ? 'Quý' :
                  f === 'year' ? 'Năm' : 'Tùy chọn'}
               </button>
             ))}
@@ -841,6 +905,31 @@ export default function DashboardView({
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
                 ))}
+              </select>
+              <select
+                value={selectedYearOption}
+                onChange={e => setSelectedYearOption(Number(e.target.value))}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+              >
+                {Array.from({ length: 5 }, (_, i) => {
+                  const y = 2026 + i;
+                  return <option key={y} value={y}>Năm {y}</option>;
+                })}
+              </select>
+            </div>
+          )}
+
+          {timeFilter === 'quarter' && (
+            <div className="flex items-center gap-2 animate-fade-in">
+              <select
+                value={selectedQuarterOption}
+                onChange={e => setSelectedQuarterOption(Number(e.target.value) as any)}
+                className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+              >
+                <option value={1}>Quý 1</option>
+                <option value={2}>Quý 2</option>
+                <option value={3}>Quý 3</option>
+                <option value={4}>Quý 4</option>
               </select>
               <select
                 value={selectedYearOption}
