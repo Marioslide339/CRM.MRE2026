@@ -483,7 +483,7 @@ export default function App() {
           cloudGoals,
           data.orders || orders,
           data.designs || designs,
-          data.expenses || data.expenses
+          data.expenses || expenses
         );
         setGoals(finalGoals);
         saveToStorage('mre_goals', finalGoals);
@@ -572,7 +572,7 @@ export default function App() {
         }
 
         // For month 6 and later, calculate dynamically from live data up to current time (no yesterday limit)
-        const monthOrders = currentOrders.filter(o => {
+        const monthOrders = (currentOrders || []).filter(o => {
           if (o.paymentStatus !== 'Đã thanh toán') return false;
           const d = toLocalDateStr(o.createdAt);
           if (!d) return false;
@@ -580,14 +580,14 @@ export default function App() {
           return parseInt(parts[0], 10) === g.year && parseInt(parts[1], 10) === m.month;
         });
 
-        const monthDesigns = currentDesigns.filter(d => {
+        const monthDesigns = (currentDesigns || []).filter(d => {
           const dateStr = toLocalDateStr(d.createdAt || d.deadline || '');
           if (!dateStr) return false;
           const parts = dateStr.split('-');
           return parseInt(parts[0], 10) === g.year && parseInt(parts[1], 10) === m.month;
         });
 
-        const monthExpenses = currentExpenses.filter(e => {
+        const monthExpenses = (currentExpenses || []).filter(e => {
           const d = e.date; // YYYY-MM-DD
           if (!d) return false;
           const parts = d.split('-');
@@ -1803,3 +1803,4 @@ export default function App() {
     </div>
   );
 }
+
