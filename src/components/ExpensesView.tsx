@@ -2,6 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { Coins, Plus, Trash2, Edit2, Search, Filter, Calendar } from 'lucide-react';
 import { Expense } from '../types';
 
+const removeAccents = (str: any): string => {
+  if (str === null || str === undefined) return '';
+  const s = String(str);
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\u0111/g, 'd')
+    .replace(/\u0110/g, 'D');
+};
+
 interface ExpensesViewProps {
   expenses: Expense[];
   onAddExpense: (newExpense: Partial<Expense>) => void;
@@ -115,10 +125,15 @@ export default function ExpensesView({
   };
 
   const filteredExpenses = useMemo(() => {
+    const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return expenses
       .filter(exp => {
-        const matchesSearch = exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              exp.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = keywords.length === 0 ? true : keywords.every(kw =>
+          removeAccents(exp.description || '').toLowerCase().includes(kw) ||
+          removeAccents(exp.id || '').toLowerCase().includes(kw) ||
+          removeAccents(exp.category || '').toLowerCase().includes(kw)
+        );
         const matchesCategory = selectedCategory ? exp.category === selectedCategory : true;
         return matchesSearch && matchesCategory;
       })
