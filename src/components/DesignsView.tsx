@@ -7,8 +7,10 @@ import React, { useState, useMemo } from 'react';
 import { PenTool, Calendar, User, CheckCircle2, AlertTriangle, PlayCircle, Plus, Trash2, X } from 'lucide-react';
 import { DesignService, Customer, Collaborator } from '../types';
 
-const removeAccents = (str: string): string => {
-  return str
+const removeAccents = (str: any): string => {
+  if (str === null || str === undefined) return '';
+  const s = String(str);
+  return s
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
