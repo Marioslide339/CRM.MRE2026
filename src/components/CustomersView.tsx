@@ -27,6 +27,14 @@ import {
 } from 'lucide-react';
 import { Customer, Course, Order, DesignService } from '../types';
 
+const removeAccents = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
 interface CustomersViewProps {
   customers: Customer[];
   courses: Course[];
@@ -125,12 +133,13 @@ export default function CustomersView({
 
   // Filter logic
   const filteredCustomers = useMemo(() => {
+    const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
     return customers.filter(c => {
       const matchSearch =
-        (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.phone || '').includes(searchTerm) ||
-        (c.id || '').toLowerCase().includes(searchTerm.toLowerCase());
+        removeAccents(c.name || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(c.email || '').toLowerCase().includes(cleanSearch) ||
+        (c.phone || '').includes(cleanSearch) ||
+        removeAccents(c.id || '').toLowerCase().includes(cleanSearch);
       const matchProvince = selectedProvince ? c.province === selectedProvince : true;
       const matchTag = selectedTag ? (c.tags || []).includes(selectedTag) : true;
       return matchSearch && matchProvince && matchTag;
