@@ -1274,4 +1274,3 @@ export default function OrdersView({
     </div>
   );
 }
-
