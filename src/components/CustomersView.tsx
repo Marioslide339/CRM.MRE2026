@@ -136,12 +136,16 @@ export default function CustomersView({
   // Filter logic
   const filteredCustomers = useMemo(() => {
     const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return customers.filter(c => {
-      const matchSearch =
-        removeAccents(c.name || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(c.email || '').toLowerCase().includes(cleanSearch) ||
-        (c.phone || '').includes(cleanSearch) ||
-        removeAccents(c.id || '').toLowerCase().includes(cleanSearch);
+      const matchSearch = keywords.length === 0 ? true : keywords.every(kw =>
+        removeAccents(c.name || '').toLowerCase().includes(kw) ||
+        removeAccents(c.email || '').toLowerCase().includes(kw) ||
+        (c.phone || '').includes(kw) ||
+        removeAccents(c.id || '').toLowerCase().includes(kw) ||
+        removeAccents(c.province || '').toLowerCase().includes(kw) ||
+        (c.tags || []).some(t => removeAccents(t || '').toLowerCase().includes(kw))
+      );
       const matchProvince = selectedProvince ? c.province === selectedProvince : true;
       const matchTag = selectedTag ? (c.tags || []).includes(selectedTag) : true;
       return matchSearch && matchProvince && matchTag;
