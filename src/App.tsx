@@ -212,11 +212,7 @@ export default function App() {
           lmsGrades: c.lmsGrades || {},
           lmsCertificateEarned: c.lmsCertificateEarned || {},
           tags: Array.isArray(c.tags) ? c.tags : [],
-          aiAnalysis: c.aiAnalysis || {
-            segment: 'Tiềm năng',
-            summary: 'Thành viên mới tạo trên hệ thống CRM.',
-            lastEvaluation: new Date().toISOString()
-          }
+          aiAnalysis: c.aiAnalysis || null
         };
       });
   };
