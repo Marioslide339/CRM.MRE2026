@@ -7,6 +7,14 @@ import React, { useState, useMemo } from 'react';
 import { PenTool, Calendar, User, CheckCircle2, AlertTriangle, PlayCircle, Plus, Trash2, X } from 'lucide-react';
 import { DesignService, Customer, Collaborator } from '../types';
 
+const removeAccents = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
 interface DesignsViewProps {
   designs: DesignService[];
   customers: Customer[];
@@ -51,10 +59,10 @@ export default function DesignsView({
     if (!custSearch.trim()) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = custSearch.toLowerCase().trim();
+    const term = removeAccents(custSearch).toLowerCase().trim();
     return sortedCustomersForSelect.filter(c =>
-      c.id.toLowerCase().includes(term) ||
-      c.name.toLowerCase().includes(term)
+      removeAccents(c.id || '').toLowerCase().includes(term) ||
+      removeAccents(c.name || '').toLowerCase().includes(term)
     );
   }, [sortedCustomersForSelect, custSearch]);
 
@@ -66,10 +74,10 @@ export default function DesignsView({
     if (!editCustSearch.trim() || editCustSearch.includes(' - ')) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = editCustSearch.toLowerCase().trim();
+    const term = removeAccents(editCustSearch).toLowerCase().trim();
     return sortedCustomersForSelect.filter(c =>
-      c.id.toLowerCase().includes(term) ||
-      c.name.toLowerCase().includes(term)
+      removeAccents(c.id || '').toLowerCase().includes(term) ||
+      removeAccents(c.name || '').toLowerCase().includes(term)
     );
   }, [sortedCustomersForSelect, editCustSearch]);
 
@@ -111,14 +119,14 @@ export default function DesignsView({
 
   // Filter and Sort designs
   const filteredDesigns = useMemo(() => {
-    // 1. Filter
+    const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
     const filtered = designs.filter(d => {
       const matchSearch =
-        !searchTerm ||
-        d.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.executor.toLowerCase().includes(searchTerm.toLowerCase());
+        !cleanSearch ||
+        removeAccents(d.id || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(d.title || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(d.customerName || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(d.executor || '').toLowerCase().includes(cleanSearch);
 
       const matchStatus = !statusFilter || d.status === statusFilter;
       const matchService = !serviceTypeFilter || d.serviceType === serviceTypeFilter;
