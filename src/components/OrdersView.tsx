@@ -17,6 +17,14 @@ import {
 } from 'lucide-react';
 import { Order, Customer, Course } from '../types';
 
+const removeAccents = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
 interface OrdersViewProps {
   orders: Order[];
   customers: Customer[];
@@ -348,12 +356,13 @@ export default function OrdersView({
 
   // Filter orders
   const filteredOrders = useMemo(() => {
+    const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
     return orders.filter(o => {
       const matchSearch =
-        o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
+        removeAccents(o.id || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(o.customerName || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(o.productName || '').toLowerCase().includes(cleanSearch) ||
+        removeAccents(o.customerEmail || '').toLowerCase().includes(cleanSearch);
       let matchStatus = true;
       if (statusFilter === 'Chưa thanh toán') {
         matchStatus = o.paymentStatus === 'Chưa thanh toán';
