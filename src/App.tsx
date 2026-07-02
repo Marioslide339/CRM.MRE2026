@@ -48,6 +48,7 @@ import AiChatView from './components/AiChatView';
 import SettingsView from './components/SettingsView';
 import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
@@ -185,37 +186,41 @@ export default function App() {
   };
 
   const sanitizeCustomers = (custs: Customer[]): Customer[] => {
-    return custs.map(c => {
-      const name = getValueByPossibleKeys(c, ['name', 'hovaten', 'hoten', 'ten', 'khachhang', 'studentName'], '');
-      const email = getValueByPossibleKeys(c, ['email', 'mail'], '');
-      const phone = getValueByPossibleKeys(c, ['phone', 'sdt', 'zalo', 'dienthoai', 'sozalo'], '');
-      const province = getValueByPossibleKeys(c, ['province', 'tinh', 'thanhpho', 'city'], '');
-      const ward = getValueByPossibleKeys(c, ['ward', 'xa', 'phuong', 'commune', 'district'], '');
-      const notes = getValueByPossibleKeys(c, ['notes', 'ghichu'], '');
-      const createdAt = getValueByPossibleKeys(c, ['createdAt', 'ngaytao', 'thoigiantao'], new Date().toISOString());
+    if (!Array.isArray(custs)) return [];
+    return custs
+      .filter(c => c && typeof c === 'object')
+      .map(c => {
+        const name = String(getValueByPossibleKeys(c, ['name', 'hovaten', 'hoten', 'ten', 'khachhang', 'studentName'], '') || c.name || '');
+        const email = String(getValueByPossibleKeys(c, ['email', 'mail'], '') || c.email || '');
+        const phone = String(getValueByPossibleKeys(c, ['phone', 'sdt', 'zalo', 'dienthoai', 'sozalo'], '') || c.phone || '');
+        const province = getValueByPossibleKeys(c, ['province', 'tinh', 'thanhpho', 'city'], '');
+        const ward = getValueByPossibleKeys(c, ['ward', 'xa', 'phuong', 'commune', 'district'], '');
+        const notes = String(getValueByPossibleKeys(c, ['notes', 'ghichu'], '') || c.notes || '');
+        const createdAt = getValueByPossibleKeys(c, ['createdAt', 'ngaytao', 'thoigiantao'], new Date().toISOString());
 
-      return {
-        id: c.id,
-        name: name || c.name || '',
-        email: email || c.email || '',
-        phone: phone || c.phone || '',
-        province: cleanLocationField(province || c.province),
-        ward: cleanLocationField(ward || c.ward),
-        notes: notes || c.notes || '',
-        createdAt: createdAt || c.createdAt || new Date().toISOString(),
-        coursesPurchased: c.coursesPurchased || [],
-        lmsProgress: c.lmsProgress || {},
-        lmsGrades: c.lmsGrades || {},
-        lmsCertificateEarned: c.lmsCertificateEarned || {},
-        tags: c.tags || [],
-        aiAnalysis: c.aiAnalysis || {
-          segment: 'Tiềm năng',
-          summary: 'Thành viên mới tạo trên hệ thống CRM.',
-          lastEvaluation: new Date().toISOString()
-        }
-      };
-    });
+        return {
+          id: String(c.id || ''),
+          name: name,
+          email: email,
+          phone: phone,
+          province: cleanLocationField(String(province || c.province || '')),
+          ward: cleanLocationField(String(ward || c.ward || '')),
+          notes: notes,
+          createdAt: String(createdAt || c.createdAt || new Date().toISOString()),
+          coursesPurchased: Array.isArray(c.coursesPurchased) ? c.coursesPurchased : [],
+          lmsProgress: c.lmsProgress || {},
+          lmsGrades: c.lmsGrades || {},
+          lmsCertificateEarned: c.lmsCertificateEarned || {},
+          tags: Array.isArray(c.tags) ? c.tags : [],
+          aiAnalysis: c.aiAnalysis || {
+            segment: 'Tiềm năng',
+            summary: 'Thành viên mới tạo trên hệ thống CRM.',
+            lastEvaluation: new Date().toISOString()
+          }
+        };
+      });
   };
+
 
   // Load from local storage on component mount, then auto-sync from Google Sheets
   useEffect(() => {
@@ -1672,16 +1677,18 @@ export default function App() {
         )}
 
         {activeTab === 'customers' && (
-          <CustomersView
-            customers={customers}
-            courses={courses}
-            orders={orders}
-            designs={designs}
-            onAddCustomer={handleAddCustomer}
-            onUpdateCustomer={handleUpdateCustomer}
-            isSyncing={isSyncing}
-            onScanCourseRegistration={handleScanCourseRegistration}
-          />
+          <ErrorBoundary>
+            <CustomersView
+              customers={customers}
+              courses={courses}
+              orders={orders}
+              designs={designs}
+              onAddCustomer={handleAddCustomer}
+              onUpdateCustomer={handleUpdateCustomer}
+              isSyncing={isSyncing}
+              onScanCourseRegistration={handleScanCourseRegistration}
+            />
+          </ErrorBoundary>
         )}
 
         {activeTab === 'orders' && (
