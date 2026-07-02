@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { Order, Customer, Course } from '../types';
 
-const removeAccents = (str: string): string => {
-  return str
+const removeAccents = (str: any): string => {
+  if (str === null || str === undefined) return '';
+  const s = String(str);
+  return s
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
