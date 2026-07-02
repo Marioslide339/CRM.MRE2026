@@ -3,19 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 
 interface State {
   hasError: boolean;
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+export class ErrorBoundary extends Component<
+  { children: ReactNode },
   State
 > {
-  constructor(props: { children: React.ReactNode }) {
+  props: { children: ReactNode };
+  state: State;
+  setState: (state: Partial<State> | ((prevState: State) => Partial<State>)) => void;
+
+  constructor(props: { children: ReactNode }) {
     super(props);
+    this.props = props;
     this.state = { hasError: false, error: null };
   }
 
@@ -23,7 +28,7 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[CRM ErrorBoundary] Caught error:', error, info);
   }
 
@@ -60,7 +65,14 @@ export class ErrorBoundary extends React.Component<
             }}
           >
             <div style={{ fontSize: 48, marginBottom: 12 }}>&#9888;&#65039;</div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
+            <h2
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: '#1e293b',
+                marginBottom: 8,
+              }}
+            >
               App Error
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: 20 }}>
