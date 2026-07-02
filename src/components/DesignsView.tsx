@@ -58,13 +58,16 @@ export default function DesignsView({
   }, [customers]);
 
   const filteredSearchCustomers = useMemo(() => {
-    if (!custSearch.trim()) {
+    const cleanSearch = removeAccents(custSearch).toLowerCase().trim();
+    if (!cleanSearch) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = removeAccents(custSearch).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return sortedCustomersForSelect.filter(c =>
-      removeAccents(c.id || '').toLowerCase().includes(term) ||
-      removeAccents(c.name || '').toLowerCase().includes(term)
+      keywords.every(kw =>
+        removeAccents(c.id || '').toLowerCase().includes(kw) ||
+        removeAccents(c.name || '').toLowerCase().includes(kw)
+      )
     );
   }, [sortedCustomersForSelect, custSearch]);
 
@@ -76,10 +79,13 @@ export default function DesignsView({
     if (!editCustSearch.trim() || editCustSearch.includes(' - ')) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = removeAccents(editCustSearch).toLowerCase().trim();
+    const cleanSearch = removeAccents(editCustSearch).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return sortedCustomersForSelect.filter(c =>
-      removeAccents(c.id || '').toLowerCase().includes(term) ||
-      removeAccents(c.name || '').toLowerCase().includes(term)
+      keywords.every(kw =>
+        removeAccents(c.id || '').toLowerCase().includes(kw) ||
+        removeAccents(c.name || '').toLowerCase().includes(kw)
+      )
     );
   }, [sortedCustomersForSelect, editCustSearch]);
 
@@ -122,13 +128,14 @@ export default function DesignsView({
   // Filter and Sort designs
   const filteredDesigns = useMemo(() => {
     const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     const filtered = designs.filter(d => {
-      const matchSearch =
-        !cleanSearch ||
-        removeAccents(d.id || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(d.title || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(d.customerName || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(d.executor || '').toLowerCase().includes(cleanSearch);
+      const matchSearch = keywords.length === 0 ? true : keywords.every(kw =>
+        removeAccents(d.id || '').toLowerCase().includes(kw) ||
+        removeAccents(d.title || '').toLowerCase().includes(kw) ||
+        removeAccents(d.customerName || '').toLowerCase().includes(kw) ||
+        removeAccents(d.executor || '').toLowerCase().includes(kw)
+      );
 
       const matchStatus = !statusFilter || d.status === statusFilter;
       const matchService = !serviceTypeFilter || d.serviceType === serviceTypeFilter;
