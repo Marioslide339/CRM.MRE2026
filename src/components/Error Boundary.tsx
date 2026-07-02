@@ -59,20 +59,12 @@ export class ErrorBoundary extends React.Component<
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
-            <h2
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: 700,
-                color: '#1e293b',
-                marginBottom: 8,
-              }}
-            >
-              Đã xảy ra lỗi hiển thị
+            <div style={{ fontSize: 48, marginBottom: 12 }}>&#9888;&#65039;</div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
+              App Error
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: 20 }}>
-              Ứng dụng gặp lỗi không mong muốn. Vui lòng thử tải lại trang hoặc
-              nhấn nút bên dưới để khôi phục.
+              An unexpected error occurred. Please try again or reload the page.
             </p>
             {this.state.error && (
               <pre
@@ -107,7 +99,7 @@ export class ErrorBoundary extends React.Component<
                   cursor: 'pointer',
                 }}
               >
-                Thử lại
+                Try Again
               </button>
               <button
                 onClick={() => window.location.reload()}
@@ -122,7 +114,7 @@ export class ErrorBoundary extends React.Component<
                   cursor: 'pointer',
                 }}
               >
-                Tải lại trang
+                Reload Page
               </button>
             </div>
           </div>
