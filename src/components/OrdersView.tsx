@@ -129,13 +129,16 @@ export default function OrdersView({
   }, [customers]);
 
   const filteredSearchCustomers = useMemo(() => {
-    if (!custSearch.trim()) {
+    const cleanSearch = removeAccents(custSearch).toLowerCase().trim();
+    if (!cleanSearch) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = custSearch.toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return sortedCustomersForSelect.filter(c =>
-      c.id.toLowerCase().includes(term) ||
-      c.name.toLowerCase().includes(term)
+      keywords.every(kw =>
+        removeAccents(c.id || '').toLowerCase().includes(kw) ||
+        removeAccents(c.name || '').toLowerCase().includes(kw)
+      )
     );
   }, [sortedCustomersForSelect, custSearch]);
 
@@ -144,13 +147,17 @@ export default function OrdersView({
   const [isEditCustDropdownOpen, setIsEditCustDropdownOpen] = useState(false);
 
   const filteredEditSearchCustomers = useMemo(() => {
+    // If it contains ' - ', it's likely pre-filled "KHXXX - Name". Don't filter out unless they search something else
     if (!editCustSearch.trim() || editCustSearch.includes(' - ')) {
       return sortedCustomersForSelect.slice(0, 5);
     }
-    const term = editCustSearch.toLowerCase().trim();
+    const cleanSearch = removeAccents(editCustSearch).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return sortedCustomersForSelect.filter(c =>
-      c.id.toLowerCase().includes(term) ||
-      c.name.toLowerCase().includes(term)
+      keywords.every(kw =>
+        removeAccents(c.id || '').toLowerCase().includes(kw) ||
+        removeAccents(c.name || '').toLowerCase().includes(kw)
+      )
     );
   }, [sortedCustomersForSelect, editCustSearch]);
 
@@ -359,12 +366,14 @@ export default function OrdersView({
   // Filter orders
   const filteredOrders = useMemo(() => {
     const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
+    const keywords = cleanSearch.split(/\s+/).filter(Boolean);
     return orders.filter(o => {
-      const matchSearch =
-        removeAccents(o.id || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(o.customerName || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(o.productName || '').toLowerCase().includes(cleanSearch) ||
-        removeAccents(o.customerEmail || '').toLowerCase().includes(cleanSearch);
+      const matchSearch = keywords.length === 0 ? true : keywords.every(kw =>
+        removeAccents(o.id || '').toLowerCase().includes(kw) ||
+        removeAccents(o.customerName || '').toLowerCase().includes(kw) ||
+        removeAccents(o.productName || '').toLowerCase().includes(kw) ||
+        removeAccents(o.customerEmail || '').toLowerCase().includes(kw)
+      );
       let matchStatus = true;
       if (statusFilter === 'Chưa thanh toán') {
         matchStatus = o.paymentStatus === 'Chưa thanh toán';
