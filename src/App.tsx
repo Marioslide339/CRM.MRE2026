@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   LayoutDashboard,
@@ -174,6 +174,8 @@ export default function App() {
   // Google Sheets integration and Gemini rotation
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isSyncPending, setIsSyncPending] = useState<boolean>(false);
+  const syncTimeoutRef = useRef<any>(null);
 
   // Toast notifications state
   const [toast, setToast] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
@@ -395,6 +397,7 @@ export default function App() {
       }
     }
     const url = urlToUse || GOOGLE_SHEET_URL;
+    setIsSyncPending(false);
     setIsSyncing(true);
     try {
       const payload = forcedData || {
@@ -433,6 +436,16 @@ export default function App() {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  const debouncedSyncToGoogleSheets = (urlToUse?: string, forcedData?: any) => {
+    setIsSyncPending(true);
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      syncToGoogleSheets(urlToUse, forcedData);
+    }, 5000);
   };
 
   const fetchFromGoogleSheets = async (urlToUse?: string) => {
@@ -908,7 +921,7 @@ export default function App() {
     saveToStorage('mre_customers', updated);
     showToast('success', `Đã thêm khách hàng ${fullCustomer.name} thành công!`);
     const updatedLogs = addActivityLog(`[Hồ sơ] Thêm khách hàng mới: ${fullCustomer.name} (${id})`, 'success', id);
-    syncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleUpdateCustomer = (id: string, updatedFields: Partial<Customer>) => {
@@ -923,7 +936,7 @@ export default function App() {
     saveToStorage('mre_customers', updated);
     showToast('success', 'Đã cập nhật thông tin khách hàng.');
     const updatedLogs = addActivityLog(`[Hồ sơ] Cập nhật thông tin khách hàng: ${name} (${id})`, 'info', id);
-    syncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleDeleteCustomer = (id: string) => {
@@ -933,7 +946,7 @@ export default function App() {
     saveToStorage('mre_customers', updated);
     showToast('success', 'Đã xóa khách hàng khỏi hệ thống.');
     const updatedLogs = addActivityLog(`[Hồ sơ] Xóa khách hàng khỏi CRM: ${name} (${id})`, 'error', id);
-    syncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const activateOrderPayoutsAndLinks = (
@@ -1016,7 +1029,7 @@ export default function App() {
       const updatedLogs = addActivityLog(`[Đơn hàng] Thêm đơn hàng mới & tự động kích hoạt: ${fullOrder.productName} (${id})`, 'success', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, updatedExpenses);
 
-      syncToGoogleSheets(undefined, {
+      debouncedSyncToGoogleSheets(undefined, {
         customers: updatedCusts,
         orders: updatedOrders,
         courses,
@@ -1035,7 +1048,7 @@ export default function App() {
       showToast('success', `Đã tạo đơn hàng ${id} thành công!`);
       const updatedLogs = addActivityLog(`[Đơn hàng] Tạo đơn hàng mới (Chưa thanh toán): ${fullOrder.productName} (${id})`, 'info', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, expenses);
-      syncToGoogleSheets(undefined, {
+      debouncedSyncToGoogleSheets(undefined, {
         customers,
         orders: updatedOrders,
         courses,
@@ -1089,7 +1102,8 @@ export default function App() {
       const updatedLogs = addActivityLog(`[Đơn hàng] Kích hoạt khóa học thành công: ${(activatedOrder as Order).productName} (${id})`, 'success', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, updatedExpenses);
 
-      syncToGoogleSheets(undefined, {
+
+      debouncedSyncToGoogleSheets(undefined, {
         customers: updatedCusts,
         orders: updatedOrders,
         courses,
@@ -1110,7 +1124,7 @@ export default function App() {
       showToast('success', 'Đã cập nhật thông tin đơn hàng.');
       const updatedLogs = addActivityLog(`[Đơn hàng] Cập nhật đơn hàng: (${id})`, 'info', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, expenses);
-      syncToGoogleSheets(undefined, {
+      debouncedSyncToGoogleSheets(undefined, {
         customers: customers,
         orders: updatedOrders,
         courses,
@@ -1131,7 +1145,7 @@ export default function App() {
     showToast('success', 'Đã xóa đơn hàng.');
     const updatedLogs = addActivityLog(`[Đơn hàng] Xóa đơn hàng: (${id})`, 'error', id);
     const finalGoals = updateGoalsWithLiveActuals(goals, updated, designs, expenses);
-    syncToGoogleSheets(undefined, { customers, orders: updated, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders: updated, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
   };
 
   const handleTriggerAutomation = async (order: Order, steps: string[]) => {
@@ -1208,7 +1222,7 @@ export default function App() {
     saveToStorage('mre_courses', updated);
     showToast('success', `Đã thêm khóa học "${newCourse.title}" thành công!`);
     const updatedLogs = addActivityLog(`[Khóa học] Thêm khóa học mới: ${newCourse.title} (${newCourse.id})`, 'success', newCourse.id);
-    syncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleUpdateCourse = (id: string, updatedFields: Partial<Course>) => {
@@ -1217,7 +1231,7 @@ export default function App() {
     saveToStorage('mre_courses', updated);
     showToast('success', 'Đã cập nhật thông tin khóa học.');
     const updatedLogs = addActivityLog(`[Khóa học] Cập nhật thông tin: (${id})`, 'info', id);
-    syncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleDeleteCourse = (id: string) => {
@@ -1226,7 +1240,7 @@ export default function App() {
     saveToStorage('mre_courses', updated);
     showToast('success', 'Đã xóa khóa học khỏi kho.');
     const updatedLogs = addActivityLog(`[Khóa học] Xóa khóa học: (${id})`, 'error', id);
-    syncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses: updated, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleAddDesign = (newDesign: Partial<DesignService>) => {
@@ -1245,7 +1259,7 @@ export default function App() {
     showToast('success', 'Đã giao dự án thiết kế mới cho CTV.');
     const updatedLogs = addActivityLog(`[Thiết kế] Giao dự án thiết kế mới: ${fullDesign.title} (${id})`, 'success', id);
     const finalGoals = updateGoalsWithLiveActuals(goals, orders, updated, expenses);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
   };
 
   const handleUpdateDesign = (id: string, updatedFields: Partial<DesignService>) => {
@@ -1270,19 +1284,17 @@ export default function App() {
     const updatedLogs = addActivityLog(`[Thiết kế] Cập nhật dự án: ${prevDesign?.title || ''} (${id})`, 'info', id);
     const finalGoals = updateGoalsWithLiveActuals(goals, orders, updated, expenses);
 
-    setTimeout(() => {
-      syncToGoogleSheets(undefined, { 
-        customers, 
-        orders, 
-        courses, 
-        designs: updated, 
-        collaborators, 
-        campaigns, 
-        logs: updatedLogs, 
-        expenses, 
-        goals: finalGoals
-      });
-    }, 1000);
+    debouncedSyncToGoogleSheets(undefined, { 
+      customers, 
+      orders, 
+      courses, 
+      designs: updated, 
+      collaborators, 
+      campaigns, 
+      logs: updatedLogs, 
+      expenses, 
+      goals: finalGoals
+    });
   };
 
   const handleDeleteDesign = (id: string) => {
@@ -1293,7 +1305,7 @@ export default function App() {
     showToast('success', 'Đã xóa dự án thiết kế.');
     const updatedLogs = addActivityLog(`[Thiết kế] Xóa dự án: ${prevDesign?.title || ''} (${id})`, 'error', id);
     const finalGoals = updateGoalsWithLiveActuals(goals, orders, updated, expenses);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
   };
 
   const handleAddCollaborator = (newCtv: Collaborator) => {
@@ -1302,7 +1314,7 @@ export default function App() {
     saveToStorage('mre_collaborators', updated);
     showToast('success', `Đã đăng ký CTV ${newCtv.name} thành công.`);
     const updatedLogs = addActivityLog(`[CTV] Đăng ký cộng tác viên mới: ${newCtv.name} (${newCtv.id})`, 'success', newCtv.id);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleUpdateCollaborator = (id: string, updatedFields: Partial<Collaborator>) => {
@@ -1312,7 +1324,7 @@ export default function App() {
     saveToStorage('mre_collaborators', updated);
     showToast('success', 'Đã cập nhật thông tin cộng tác viên.');
     const updatedLogs = addActivityLog(`[CTV] Cập nhật thông tin CTV: ${prevCtv?.name || ''} (${id})`, 'info', id);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleDeleteCollaborator = (id: string) => {
@@ -1322,7 +1334,7 @@ export default function App() {
     saveToStorage('mre_collaborators', updated);
     showToast('success', 'Đã xóa cộng tác viên.');
     const updatedLogs = addActivityLog(`[CTV] Xóa CTV khỏi hệ thống: ${prevCtv?.name || ''} (${id})`, 'error', id);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators: updated, campaigns, logs: updatedLogs, expenses, goals });
   };
 
   const handleAddCampaign = (newCampaign: MarketingCampaign) => {
@@ -1331,7 +1343,7 @@ export default function App() {
     saveToStorage('mre_campaigns', updated);
     showToast('success', `Đã lưu chiến dịch marketing "${newCampaign.title}".`);
     const updatedLogs = addActivityLog(`[Marketing] Soạn và lưu chiến dịch email: ${newCampaign.title} (${newCampaign.id})`, 'success', newCampaign.id);
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns: updated, logs: updatedLogs, expenses, goals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns: updated, logs: updatedLogs, expenses, goals });
   };
 
   // Expense Handlers
@@ -1363,7 +1375,7 @@ export default function App() {
       showToast('success', 'Đã ghi nhận chi phí vận hành mới.');
       const updatedLogs = addActivityLog(`[Chi phí] Ghi nhận chi phí vận hành mới: ${fullExpense.description} (${id})`, 'success', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
       return updated;
     });
   };
@@ -1380,7 +1392,7 @@ export default function App() {
       showToast('success', 'Đã cập nhật chi phí vận hành.');
       const updatedLogs = addActivityLog(`[Chi phí] Cập nhật chi phí: ${prevExpense?.description || ''} (${id})`, 'info', id);
       const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
-      syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
+      debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
       return updated;
     });
   };
@@ -1392,7 +1404,7 @@ export default function App() {
     saveToStorage('mre_goals', finalGoals);
     showToast('success', 'Đã cập nhật mục tiêu thành công.');
     const updatedLogs = addActivityLog(`[Mục tiêu] Cập nhật số liệu mục tiêu kinh doanh năm`, 'info', 'MUC_TIEU');
-    syncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
   };
 
   const handleDeleteExpense = (id: string) => {
@@ -1401,8 +1413,9 @@ export default function App() {
       const updated = prevExpenses.filter(e => e.id !== id);
       saveToStorage('mre_expenses', updated);
       showToast('success', 'Đã xóa chi phí vận hành.');
-      addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
-      updateGoalsWithLiveActuals(goals, orders, designs, updated);
+      const updatedLogs = addActivityLog(`[Chi phí] Xóa chi phí vận hành: ${prevExpense?.description || ''} (${id})`, 'error', id);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, updated);
+      debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses: updated, goals: finalGoals });
       return updated;
     });
   };
@@ -1471,8 +1484,14 @@ export default function App() {
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white font-black text-sm">
             MR
           </div>
-          <span className="font-extrabold text-white text-sm tracking-wide font-sans">
+          <span className="font-extrabold text-white text-sm tracking-wide font-sans flex items-center gap-1.5">
             CRM <span className="text-primary">MRE EDU</span>
+            {isSyncing && (
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            )}
+            {isSyncPending && (
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" title="Đang chờ đồng bộ..." />
+            )}
           </span>
         </div>
         <button
@@ -1503,10 +1522,20 @@ export default function App() {
                 MR
               </div>
               <div>
-                <span className="font-extrabold text-white text-sm tracking-wide font-sans block">
+                <span className="font-extrabold text-white text-sm tracking-wide font-sans block flex items-center gap-1.5">
                   CRM <span className="text-primary">MRE EDU</span>
+                  {isSyncing && (
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                  )}
+                  {isSyncPending && (
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" title="Đang chờ đồng bộ..." />
+                  )}
                 </span>
-                <span className="text-[10px] text-slate-400 block font-mono font-bold">{currentTime}</span>
+                <span className="text-[10px] text-slate-400 block font-mono font-bold flex items-center gap-1">
+                  {currentTime}
+                  {isSyncing && <span className="text-[9px] text-emerald-400 font-sans font-medium italic shrink-0">(Đang lưu...)</span>}
+                  {isSyncPending && <span className="text-[9px] text-amber-400 font-sans font-medium italic shrink-0">(Chờ lưu...)</span>}
+                </span>
               </div>
             </div>
             {/* Close button on Mobile */}
