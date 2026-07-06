@@ -337,61 +337,30 @@ export default function ExpensesView({
       </div>
 
       {/* KPI Cards row */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between" id="expenses_summary_card">
-        <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">TỔNG CHI PHÍ HIỆN TẠI</span>
-          <h3 className="text-2xl font-bold font-mono tracking-tight text-primary">
-            {formatVND(totalExpense)}
-          </h3>
-        </div>
-        <div className="p-3 bg-red-50 text-primary rounded-2xl shadow-inner">
-          <Coins className="w-6 h-6" />
-        </div>
-      </div>
-
-      {/* Table & filter */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[calc(100vh-18rem)]">
-        {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sticky top-0 z-10 bg-white">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Tìm kiếm chi tiết, mã chi phí..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-4 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition"
-            />
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4" id="expenses_summary_card">
+        {/* Left Side: Summary Info */}
+        <div className="flex items-center justify-between lg:justify-start gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">TỔNG CHI PHÍ HIỆN TẠI</span>
+            <h3 className="text-2xl font-bold font-mono tracking-tight text-primary">
+              {formatVND(totalExpense)}
+            </h3>
           </div>
-
-          <div className="flex gap-2">
-            <div className="relative">
-              <select
-                value={selectedCategory}
-                onChange={e => setSelectedCategory(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans appearance-none cursor-pointer"
-              >
-                <option value="">Tất cả danh mục</option>
-                <option value="Chi phí quảng cáo">Chi phí quảng cáo</option>
-                <option value="Văn phòng phẩm">Văn phòng phẩm</option>
-                <option value="Trả lương">Trả lương</option>
-                <option value="Phần mềm dịch vụ">Phần mềm dịch vụ</option>
-                <option value="Thuế VAT">Thuế VAT</option>
-                <option value="Thuế TNDN">Thuế TNDN</option>
-                <option value="Khác">Khác</option>
-              </select>
-              <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-400 pointer-events-none" />
-            </div>
+          <div className="p-3 bg-red-50 text-primary rounded-2xl shadow-inner lg:hidden">
+            <Coins className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Date Filter Panel */}
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        {/* Center/Right Side: Time Filter controls */}
+        <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 text-xs lg:px-6">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-bold text-slate-700 uppercase font-sans tracking-wider">Bộ lọc thời gian: <span className="text-primary normal-case font-semibold">{filterLabel}</span></span>
+            <span className="font-bold text-slate-700 uppercase font-sans tracking-wider text-[11px] whitespace-nowrap">
+              Bộ lọc: <span className="text-primary normal-case font-semibold">{filterLabel}</span>
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             {/* Main Time filter options */}
             <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
               {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as const).map(f => (
@@ -433,11 +402,11 @@ export default function ExpensesView({
             )}
 
             {timeFilter === 'week' && (
-              <div className="flex items-center gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-1 animate-fade-in">
                 <select
                   value={selectedWeekOption}
                   onChange={e => setSelectedWeekOption(Number(e.target.value) as any)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   <option value={1}>Tuần 1</option>
                   <option value={2}>Tuần 2</option>
@@ -447,7 +416,7 @@ export default function ExpensesView({
                 <select
                   value={selectedMonthOption}
                   onChange={e => setSelectedMonthOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
@@ -456,7 +425,7 @@ export default function ExpensesView({
                 <select
                   value={selectedYearOption}
                   onChange={e => setSelectedYearOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 5 }, (_, i) => {
                     const y = 2026 + i;
@@ -467,11 +436,11 @@ export default function ExpensesView({
             )}
 
             {timeFilter === 'month' && (
-              <div className="flex items-center gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-1 animate-fade-in">
                 <select
                   value={selectedMonthOption}
                   onChange={e => setSelectedMonthOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
@@ -480,7 +449,7 @@ export default function ExpensesView({
                 <select
                   value={selectedYearOption}
                   onChange={e => setSelectedYearOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 5 }, (_, i) => {
                     const y = 2026 + i;
@@ -491,11 +460,11 @@ export default function ExpensesView({
             )}
 
             {timeFilter === 'quarter' && (
-              <div className="flex items-center gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-1 animate-fade-in">
                 <select
                   value={selectedQuarterOption}
                   onChange={e => setSelectedQuarterOption(Number(e.target.value) as any)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   <option value={1}>Quý 1</option>
                   <option value={2}>Quý 2</option>
@@ -505,7 +474,7 @@ export default function ExpensesView({
                 <select
                   value={selectedYearOption}
                   onChange={e => setSelectedYearOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 5 }, (_, i) => {
                     const y = 2026 + i;
@@ -516,11 +485,11 @@ export default function ExpensesView({
             )}
 
             {timeFilter === 'year' && (
-              <div className="flex items-center gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-1 animate-fade-in">
                 <select
                   value={selectedYearOption}
                   onChange={e => setSelectedYearOption(Number(e.target.value))}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 >
                   {Array.from({ length: 5 }, (_, i) => {
                     const y = 2026 + i;
@@ -536,19 +505,61 @@ export default function ExpensesView({
                   type="date"
                   value={customStart}
                   onChange={e => setCustomStart(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 />
                 <span className="text-slate-400">-</span>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={e => setCustomEnd(e.target.value)}
-                  className="p-1 bg-white border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                  className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
                 />
               </div>
             )}
           </div>
         </div>
+
+        {/* Far Right: Icon (Desktop only) */}
+        <div className="p-3 bg-red-50 text-primary rounded-2xl shadow-inner hidden lg:block">
+          <Coins className="w-6 h-6" />
+        </div>
+      </div>
+
+      {/* Table & filter */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[calc(100vh-18rem)]">
+        {/* Filters */}
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sticky top-0 z-10 bg-white">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Tìm kiếm chi tiết, mã chi phí..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 transition"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="relative">
+              <select
+                value={selectedCategory}
+                onChange={e => setSelectedCategory(e.target.value)}
+                className="pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-xs outline-none focus:border-slate-400 text-slate-600 font-sans appearance-none cursor-pointer"
+              >
+                <option value="">Tất cả danh mục</option>
+                <option value="Chi phí quảng cáo">Chi phí quảng cáo</option>
+                <option value="Văn phòng phẩm">Văn phòng phẩm</option>
+                <option value="Trả lương">Trả lương</option>
+                <option value="Phần mềm dịch vụ">Phần mềm dịch vụ</option>
+                <option value="Thuế VAT">Thuế VAT</option>
+                <option value="Thuế TNDN">Thuế TNDN</option>
+                <option value="Khác">Khác</option>
+              </select>
+              <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
 
         {/* Expenses List (Desktop only) */}
         <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1">
