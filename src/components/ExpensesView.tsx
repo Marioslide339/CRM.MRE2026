@@ -50,6 +50,140 @@ export default function ExpensesView({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  // Date/Time Filters
+  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('custom');
+  const [selectedDayOption, setSelectedDayOption] = useState<'today' | 'yesterday' | '7days' | '30days'>('30days');
+  const [selectedWeekOption, setSelectedWeekOption] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedMonthOption, setSelectedMonthOption] = useState<number>(() => new Date().getMonth() + 1);
+  const [selectedYearOption, setSelectedYearOption] = useState<number>(() => new Date().getFullYear());
+  const [selectedQuarterOption, setSelectedQuarterOption] = useState<1 | 2 | 3 | 4>(1);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const getTodayStrWithDate = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const activeRange = useMemo(() => {
+    const today = new Date();
+    
+    if (timeFilter === 'day') {
+      if (selectedDayOption === 'today') {
+        const str = getTodayStrWithDate(today);
+        return { start: str, end: str };
+      } else if (selectedDayOption === 'yesterday') {
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const str = getTodayStrWithDate(yesterday);
+        return { start: str, end: str };
+      } else if (selectedDayOption === '7days') {
+        const start = new Date(today);
+        start.setDate(today.getDate() - 6);
+        return { start: getTodayStrWithDate(start), end: getTodayStrWithDate(today) };
+      } else if (selectedDayOption === '30days') {
+        const start = new Date(today);
+        start.setDate(today.getDate() - 29);
+        return { start: getTodayStrWithDate(start), end: getTodayStrWithDate(today) };
+      }
+    }
+    
+    if (timeFilter === 'week') {
+      const year = selectedYearOption;
+      const month = selectedMonthOption - 1; // 0-indexed
+      if (selectedWeekOption === 1) {
+        return {
+          start: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+          end: `${year}-${String(month + 1).padStart(2, '0')}-07`
+        };
+      } else if (selectedWeekOption === 2) {
+        return {
+          start: `${year}-${String(month + 1).padStart(2, '0')}-08`,
+          end: `${year}-${String(month + 1).padStart(2, '0')}-14`
+        };
+      } else if (selectedWeekOption === 3) {
+        return {
+          start: `${year}-${String(month + 1).padStart(2, '0')}-15`,
+          end: `${year}-${String(month + 1).padStart(2, '0')}-21`
+        };
+      } else {
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        return {
+          start: `${year}-${String(month + 1).padStart(2, '0')}-22`,
+          end: `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+        };
+      }
+    }
+    
+    if (timeFilter === 'month') {
+      const year = selectedYearOption;
+      const month = selectedMonthOption - 1; // 0-indexed
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      return {
+        start: getTodayStrWithDate(firstDay),
+        end: getTodayStrWithDate(lastDay)
+      };
+    }
+    
+    if (timeFilter === 'quarter') {
+      const year = selectedYearOption;
+      if (selectedQuarterOption === 1) {
+        return { start: `${year}-01-01`, end: `${year}-03-31` };
+      } else if (selectedQuarterOption === 2) {
+        return { start: `${year}-04-01`, end: `${year}-06-30` };
+      } else if (selectedQuarterOption === 3) {
+        return { start: `${year}-07-01`, end: `${year}-09-30` };
+      } else {
+        return { start: `${year}-10-01`, end: `${year}-12-31` };
+      }
+    }
+    
+    if (timeFilter === 'year') {
+      const year = selectedYearOption;
+      return {
+        start: `${year}-01-01`,
+        end: `${year}-12-31`
+      };
+    }
+    
+    if (timeFilter === 'custom') {
+      return {
+        start: customStart || '1970-01-01',
+        end: customEnd || '9999-12-31'
+      };
+    }
+    
+    const todayS = getTodayStrWithDate(today);
+    return { start: todayS, end: todayS };
+  }, [timeFilter, selectedDayOption, selectedWeekOption, selectedMonthOption, selectedYearOption, selectedQuarterOption, customStart, customEnd]);
+
+  const filterLabel = useMemo(() => {
+    if (timeFilter === 'day') {
+      return selectedDayOption === 'today' ? 'Hôm nay' :
+             selectedDayOption === 'yesterday' ? 'Hôm qua' :
+             selectedDayOption === '7days' ? '7 ngày qua' : '30 ngày qua';
+    }
+    if (timeFilter === 'week') {
+      return `Tuần ${selectedWeekOption} (T${selectedMonthOption}/${selectedYearOption})`;
+    }
+    if (timeFilter === 'month') {
+      return `Tháng ${selectedMonthOption}/${selectedYearOption}`;
+    }
+    if (timeFilter === 'quarter') {
+      return `Quý ${selectedQuarterOption}/${selectedYearOption}`;
+    }
+    if (timeFilter === 'year') {
+      return `Năm ${selectedYearOption}`;
+    }
+    if (customStart || customEnd) {
+      return `${customStart || 'Đầu'} đến ${customEnd || 'Cuối'}`;
+    }
+    return 'Tất cả thời gian';
+  }, [timeFilter, selectedDayOption, selectedWeekOption, selectedMonthOption, selectedYearOption, selectedQuarterOption, customStart, customEnd]);
+
   const formatVND = (value: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
@@ -135,14 +269,15 @@ export default function ExpensesView({
           removeAccents(exp.category || '').toLowerCase().includes(kw)
         );
         const matchesCategory = selectedCategory ? exp.category === selectedCategory : true;
-        return matchesSearch && matchesCategory;
+        const matchesDate = exp.date >= activeRange.start && exp.date <= activeRange.end;
+        return matchesSearch && matchesCategory && matchesDate;
       })
       .sort((a, b) => {
         // Sort by date descending (newest first), then by id descending
         if (a.date !== b.date) return b.date.localeCompare(a.date);
         return b.id.localeCompare(a.id);
       });
-  }, [expenses, searchTerm, selectedCategory]);
+  }, [expenses, searchTerm, selectedCategory, activeRange]);
 
   const totalExpense = useMemo(() => {
     return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -246,6 +381,172 @@ export default function ExpensesView({
               </select>
               <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
+          </div>
+        </div>
+
+        {/* Date Filter Panel */}
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary shrink-0" />
+            <span className="font-bold text-slate-700 uppercase font-sans tracking-wider">Bộ lọc thời gian: <span className="text-primary normal-case font-semibold">{filterLabel}</span></span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Main Time filter options */}
+            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
+              {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as const).map(f => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setTimeFilter(f)}
+                  className={`px-2.5 py-1 rounded-md text-[10px] md:text-xs font-bold cursor-pointer transition ${
+                    timeFilter === f ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {f === 'day' ? 'Ngày' :
+                   f === 'week' ? 'Tuần' :
+                   f === 'month' ? 'Tháng' :
+                   f === 'quarter' ? 'Quý' :
+                   f === 'year' ? 'Năm' : 'Tất cả'}
+                </button>
+              ))}
+            </div>
+
+            {/* Sub options */}
+            {timeFilter === 'day' && (
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50 gap-0.5 animate-fade-in">
+                {(['today', 'yesterday', '7days', '30days'] as const).map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSelectedDayOption(opt)}
+                    className={`px-2 py-1 rounded-md text-[10px] md:text-xs font-bold cursor-pointer transition ${
+                      selectedDayOption === opt ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {opt === 'today' ? 'Hôm nay' :
+                     opt === 'yesterday' ? 'Hôm qua' :
+                     opt === '7days' ? '7 ngày' : '30 ngày'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {timeFilter === 'week' && (
+              <div className="flex items-center gap-1.5 animate-fade-in">
+                <select
+                  value={selectedWeekOption}
+                  onChange={e => setSelectedWeekOption(Number(e.target.value) as any)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  <option value={1}>Tuần 1</option>
+                  <option value={2}>Tuần 2</option>
+                  <option value={3}>Tuần 3</option>
+                  <option value={4}>Tuần 4</option>
+                </select>
+                <select
+                  value={selectedMonthOption}
+                  onChange={e => setSelectedMonthOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+                  ))}
+                </select>
+                <select
+                  value={selectedYearOption}
+                  onChange={e => setSelectedYearOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = 2026 + i;
+                    return <option key={y} value={y}>Năm {y}</option>;
+                  })}
+                </select>
+              </div>
+            )}
+
+            {timeFilter === 'month' && (
+              <div className="flex items-center gap-1.5 animate-fade-in">
+                <select
+                  value={selectedMonthOption}
+                  onChange={e => setSelectedMonthOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+                  ))}
+                </select>
+                <select
+                  value={selectedYearOption}
+                  onChange={e => setSelectedYearOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = 2026 + i;
+                    return <option key={y} value={y}>Năm {y}</option>;
+                  })}
+                </select>
+              </div>
+            )}
+
+            {timeFilter === 'quarter' && (
+              <div className="flex items-center gap-1.5 animate-fade-in">
+                <select
+                  value={selectedQuarterOption}
+                  onChange={e => setSelectedQuarterOption(Number(e.target.value) as any)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  <option value={1}>Quý 1</option>
+                  <option value={2}>Quý 2</option>
+                  <option value={3}>Quý 3</option>
+                  <option value={4}>Quý 4</option>
+                </select>
+                <select
+                  value={selectedYearOption}
+                  onChange={e => setSelectedYearOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = 2026 + i;
+                    return <option key={y} value={y}>Năm {y}</option>;
+                  })}
+                </select>
+              </div>
+            )}
+
+            {timeFilter === 'year' && (
+              <div className="flex items-center gap-1.5 animate-fade-in">
+                <select
+                  value={selectedYearOption}
+                  onChange={e => setSelectedYearOption(Number(e.target.value))}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const y = 2026 + i;
+                    return <option key={y} value={y}>Năm {y}</option>;
+                  })}
+                </select>
+              </div>
+            )}
+
+            {timeFilter === 'custom' && (
+              <div className="flex items-center gap-1 animate-fade-in">
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={e => setCustomStart(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={e => setCustomEnd(e.target.value)}
+                  className="p-1 bg-white border border-slate-200 rounded-lg text-[10px] md:text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -509,3 +810,4 @@ export default function ExpensesView({
     </div>
   );
 }
+
