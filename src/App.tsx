@@ -319,10 +319,8 @@ export default function App() {
           localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
 
           let cloudGoals = data.goals;
-          let shouldForceSyncGoals = false;
           if (!cloudGoals || !Array.isArray(cloudGoals) || cloudGoals.length === 0) {
             cloudGoals = INITIAL_GOALS;
-            shouldForceSyncGoals = true;
           }
           const finalGoals = computeGoalsWithActuals(cloudGoals, cloudOrders, cloudDesigns, cloudExpenses);
           setGoals(finalGoals);
@@ -330,46 +328,6 @@ export default function App() {
 
           setHasLoadedFromCloud(true);
           console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
-
-          if (shouldForceSyncGoals) {
-            console.log('Forcing sync of initial goals back to Google Sheet database...');
-            // Wait slightly for state flag to register, then sync
-            setTimeout(() => {
-              const payload = {
-                customers: cloudCustomers,
-                orders: cloudOrders,
-                courses: cloudCourses,
-                designs: cloudDesigns,
-                collaborators: cloudCollaborators,
-                campaigns: cloudCampaigns,
-                logs: cloudLogs,
-                expenses: cloudExpenses,
-                goals: finalGoals
-              };
-              
-              // We call the POST sync API directly to avoid using the state which hasn't updated yet
-              fetch(GOOGLE_SHEET_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                  action: 'sync',
-                  data: payload
-                })
-              })
-              .then(res => res.json())
-              .then(resData => {
-                if (resData && resData.success) {
-                  console.log('Successfully restored and synchronized initial goals to Google Sheets database!');
-                  showToast('success', 'Đã tự động khôi phục và đồng bộ số liệu mục tiêu lên Database!');
-                } else {
-                  console.warn('Failed to auto-sync restored goals:', resData.error);
-                }
-              })
-              .catch(syncErr => {
-                console.error('Error auto-syncing restored goals:', syncErr);
-              });
-            }, 1000);
-          }
         }
       } catch (err) {
         console.log('Auto-sync skipped (offline or error):', err);
@@ -776,20 +734,32 @@ export default function App() {
       }
 
       let updatedCustomers = [...customers];
+      let updatedOrders = [...orders];
       const rowNumsToConfirm: number[] = [];
       let newCount = 0;
       let updateCount = 0;
       
       pendingCustomers.forEach((c: any) => {
+        // Tìm khóa học tương ứng
+        const matchedCourse = courses.find(item => 
+          c.courseName && (
+            item.name.toLowerCase().includes(c.courseName.toLowerCase()) || 
+            c.courseName.toLowerCase().includes(item.name.toLowerCase())
+          )
+        ) || courses[0] || { id: 'KH001', name: 'Khoá học AI', driveFolderId: '0' };
+
         // Check if customer already exists by phone or email
-        const dup = updatedCustomers.find(existing => 
+        let dup = updatedCustomers.find(existing => 
           (c.phone && existing.phone === c.phone) || 
           (c.email && existing.email === c.email)
         );
         
+        let targetCustomerId = '';
         if (!dup) {
           const nextIdNum = updatedCustomers.length + 1;
           const nextIdStr = `KH${String(nextIdNum).padStart(4, '0')}`;
+          targetCustomerId = nextIdStr;
+          
           const newCust: Customer = {
             id: nextIdStr,
             name: c.name || '',
@@ -797,22 +767,23 @@ export default function App() {
             phone: c.phone || '',
             province: cleanLocationField(c.province),
             ward: cleanLocationField(c.ward),
-            tags: ['Sheet Import'],
+            tags: ['Sheet Import', 'Auto Active'],
             notes: `Tự động nhập từ Google Sheet Đăng ký học viên vào ${new Date().toLocaleString('vi-VN')}`,
             createdAt: new Date().toISOString(),
-            coursesPurchased: [],
+            coursesPurchased: [matchedCourse.id],
             lmsProgress: {},
             lmsGrades: {},
             lmsCertificateEarned: {},
             aiAnalysis: {
               segment: 'Tiềm năng',
-              summary: 'Khách hàng tự động quét từ Web Khóa học.',
+              summary: `Khách hàng tự động quét từ Web Khóa học: ${matchedCourse.name}.`,
               lastEvaluation: new Date().toISOString()
             }
           };
           updatedCustomers.push(newCust);
           newCount++;
         } else {
+          targetCustomerId = dup.id;
           // If customer already exists, let's update their province/ward fields if they have new content
           let changed = false;
           const cleanProv = cleanLocationField(c.province);
@@ -826,18 +797,54 @@ export default function App() {
             dup.ward = cleanWrd;
             changed = true;
           }
+          
+          // Thêm khóa học vào danh sách đã mua của học viên cũ nếu chưa có
+          const list = dup.coursesPurchased || [];
+          if (!list.includes(matchedCourse.id)) {
+            dup.coursesPurchased = [...list, matchedCourse.id];
+            changed = true;
+          }
+          
           if (changed) {
             updatedCustomers = updatedCustomers.map(existing => 
-              existing.id === dup.id ? { ...existing, province: dup.province, ward: dup.ward } : existing
+              existing.id === dup.id ? { ...existing, province: dup.province, ward: dup.ward, coursesPurchased: dup.coursesPurchased } : existing
             );
             updateCount++;
           }
         }
+        
+        // Tạo Đơn hàng tương ứng trong CRM
+        const orderId = `DH${String(updatedOrders.length + 1).padStart(4, '0')}`;
+        const newOrder: Order = {
+          id: orderId,
+          customerId: targetCustomerId,
+          customerName: c.name || 'Học viên',
+          customerEmail: c.email || '',
+          productId: matchedCourse.id,
+          productName: matchedCourse.name,
+          price: 0,
+          paymentStatus: 'Đã thanh toán',
+          paymentRecipient: 'TK công ty',
+          orderType: 'Đăng ký mới',
+          deliveryStatus: 'Chưa kích hoạt',
+          createdAt: new Date().toISOString(),
+          driveFolderId: matchedCourse.driveFolderId
+        };
+        updatedOrders = [newOrder, ...updatedOrders];
+        
+        // Tự động kích hoạt (gửi email + share Drive)
+        runAppsScriptActivation(newOrder);
+        
         rowNumsToConfirm.push(c.rowNum);
       });
       
-      if (newCount === 0 && updateCount === 0) {
-        // All registrations are already in CRM, but we should still confirm them on registration sheet to clean up
+      if (newCount === 0 && updateCount === 0 && rowNumsToConfirm.length === 0) {
+        showToast('info', 'Không có đăng ký mới nào cần quét.');
+        return;
+      }
+      
+      // Step 3: Call Script 1 to confirm rows as "Đã xác nhận"
+      if (rowNumsToConfirm.length > 0) {
         const confirmRes = await fetch(REGISTRATION_SHEET_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
@@ -850,48 +857,37 @@ export default function App() {
         if (!confirmData.success) {
           throw new Error(confirmData.error || 'Không thể chuyển trạng thái Đã xác nhận trên Sheet Đăng ký.');
         }
-        showToast('info', 'Các học viên đăng ký đã tồn tại trong hệ thống. Đã đánh dấu xác nhận trên Sheet đăng ký.');
-        return;
-      }
-      
-      // Step 3: Call Script 1 to confirm rows as "Đã xác nhận"
-      const confirmRes = await fetch(REGISTRATION_SHEET_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'confirmRows',
-          rows: rowNumsToConfirm
-        })
-      });
-      const confirmData = await confirmRes.json();
-      if (!confirmData.success) {
-        throw new Error(confirmData.error || 'Không thể chuyển trạng thái Đã xác nhận trên Sheet Đăng ký.');
       }
       
       // Step 4: Save to local storage and state
       setCustomers(updatedCustomers);
       saveToStorage('mre_customers', updatedCustomers);
       
-      const message = `[Quét Web] Quét và nhập thành công: ${newCount} khách mới, cập nhật thông tin tỉnh/thành cho ${updateCount} khách cũ.`;
+      setOrders(updatedOrders);
+      saveToStorage('mre_orders', updatedOrders);
+      
+      const message = `[Quét Web] Quét và kích hoạt tự động thành công cho ${rowNumsToConfirm.length} đăng ký mới.`;
       const updatedLogs = addActivityLog(message, 'success', 'QUET_WEB');
+      
+      const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, expenses);
  
       // Step 5: Sync to CRM Database (Script 2)
       await syncToGoogleSheets(undefined, {
         customers: updatedCustomers,
-        orders,
+        orders: updatedOrders,
         courses,
         designs,
         collaborators,
         campaigns,
         logs: updatedLogs,
         expenses,
-        goals
+        goals: finalGoals
       });
       
-      showToast('success', `Đã quét và thêm thành công ${newCount} khách hàng mới, cập nhật vị trí cho ${updateCount} khách hàng!`);
+      showToast('success', `Đã tự động gửi email kích hoạt và chia sẻ tài liệu học tập cho ${rowNumsToConfirm.length} đăng ký mới!`);
     } catch (err: any) {
       console.error('Scan registration error:', err);
-      showToast('error', `Lỗi khi quét khách hàng mới: ${err.message || err}`);
+      showToast('error', `Lỗi khi quét và tự động kích hoạt học viên mới: ${err.message || err}`);
     } finally {
       setIsSyncing(false);
     }
