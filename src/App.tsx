@@ -21,7 +21,10 @@ import {
   DollarSign,
   Target,
   Menu,
-  X
+  X,
+  Mail,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { Customer, Order, Course, DesignService, Collaborator, AutomationLog, MarketingCampaign, Expense, YearlyGoal } from './types';
 import {
@@ -50,7 +53,7 @@ import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzPKar9RU-l58TXmxWiCKwgsLhOPWO4CuRTavd8vM9dK7z5DfsQpib-v9qlDbxpoIZD-Q/exec';
 const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
 
 const cleanLocationField = (val: any): string => {
@@ -170,6 +173,12 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goals, setGoals] = useState<YearlyGoal[]>([]);
   const [hasLoadedFromCloud, setHasLoadedFromCloud] = useState<boolean>(false);
+  const [pendingManualMail, setPendingManualMail] = useState<{
+    email: string;
+    name: string;
+    course: string;
+    driveLink: string;
+  } | null>(null);
 
   // Google Sheets integration and Gemini rotation
   const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
@@ -685,6 +694,14 @@ export default function App() {
           type: 'error'
         });
         showToast('error', `Lỗi Apps Script khi kích hoạt cho ${order.customerEmail}: ${resData.error || 'Unknown'}`);
+        
+        // Cung cấp giải pháp thủ công
+        setPendingManualMail({
+          email: order.customerEmail,
+          name: order.customerName,
+          course: order.productName,
+          driveLink: order.driveFolderId || '0'
+        });
       }
       
       setLogs(prev => {
@@ -696,6 +713,13 @@ export default function App() {
     } catch (err: any) {
       console.error('Auto activation error:', err);
       showToast('error', `Không thể kết nối Apps Script để kích hoạt và gửi email thực tế cho ${order.customerEmail}.`);
+      
+      setPendingManualMail({
+        email: order.customerEmail,
+        name: order.customerName,
+        course: order.productName,
+        driveLink: order.driveFolderId || '0'
+      });
       
       const errLog: AutomationLog = {
         id: `L${Date.now()}_bg_err`,
@@ -1800,6 +1824,63 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Floating Manual Email Fallback Modal */}
+      {pendingManualMail && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">Gửi Email Thủ Công</h3>
+                  <p className="text-xs text-slate-500">Tự động kích hoạt thất bại do lỗi uỷ quyền Google.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPendingManualMail(null)}
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-xl space-y-2 text-sm text-slate-600 border border-slate-100 text-left">
+              <p><strong>Học viên:</strong> {pendingManualMail.name}</p>
+              <p><strong>Email:</strong> {pendingManualMail.email}</p>
+              <p><strong>Khóa học:</strong> {pendingManualMail.course}</p>
+              <p className="truncate"><strong>Link Drive:</strong> {pendingManualMail.driveLink}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <a
+                href={`mailto:${pendingManualMail.email}?subject=${encodeURIComponent(`🎓 [MRE EDU] Kích hoạt khoá học: ${pendingManualMail.course}`)}&body=${encodeURIComponent(
+                  `Xin chào ${pendingManualMail.name},\n\nChúc mừng bạn đã đăng ký thành công khóa học: ${pendingManualMail.course}!\n\nLink tài liệu khóa học trên Google Drive:\n${pendingManualMail.driveLink.startsWith('http') ? pendingManualMail.driveLink : `https://drive.google.com/drive/folders/${pendingManualMail.driveLink}`}\n\nTrân trọng,\nMRE EDU`
+                )}`}
+                onClick={() => setPendingManualMail(null)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[#FF3B30] text-white rounded-xl font-bold hover:bg-[#FF3B30]/90 transition cursor-pointer shadow-sm text-sm"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Mở Mail ứng dụng (Outlook/Gmail)
+              </a>
+              
+              <button
+                onClick={() => {
+                  const bodyText = `Xin chào ${pendingManualMail.name},\n\nChúc mừng bạn đã đăng ký thành công khóa học: ${pendingManualMail.course}!\n\nLink tài liệu khóa học trên Google Drive:\n${pendingManualMail.driveLink.startsWith('http') ? pendingManualMail.driveLink : `https://drive.google.com/drive/folders/${pendingManualMail.driveLink}`}\n\nTrân trọng,\nMRE EDU`;
+                  navigator.clipboard.writeText(bodyText);
+                  showToast('success', 'Đã sao chép nội dung thư vào Clipboard!');
+                }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl font-bold transition cursor-pointer text-sm"
+              >
+                <Copy className="w-4 h-4" />
+                Sao chép nội dung Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Toast Notification */}
       {toast && (
