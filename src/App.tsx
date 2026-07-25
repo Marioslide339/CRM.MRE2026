@@ -387,14 +387,12 @@ export default function App() {
 
   // Live Sync to Google Sheet
   const syncToGoogleSheets = async (urlToUse?: string, forcedData?: any) => {
-    // Chỉ chặn đồng bộ nếu chưa tải từ cloud VÀ không có dữ liệu cache local (tránh đè database trống lên sheet)
+    // Chặn hoàn toàn việc đồng bộ lên Sheets nếu chưa tải thành công dữ liệu từ Sheets về máy trong phiên làm việc này.
+    // Điều này để bảo vệ dữ liệu, tránh ghi đè dữ liệu trống hoặc dữ liệu cũ từ local cache khi mạng lỗi hoặc đổi URL.
     if (!hasLoadedFromCloud) {
-      const hasLocalCache = localStorage.getItem('mre_customers') || localStorage.getItem('mre_orders') || localStorage.getItem('mre_expenses');
-      if (!hasLocalCache) {
-        console.warn('Sync to Google Sheets blocked: Cloud data has not been loaded and no local cache exists.');
-        showToast('error', 'Chưa hoàn thành tải dữ liệu từ Google Sheets. Vui lòng đợi trong giây lát!');
-        return;
-      }
+      console.warn('Sync to Google Sheets blocked: Cloud data has not been successfully loaded in this session.');
+      showToast('error', 'Để bảo vệ dữ liệu của bạn, đồng bộ đã bị khóa do chưa kết nối được cơ sở dữ liệu từ Google Sheets!');
+      return;
     }
     const url = urlToUse || GOOGLE_SHEET_URL;
     setIsSyncPending(false);
