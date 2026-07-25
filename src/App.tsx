@@ -50,7 +50,7 @@ import ExpensesView from './components/ExpensesView';
 import GoalsViewComponent from './components/GoalsViewComponent';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbx6aCQGbpP7rXRlvxgQwiS3GH2w-F2DbdI11tm35TWWUniLquSefz4NH9Cb3Jhw5Jrdkw/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzghqXE0ot3OE0nobmXuswHBUpu6iJDowhxLO1nLa8_SphGljQUbvm6HBbvERQGEy901w/exec';
 const REGISTRATION_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJSWT6ZpXJhP9rFQoBMTDxQBMWUYg4XcffhvqFy_RCd7lwuWrBrTdu3dBzdcFRX_c7/exec';
 
 const cleanLocationField = (val: any): string => {
