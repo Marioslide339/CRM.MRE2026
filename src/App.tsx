@@ -758,19 +758,18 @@ export default function App() {
       }
 
       let updatedCustomers = [...customers];
-      let updatedOrders = [...orders];
       const rowNumsToConfirm: number[] = [];
       let newCount = 0;
       let updateCount = 0;
       
       pendingCustomers.forEach((c: any) => {
-        // Tìm khóa học tương ứng
+        // Tìm khóa học tương ứng (Sử dụng trường title chính xác theo định nghĩa của Course)
         const matchedCourse = courses.find(item => 
           c.courseName && (
-            item.name.toLowerCase().includes(c.courseName.toLowerCase()) || 
-            c.courseName.toLowerCase().includes(item.name.toLowerCase())
+            (item.title || (item as any).name || '').toLowerCase().includes(c.courseName.toLowerCase()) || 
+            c.courseName.toLowerCase().includes((item.title || (item as any).name || '').toLowerCase())
           )
-        ) || courses[0] || { id: 'KH001', name: 'Khoá học AI', driveFolderId: '0' };
+        ) || courses[0] || { id: 'KH001', title: 'Khoá học AI', driveFolderId: '0' };
 
         // Check if customer already exists by phone or email
         let dup = updatedCustomers.find(existing => 
@@ -778,11 +777,11 @@ export default function App() {
           (c.email && existing.email === c.email)
         );
         
-        let targetCustomerId = '';
+        const courseTitle = matchedCourse.title || (matchedCourse as any).name || 'Khoá học';
+        
         if (!dup) {
           const nextIdNum = updatedCustomers.length + 1;
           const nextIdStr = `KH${String(nextIdNum).padStart(4, '0')}`;
-          targetCustomerId = nextIdStr;
           
           const newCust: Customer = {
             id: nextIdStr,
@@ -800,14 +799,13 @@ export default function App() {
             lmsCertificateEarned: {},
             aiAnalysis: {
               segment: 'Tiềm năng',
-              summary: `Khách hàng tự động quét từ Web Khóa học: ${matchedCourse.name}.`,
+              summary: `Khách hàng tự động quét từ Web Khóa học: ${courseTitle}.`,
               lastEvaluation: new Date().toISOString()
             }
           };
           updatedCustomers.push(newCust);
           newCount++;
         } else {
-          targetCustomerId = dup.id;
           // If customer already exists, let's update their province/ward fields if they have new content
           let changed = false;
           const cleanProv = cleanLocationField(c.province);
@@ -837,28 +835,6 @@ export default function App() {
           }
         }
         
-        // Tạo Đơn hàng tương ứng trong CRM
-        const orderId = `DH${String(updatedOrders.length + 1).padStart(4, '0')}`;
-        const newOrder: Order = {
-          id: orderId,
-          customerId: targetCustomerId,
-          customerName: c.name || 'Học viên',
-          customerEmail: c.email || '',
-          productId: matchedCourse.id,
-          productName: matchedCourse.name,
-          price: 0,
-          paymentStatus: 'Đã thanh toán',
-          paymentRecipient: 'TK công ty',
-          orderType: 'Đăng ký mới',
-          deliveryStatus: 'Chưa kích hoạt',
-          createdAt: new Date().toISOString(),
-          driveFolderId: matchedCourse.driveFolderId
-        };
-        updatedOrders = [newOrder, ...updatedOrders];
-        
-        // Tự động kích hoạt (gửi email + share Drive)
-        runAppsScriptActivation(newOrder);
-        
         rowNumsToConfirm.push(c.rowNum);
       });
       
@@ -887,18 +863,15 @@ export default function App() {
       setCustomers(updatedCustomers);
       saveToStorage('mre_customers', updatedCustomers);
       
-      setOrders(updatedOrders);
-      saveToStorage('mre_orders', updatedOrders);
-      
-      const message = `[Quét Web] Quét và kích hoạt tự động thành công cho ${rowNumsToConfirm.length} đăng ký mới.`;
+      const message = `[Quét Web] Quét và nhập thành công ${newCount} khách hàng mới từ Web.`;
       const updatedLogs = addActivityLog(message, 'success', 'QUET_WEB');
       
-      const finalGoals = updateGoalsWithLiveActuals(goals, updatedOrders, designs, expenses);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, designs, expenses);
  
       // Step 5: Sync to CRM Database (Script 2)
       await syncToGoogleSheets(undefined, {
         customers: updatedCustomers,
-        orders: updatedOrders,
+        orders,
         courses,
         designs,
         collaborators,
@@ -908,10 +881,10 @@ export default function App() {
         goals: finalGoals
       });
       
-      showToast('success', `Đã tự động gửi email kích hoạt và chia sẻ tài liệu học tập cho ${rowNumsToConfirm.length} đăng ký mới!`);
+      showToast('success', `Đã quét và nhập thành công ${newCount} khách hàng mới từ Web!`);
     } catch (err: any) {
       console.error('Scan registration error:', err);
-      showToast('error', `Lỗi khi quét và tự động kích hoạt học viên mới: ${err.message || err}`);
+      showToast('error', `Lỗi khi quét học viên mới: ${err.message || err}`);
     } finally {
       setIsSyncing(false);
     }
