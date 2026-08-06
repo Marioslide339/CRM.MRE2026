@@ -67,7 +67,7 @@ export interface DesignService {
 export interface Expense {
   id: string; // CP0001...
   date: string; // YYYY-MM-DD
-  category: 'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác';
+  category: 'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Đóng bảo hiểm' | 'Khác';
   amount: number;
   description: string;
   hasTax?: boolean;
