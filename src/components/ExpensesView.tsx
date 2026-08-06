@@ -40,7 +40,7 @@ export default function ExpensesView({
 
   // Form states
   const [date, setDate] = useState(getTodayStr());
-  const [category, setCategory] = useState<'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Khác'>('Chi phí quảng cáo');
+  const [category, setCategory] = useState<'Chi phí quảng cáo' | 'Văn phòng phẩm' | 'Trả lương' | 'Phần mềm dịch vụ' | 'Thuế VAT' | 'Thuế TNDN' | 'Đóng bảo hiểm' | 'Khác'>('Chi phí quảng cáo');
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState('');
   const [hasTax, setHasTax] = useState(true);
@@ -553,6 +553,7 @@ export default function ExpensesView({
                 <option value="Phần mềm dịch vụ">Phần mềm dịch vụ</option>
                 <option value="Thuế VAT">Thuế VAT</option>
                 <option value="Thuế TNDN">Thuế TNDN</option>
+                <option value="Đóng bảo hiểm">Đóng bảo hiểm</option>
                 <option value="Khác">Khác</option>
               </select>
               <Filter className="absolute right-2.5 top-3 w-3 h-3 text-slate-400 pointer-events-none" />
@@ -586,6 +587,7 @@ export default function ExpensesView({
                         exp.category === 'Trả lương' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
                         exp.category === 'Phần mềm dịch vụ' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
                         exp.category === 'Thuế VAT' || exp.category === 'Thuế TNDN' ? 'bg-red-50 text-red-600 border border-red-100' :
+                        exp.category === 'Đóng bảo hiểm' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                         'bg-slate-100 text-slate-600'
                       }`}>
                         {exp.category}
@@ -636,6 +638,7 @@ export default function ExpensesView({
                       exp.category === 'Trả lương' ? 'bg-purple-50 text-purple-600 border-purple-100' :
                       exp.category === 'Phần mềm dịch vụ' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
                       exp.category === 'Thuế VAT' || exp.category === 'Thuế TNDN' ? 'bg-red-50 text-red-600 border-red-100' :
+                      exp.category === 'Đóng bảo hiểm' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                       'bg-slate-100 text-slate-600'
                     }`}>
                       {exp.category}
@@ -718,6 +721,7 @@ export default function ExpensesView({
                   <option value="Phần mềm dịch vụ">Phần mềm dịch vụ (SaaS, Server, Hosting...)</option>
                   <option value="Thuế VAT">Thuế VAT</option>
                   <option value="Thuế TNDN">Thuế TNDN</option>
+                  <option value="Đóng bảo hiểm">Đóng bảo hiểm</option>
                   <option value="Khác">Khác / Chi phí không tên</option>
                 </select>
               </div>
