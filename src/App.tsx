@@ -1739,6 +1739,7 @@ export default function App() {
         {activeTab === 'collaborators' && (
           <CollaboratorsView
             collaborators={collaborators}
+            designs={designs}
             onAddCollaborator={handleAddCollaborator}
             onUpdateCollaborator={handleUpdateCollaborator}
           />
