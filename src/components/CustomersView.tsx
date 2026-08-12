@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -133,6 +133,37 @@ export default function CustomersView({
     return Array.from(list);
   }, [customers]);
 
+  const customerSegmentMap = useMemo(() => {
+    const map: Record<string, { label: string; color: string; totalSpent: number }> = {};
+    customers.forEach(c => {
+      const custOrders = orders.filter(o => o.customerId === c.id);
+      const totalSpent = custOrders.reduce((sum, o) => sum + (o.price || 0), 0);
+      const custDesigns = designs.filter(d => d.customerId === c.id);
+      const hasDesign = custDesigns.length > 0;
+      
+      let label = 'Mới';
+      let color = 'bg-slate-100 text-slate-600';
+      
+      if (totalSpent >= 2000000 || (custOrders.length >= 3 && hasDesign)) {
+        label = 'VIP'; color = 'bg-amber-50 text-amber-700 border border-amber-200';
+      } else if (totalSpent >= 500000 || custOrders.length >= 2) {
+        label = 'Thân thiết'; color = 'bg-blue-50 text-blue-600 border border-blue-200';
+      } else if (custOrders.length >= 1) {
+        label = 'Đã mua'; color = 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+      }
+      
+      map[c.id] = { label, color, totalSpent };
+    });
+    return map;
+  }, [customers, orders, designs]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedProvince, selectedTag]);
+
   // Filter logic
   const filteredCustomers = useMemo(() => {
     const cleanSearch = removeAccents(searchTerm).toLowerCase().trim();
@@ -155,6 +186,12 @@ export default function CustomersView({
       return dateB - dateA;
     });
   }, [customers, searchTerm, selectedProvince, selectedTag]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleSelectCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -477,8 +514,8 @@ export default function CustomersView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCustomers.length > 0 ? (
-                  filteredCustomers.map((c) => (
+                {paginatedCustomers.length > 0 ? (
+                  paginatedCustomers.map((c) => (
                     <tr
                       key={c.id}
                       onClick={() => handleSelectCustomer(c)}
@@ -489,10 +526,10 @@ export default function CustomersView({
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-800">{c.name}</span>
                           {(() => {
-                            const seg = getCustomerSegment(c);
+                            const seg = customerSegmentMap[c.id] || { label: 'Mới', color: 'bg-slate-100 text-slate-600' };
                             return (
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.colorClass}`}>
-                                {seg.text}
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.color}`}>
+                                {seg.label}
                               </span>
                             );
                           })()}
@@ -545,8 +582,8 @@ export default function CustomersView({
 
           {/* Cards display (mobile only) */}
           <div className="block md:hidden divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
-            {filteredCustomers.length > 0 ? (
-              filteredCustomers.map((c) => (
+            {paginatedCustomers.length > 0 ? (
+              paginatedCustomers.map((c) => (
                 <div
                   key={c.id}
                   onClick={() => handleSelectCustomer(c)}
@@ -561,10 +598,10 @@ export default function CustomersView({
                     </div>
                     <div className="flex gap-1">
                       {(() => {
-                        const seg = getCustomerSegment(c);
+                        const seg = customerSegmentMap[c.id] || { label: 'Mới', color: 'bg-slate-100 text-slate-600' };
                         return (
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.colorClass}`}>
-                            {seg.text}
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${seg.color}`}>
+                            {seg.label}
                           </span>
                         );
                       })()}
@@ -599,6 +636,55 @@ export default function CustomersView({
               </div>
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100 bg-slate-50/50">
+              <span className="text-xs text-slate-500 font-sans">
+                Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length)} / {filteredCustomers.length} khách hàng
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                >
+                  ← Trước
+                </button>
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let page: number;
+                  if (totalPages <= 7) {
+                    page = i + 1;
+                  } else if (currentPage <= 4) {
+                    page = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    page = totalPages - 6 + i;
+                  } else {
+                    page = currentPage - 3 + i;
+                  }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-lg border cursor-pointer transition ${
+                        currentPage === page
+                          ? 'bg-primary text-white border-primary shadow-sm'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                >
+                  Sau →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Customer Detail Side-Panel / Workspace */}
@@ -629,10 +715,10 @@ export default function CustomersView({
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   {(() => {
-                    const seg = getCustomerSegment(selectedCustomer);
+                    const seg = customerSegmentMap[selectedCustomer.id] || { label: 'Mới', color: 'bg-slate-100 text-slate-600' };
                     return (
-                      <span className={`px-2 py-1 rounded-lg text-[9px] font-bold font-sans uppercase border ${seg.colorClass}`}>
-                        {seg.text}
+                      <span className={`px-2 py-1 rounded-lg text-[9px] font-bold font-sans uppercase border ${seg.color}`}>
+                        {seg.label}
                       </span>
                     );
                   })()}
@@ -1110,3 +1196,4 @@ export default function CustomersView({
     </div>
   );
 }
+
