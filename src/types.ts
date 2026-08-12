@@ -36,7 +36,7 @@ export interface Order {
   paymentStatus: 'Chưa thanh toán' | 'Đã thanh toán';
   paymentRecipient?: 'Tiền mặt' | 'TK công ty';
   orderType?: 'Đăng ký mới' | 'Gửi lại';
-  deliveryStatus: 'Chưa kích hoạt' | 'Đã cấp tài khoản';
+  deliveryStatus: 'Chưa kích hoạt' | 'Đã cấp tài khoản' | 'Cần gửi thủ công';
   createdAt: string;
   activatedAt?: string;
   driveFolderId?: string;
