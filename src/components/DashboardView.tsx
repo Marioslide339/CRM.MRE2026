@@ -53,6 +53,22 @@ interface DashboardViewProps {
 const COLORS = ['#FF3B30', '#1B1325', '#FFA726', '#D946EF', '#7C3AED'];
 const EXPENSE_COLORS = ['#FF3B30', '#7C3AED', '#FFA726', '#D946EF', '#3B82F6', '#10B981', '#1B1325'];
 
+function DashboardClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return <>{day}/{month}/{year} {hours}:{minutes}:{seconds}</>;
+}
+
 export default function DashboardView({
   customers,
   orders,
@@ -80,14 +96,7 @@ export default function DashboardView({
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
 
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const [currentDateTime] = useState(() => new Date());
 
   const getTodayStr = (date: Date) => {
     const year = date.getFullYear();
@@ -205,15 +214,7 @@ export default function DashboardView({
     return { start: todayS, end: todayS };
   }, [timeFilter, selectedDayOption, selectedWeekOption, selectedMonthOption, selectedYearOption, customStart, customEnd, currentDateTime]);
 
-  const formattedDateTime = useMemo(() => {
-    const day = String(currentDateTime.getDate()).padStart(2, '0');
-    const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
-    const year = currentDateTime.getFullYear();
-    const hours = String(currentDateTime.getHours()).padStart(2, '0');
-    const minutes = String(currentDateTime.getMinutes()).padStart(2, '0');
-    const seconds = String(currentDateTime.getSeconds()).padStart(2, '0');
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-  }, [currentDateTime]);
+
 
   // Filter lists based on time range (using local date conversion)
   const filteredOrders = useMemo(() => {
@@ -796,7 +797,7 @@ export default function DashboardView({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 font-mono text-xs font-semibold text-slate-600">
             <Calendar className="w-3.5 h-3.5 text-primary" />
-            <span>Hôm nay: {formattedDateTime}</span>
+            <span>Hôm nay: <DashboardClock /></span>
           </div>
           {isSyncing ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-600 rounded-xl text-xs font-bold font-sans border border-amber-500/20 animate-pulse">
