@@ -188,7 +188,7 @@ export default function App() {
     setToast({ type, message });
     setTimeout(() => {
       setToast(null);
-    }, 4000);
+    }, 8000);
   };
 
   const sanitizeCustomers = (custs: Customer[]): Customer[] => {
@@ -669,6 +669,7 @@ export default function App() {
       
       const newLogs: AutomationLog[] = [];
       if (resData && resData.success) {
+        handleUpdateOrder(order.id, { deliveryStatus: 'Đã cấp tài khoản', activatedAt: new Date().toISOString() }, false);
         newLogs.push({
           id: `L${Date.now()}_bg1`,
           timestamp: new Date().toISOString(),
@@ -677,20 +678,9 @@ export default function App() {
           message: `[Auto-Background] Kích hoạt và cấp quyền thành công cho ${order.customerEmail}`,
           type: 'success'
         });
-        if (resData.shareSuccess) {
-          showToast('success', `Đã tự động kích hoạt: Cấp quyền Drive và gửi email đến ${order.customerEmail}!`);
-        } else {
-          newLogs.push({
-            id: `L${Date.now()}_bg2`,
-            timestamp: new Date().toISOString(),
-            orderId: order.id,
-            step: 3,
-            message: `[Auto-Background] Gửi email thành công, lỗi cấp quyền Drive: ${resData.error || 'N/A'}`,
-            type: 'error'
-          });
-          showToast('info', `Đã gửi mail kích hoạt cho ${order.customerEmail}, nhưng không thể tự động share Drive (Lỗi: ${resData.error || 'File ID không hợp lệ'}).`);
-        }
+        showToast('success', `Đã gửi email kích hoạt khoá học thành công cho ${order.customerEmail}!`);
       } else {
+        handleUpdateOrder(order.id, { deliveryStatus: 'Cần gửi thủ công' }, false);
         newLogs.push({
           id: `L${Date.now()}_bg3`,
           timestamp: new Date().toISOString(),
@@ -718,6 +708,7 @@ export default function App() {
       
     } catch (err: any) {
       console.error('Auto activation error:', err);
+      handleUpdateOrder(order.id, { deliveryStatus: 'Cần gửi thủ công' }, false);
       showToast('error', `Không thể kết nối Apps Script để kích hoạt và gửi email thực tế cho ${order.customerEmail}.`);
       
       setPendingManualMail({
