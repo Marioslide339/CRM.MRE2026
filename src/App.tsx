@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   LayoutDashboard,
@@ -40,17 +40,17 @@ import {
 } from './data/mockData';
 
 // Modular Component imports
-import DashboardView from './components/DashboardView';
-import CustomersView from './components/CustomersView';
-import OrdersView from './components/OrdersView';
-import CoursesView from './components/CoursesView';
-import DesignsView from './components/DesignsView';
-import CollaboratorsView from './components/CollaboratorsView';
-import MarketingView from './components/MarketingView';
-import AiChatView from './components/AiChatView';
-import SettingsView from './components/SettingsView';
-import ExpensesView from './components/ExpensesView';
-import GoalsViewComponent from './components/GoalsViewComponent';
+const DashboardView = React.lazy(() => import('./components/DashboardView'));
+const CustomersView = React.lazy(() => import('./components/CustomersView'));
+const OrdersView = React.lazy(() => import('./components/OrdersView'));
+const CoursesView = React.lazy(() => import('./components/CoursesView'));
+const DesignsView = React.lazy(() => import('./components/DesignsView'));
+const CollaboratorsView = React.lazy(() => import('./components/CollaboratorsView'));
+const MarketingView = React.lazy(() => import('./components/MarketingView'));
+const AiChatView = React.lazy(() => import('./components/AiChatView'));
+const SettingsView = React.lazy(() => import('./components/SettingsView'));
+const ExpensesView = React.lazy(() => import('./components/ExpensesView'));
+const GoalsViewComponent = React.lazy(() => import('./components/GoalsViewComponent'));
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyrzyQD1wrWaQSw5BVCXNPY-Bp_YKgwDOFdOQT5Ij7L2BkDF4iataMAgyuSSJFG3fendA/exec';
@@ -136,26 +136,21 @@ const getValueByPossibleKeys = (obj: any, possibleKeys: string[], defaultValue: 
   return defaultValue;
 };
 
+function LiveClock() {
+  const [time, setTime] = React.useState(new Date());
+  React.useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const formatted = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')} ${String(time.getDate()).padStart(2, '0')}/${String(time.getMonth() + 1).padStart(2, '0')}/${time.getFullYear()}`;
+  return <span>{formatted}</span>;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>('');
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const min = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      setCurrentTime(`${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
 
   const selectTab = (tabName: string) => {
     setActiveTab(tabName);
@@ -1523,7 +1518,7 @@ export default function App() {
                   )}
                 </span>
                 <span className="text-[10px] text-slate-400 block font-mono font-bold flex items-center gap-1">
-                  {currentTime}
+                  <LiveClock />
                   {isSyncing && <span className="text-[9px] text-emerald-400 font-sans font-medium italic shrink-0">(Đang lưu...)</span>}
                   {isSyncPending && <span className="text-[9px] text-amber-400 font-sans font-medium italic shrink-0">(Chờ lưu...)</span>}
                 </span>
@@ -1676,6 +1671,7 @@ export default function App() {
       {/* Main Container contents */}
       <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto w-full space-y-6" id="view_contents_main">
         {/* Render separate views natively inside active states */}
+        <React.Suspense fallback={<div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>}>
         {activeTab === 'dashboard' && (
           <DashboardView
             customers={customers}
@@ -1797,6 +1793,7 @@ export default function App() {
             onTestConnection={handleTestConnection}
           />
         )}
+        </React.Suspense>
       </main>
 
       {/* Floating Manual Email Fallback Modal */}
