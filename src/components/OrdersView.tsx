@@ -13,7 +13,8 @@ import {
   Link2,
   X,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Mail
 } from 'lucide-react';
 import { Order, Customer, Course } from '../types';
 
@@ -598,10 +599,12 @@ export default function OrdersView({
                     <td className="py-4 px-4 space-y-1">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${
                         order.deliveryStatus === 'Đã cấp tài khoản'
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold'
+                          : order.deliveryStatus === 'Cần gửi thủ công'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-100 font-bold'
+                          : 'bg-amber-50 text-amber-700 border border-amber-100'
                       }`}>
-                        {order.deliveryStatus}
+                        {order.deliveryStatus === 'Đã cấp tài khoản' ? 'Đã cấp học (Tự động)' : order.deliveryStatus}
                       </span>
                       {order.activatedAt && (
                         <p className="text-[9px] text-slate-400 block font-mono">
@@ -619,6 +622,14 @@ export default function OrdersView({
                           >
                             <Coins className="w-3.5 h-3.5" />
                             Kích hoạt
+                          </button>
+                        ) : order.deliveryStatus === 'Cần gửi thủ công' ? (
+                          <button
+                            onClick={() => handleMarkAsPaid(order)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold shadow-sm transition cursor-pointer"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Gửi thủ công
                           </button>
                         ) : (
                           <div className="inline-flex gap-1.5 items-center text-emerald-600 text-[10px] font-bold">
@@ -699,10 +710,12 @@ export default function OrdersView({
                     <span className="text-[9px] text-slate-400 uppercase font-semibold">Kích hoạt LMS</span>
                     <span className={`inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium w-full ${
                       order.deliveryStatus === 'Đã cấp tài khoản'
-                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                        : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold'
+                        : order.deliveryStatus === 'Cần gửi thủ công'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-100 font-bold'
+                        : 'bg-amber-50 text-amber-700 border border-amber-100'
                     }`}>
-                      {order.deliveryStatus}
+                      {order.deliveryStatus === 'Đã cấp tài khoản' ? 'Đã cấp học (Tự động)' : order.deliveryStatus}
                     </span>
                   </div>
                 </div>
@@ -715,6 +728,14 @@ export default function OrdersView({
                     >
                       <Coins className="w-3 h-3" />
                       Kích hoạt
+                    </button>
+                  ) : order.deliveryStatus === 'Cần gửi thủ công' ? (
+                    <button
+                      onClick={() => handleMarkAsPaid(order)}
+                      className="flex items-center gap-1.5 px-2 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-[10px] font-bold shadow-sm transition cursor-pointer"
+                    >
+                      <Mail className="w-3 h-3" />
+                      Gửi thủ công
                     </button>
                   ) : (
                     <span className="inline-flex gap-1 items-center text-emerald-600 text-[10px] font-bold">
