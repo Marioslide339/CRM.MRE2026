@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShoppingBag,
   Plus,
@@ -51,6 +51,13 @@ export default function OrdersView({
   const [timeFilter, setTimeFilter] = useState<'all' | 'day' | 'week' | 'month' | 'year' | 'custom'>('all');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, timeFilter, customStart, customEnd]);
 
   const currentDateTime = useMemo(() => new Date(), []);
   
@@ -403,6 +410,12 @@ export default function OrdersView({
     });
   }, [orders, searchTerm, statusFilter, timeFilter, customStart, customEnd, todayStr, weekRange, monthRange, yearRange]);
 
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const handleExportCSV = () => {
     const headers = ["Mã Đơn", "Học viên", "Email", "Khóa học / Gói", "Thanh toán (VND)", "Phương thức", "Ngày tạo", "Trạng thái thanh toán", "Kích hoạt LMS"];
     const rows = filteredOrders.map(o => [
@@ -539,8 +552,8 @@ export default function OrdersView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map(order => (
+              {paginatedOrders.length > 0 ? (
+                paginatedOrders.map(order => (
                   <tr key={order.id} className="hover:bg-slate-50/50 transition">
                     <td className="py-4 px-6 space-y-0.5">
                       <p className="font-mono font-bold text-slate-800">{order.id}</p>
@@ -645,8 +658,8 @@ export default function OrdersView({
 
         {/* Card representation (mobile only) */}
         <div className="block md:hidden divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
+          {paginatedOrders.length > 0 ? (
+            paginatedOrders.map(order => (
               <div key={order.id} className="p-4 space-y-3 hover:bg-slate-50/50 transition">
                 <div className="flex justify-between items-center">
                   <span className="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-2 py-0.5 rounded">{order.id}</span>
@@ -733,6 +746,55 @@ export default function OrdersView({
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100 bg-slate-50/50">
+            <span className="text-xs text-slate-500 font-sans">
+              Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} / {filteredOrders.length} đơn hàng
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+              >
+                ← Trước
+              </button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let page: number;
+                if (totalPages <= 7) {
+                  page = i + 1;
+                } else if (currentPage <= 4) {
+                  page = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  page = totalPages - 6 + i;
+                } else {
+                  page = currentPage - 3 + i;
+                }
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg border cursor-pointer transition ${
+                      currentPage === page
+                        ? 'bg-primary text-white border-primary shadow-sm'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+              >
+                Sau →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create Order Modal dialog popup */}
@@ -1274,3 +1336,4 @@ export default function OrdersView({
     </div>
   );
 }
+
