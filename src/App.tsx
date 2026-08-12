@@ -283,61 +283,68 @@ export default function App() {
     }
 
     // Bước 2: Tự động tải dữ liệu từ Google Sheets — nguồn dữ liệu chính duy nhất
-    const autoSyncFromCloud = async () => {
-      try {
-        setIsSyncing(true);
-        const response = await fetch(`${GOOGLE_SHEET_URL}?action=getData`);
-        const data = await response.json();
-        if (data && !data.error) {
-          // Ghi đè TOÀN BỘ dữ liệu từ Google Sheets (kể cả mảng rỗng)
-          const cloudCustomers = sanitizeCustomers(data.customers || []);
-          setCustomers(cloudCustomers);
-          localStorage.setItem('mre_customers', JSON.stringify(cloudCustomers));
+    const autoSyncFromCloud = async (maxRetries = 3) => {
+      setIsSyncing(true);
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(`${GOOGLE_SHEET_URL}?action=getData`);
+          const data = await response.json();
+          if (data && !data.error) {
+            // Ghi đè TOÀN BỘ dữ liệu từ Google Sheets (kể cả mảng rỗng)
+            const cloudCustomers = sanitizeCustomers(data.customers || []);
+            setCustomers(cloudCustomers);
+            localStorage.setItem('mre_customers', JSON.stringify(cloudCustomers));
 
-          const cloudOrders = data.orders || [];
-          setOrders(cloudOrders);
-          localStorage.setItem('mre_orders', JSON.stringify(cloudOrders));
+            const cloudOrders = data.orders || [];
+            setOrders(cloudOrders);
+            localStorage.setItem('mre_orders', JSON.stringify(cloudOrders));
 
-          const cloudCourses = data.courses || [];
-          setCourses(cloudCourses);
-          localStorage.setItem('mre_courses', JSON.stringify(cloudCourses));
+            const cloudCourses = data.courses || [];
+            setCourses(cloudCourses);
+            localStorage.setItem('mre_courses', JSON.stringify(cloudCourses));
 
-          const cloudDesigns = sanitizeDesigns(data.designs || []);
-          setDesigns(cloudDesigns);
-          localStorage.setItem('mre_designs', JSON.stringify(cloudDesigns));
+            const cloudDesigns = sanitizeDesigns(data.designs || []);
+            setDesigns(cloudDesigns);
+            localStorage.setItem('mre_designs', JSON.stringify(cloudDesigns));
 
-          const cloudCollaborators = data.collaborators || [];
-          setCollaborators(cloudCollaborators);
-          localStorage.setItem('mre_collaborators', JSON.stringify(cloudCollaborators));
+            const cloudCollaborators = data.collaborators || [];
+            setCollaborators(cloudCollaborators);
+            localStorage.setItem('mre_collaborators', JSON.stringify(cloudCollaborators));
 
-          const cloudCampaigns = data.campaigns || [];
-          setCampaigns(cloudCampaigns);
-          localStorage.setItem('mre_campaigns', JSON.stringify(cloudCampaigns));
+            const cloudCampaigns = data.campaigns || [];
+            setCampaigns(cloudCampaigns);
+            localStorage.setItem('mre_campaigns', JSON.stringify(cloudCampaigns));
 
-          const cloudLogs = data.logs || [];
-          setLogs(cloudLogs);
-          localStorage.setItem('mre_logs', JSON.stringify(cloudLogs));
+            const cloudLogs = data.logs || [];
+            setLogs(cloudLogs);
+            localStorage.setItem('mre_logs', JSON.stringify(cloudLogs));
 
-          const cloudExpenses = sanitizeExpenses(data.expenses || []);
-          setExpenses(cloudExpenses);
-          localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
+            const cloudExpenses = sanitizeExpenses(data.expenses || []);
+            setExpenses(cloudExpenses);
+            localStorage.setItem('mre_expenses', JSON.stringify(cloudExpenses));
 
-          let cloudGoals = data.goals;
-          if (!cloudGoals || !Array.isArray(cloudGoals) || cloudGoals.length === 0) {
-            cloudGoals = INITIAL_GOALS;
+            let cloudGoals = data.goals;
+            if (!cloudGoals || !Array.isArray(cloudGoals) || cloudGoals.length === 0) {
+              cloudGoals = INITIAL_GOALS;
+            }
+            const finalGoals = computeGoalsWithActuals(cloudGoals, cloudOrders, cloudDesigns, cloudExpenses);
+            setGoals(finalGoals);
+            localStorage.setItem('mre_goals', JSON.stringify(finalGoals));
+
+            setHasLoadedFromCloud(true);
+            console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
+            setIsSyncing(false);
+            return;
           }
-          const finalGoals = computeGoalsWithActuals(cloudGoals, cloudOrders, cloudDesigns, cloudExpenses);
-          setGoals(finalGoals);
-          localStorage.setItem('mre_goals', JSON.stringify(finalGoals));
-
-          setHasLoadedFromCloud(true);
-          console.log('Auto-sync from Google Sheets completed — all devices synchronized.');
+        } catch (err) {
+          console.warn(`Auto-sync attempt ${attempt}/${maxRetries} failed:`, err);
+          if (attempt < maxRetries) {
+            await new Promise(res => setTimeout(res, 2000 * attempt));
+          }
         }
-      } catch (err) {
-        console.log('Auto-sync skipped (offline or error):', err);
-      } finally {
-        setIsSyncing(false);
       }
+      setIsSyncing(false);
+      console.warn('Auto-sync from Google Sheets could not complete after retries.');
     };
     autoSyncFromCloud();
   }, []);
@@ -608,7 +615,11 @@ export default function App() {
   };
 
   const handleTriggerSync = async () => {
-    await syncToGoogleSheets();
+    if (!hasLoadedFromCloud) {
+      await fetchFromGoogleSheets();
+    } else {
+      await syncToGoogleSheets();
+    }
   };
 
   const handleTestConnection = async (email: string) => {
