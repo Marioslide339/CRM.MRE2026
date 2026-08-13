@@ -310,19 +310,348 @@ export default function DashboardView({
     });
   }, [customers, activeRange]);
 
-  // Financial KPIs
+  const trendChartData = useMemo(() => {
+    // 1. Hourly breakdown (for today / yesterday)
+    if (timeFilter === 'day' && (selectedDayOption === 'today' || selectedDayOption === 'yesterday')) {
+      const bins = Array.from({ length: 24 }, (_, i) => ({
+        name: `${String(i).padStart(2, '0')}:00`,
+        'Doanh thu': 0,
+        'Chi phí': 0,
+        'Lợi nhuận': 0
+      }));
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const hr = new Date(o.createdAt).getHours();
+          if (hr >= 0 && hr < 24) bins[hr]['Doanh thu'] += o.price;
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dateStr = d.createdAt || d.deadline;
+        const hr = new Date(dateStr).getHours();
+        if (hr >= 0 && hr < 24) bins[hr]['Doanh thu'] += d.amount || 0;
+      });
+
+      filteredExpenses.forEach(e => {
+        const hr = new Date(e.date).getHours();
+        if (hr >= 0 && hr < 24) bins[hr]['Chi phí'] += e.amount;
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+      });
+
+      return bins;
+    }
+
+    // 2. Yearly breakdown (for year filter)
+    if (timeFilter === 'year') {
+      const currentYear = selectedYearOption;
+      const activeMonthNum = (selectedYearOption === new Date().getFullYear()) ? new Date().getMonth() + 1 : 13;
+      const goalForYear = goals.find(g => g.year === currentYear) || goals[0];
+
+      const bins = Array.from({ length: 12 }, (_, i) => {
+        const mNum = i + 1;
+        return {
+          name: `Tháng ${String(mNum).padStart(2, '0')}`,
+          month: mNum,
+          'Doanh thu': 0,
+          'Chi phí': 0,
+          'Lợi nhuận': 0
+        };
+      });
+
+      bins.forEach(b => {
+        if (b.month < activeMonthNum) {
+          const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
+          if (targetMonth) {
+            b['Doanh thu'] = targetMonth.actualRevenue || 0;
+            b['Chi phí'] = (targetMonth.actualExpenseAds || 0) + (targetMonth.actualExpenseOther || 0);
+            b['Lợi nhuận'] = targetMonth.actualProfit || (b['Doanh thu'] - b['Chi phí']);
+          }
+        }
+      });
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const m = new Date(o.createdAt).getMonth() + 1;
+          if (m >= activeMonthNum) {
+            const bin = bins.find(b => b.month === m);
+            if (bin) bin['Doanh thu'] += o.price;
+          }
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dateStr = d.createdAt || d.deadline;
+        const m = new Date(dateStr).getMonth() + 1;
+        if (m >= activeMonthNum) {
+          const bin = bins.find(b => b.month === m);
+          if (bin) bin['Doanh thu'] += d.amount || 0;
+        }
+      });
+
+      filteredExpenses.forEach(e => {
+        const m = new Date(e.date).getMonth() + 1;
+        if (m >= activeMonthNum) {
+          const bin = bins.find(b => b.month === m);
+          if (bin) bin['Chi phí'] += e.amount;
+        }
+      });
+
+      bins.forEach(b => {
+        if (b.month >= activeMonthNum) {
+          b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+        }
+      });
+
+      return bins;
+    }
+
+    // 2b. Quarterly breakdown (for quarter filter - 3 months per quarter, integrates historical summary + live software data)
+    if (timeFilter === 'quarter') {
+      const year = selectedYearOption;
+      const goalForYear = goals.find(g => g.year === year) || goals[0];
+      const quarterStartMonth = (selectedQuarterOption - 1) * 3; // 0 for Q1 (Jan-Mar), 3 for Q2 (Apr-Jun), 6 for Q3 (Jul-Sep), 9 for Q4 (Oct-Dec)
+
+      const bins = Array.from({ length: 3 }, (_, i) => {
+        const mNum = quarterStartMonth + i + 1;
+        return {
+          name: `Tháng ${String(mNum).padStart(2, '0')}`,
+          month: mNum,
+          'Doanh thu': 0,
+          'Chi phí': 0,
+          'Lợi nhuận': 0
+        };
+      });
+
+      // 1. Populate historical monthly summary actuals from goals
+      bins.forEach(b => {
+        const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
+        if (targetMonth) {
+          b['Doanh thu'] = targetMonth.actualRevenue || 0;
+          b['Chi phí'] = (targetMonth.actualExpenseAds || 0) + (targetMonth.actualExpenseOther || 0);
+          b['Lợi nhuận'] = targetMonth.actualProfit || (b['Doanh thu'] - b['Chi phí']);
+        }
+      });
+
+      // 2. Add live software orders/expenses if month wasn't covered in goals
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const dStr = toLocalDateStr(o.createdAt);
+          if (dStr) {
+            const parts = dStr.split('-');
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (y === year) {
+              const bin = bins.find(b => b.month === m);
+              if (bin && bin['Doanh thu'] === 0) {
+                bin['Doanh thu'] += o.price;
+              }
+            }
+          }
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dStr = toLocalDateStr(d.createdAt || d.deadline);
+        if (dStr) {
+          const parts = dStr.split('-');
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          if (y === year) {
+            const bin = bins.find(b => b.month === m);
+            if (bin && bin['Doanh thu'] === 0) {
+              bin['Doanh thu'] += d.amount || 0;
+            }
+          }
+        }
+      });
+
+      filteredExpenses.forEach(e => {
+        const eStr = toLocalDateStr(e.date);
+        if (eStr) {
+          const parts = eStr.split('-');
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          if (y === year) {
+            const bin = bins.find(b => b.month === m);
+            if (bin && bin['Chi phí'] === 0) {
+              bin['Chi phí'] += e.amount;
+            }
+          }
+        }
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+      });
+
+      return bins;
+    }
+
+    // 3. Monthly breakdown (for month filter)
+    if (timeFilter === 'month') {
+      const year = selectedYearOption;
+      const month = selectedMonthOption - 1;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const bins = Array.from({ length: daysInMonth }, (_, i) => ({
+        name: `Ngày ${String(i + 1).padStart(2, '0')}`,
+        'Doanh thu': 0,
+        'Chi phí': 0,
+        'Lợi nhuận': 0
+      }));
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const d = new Date(o.createdAt).getDate();
+          if (d >= 1 && d <= daysInMonth) {
+            bins[d - 1]['Doanh thu'] += o.price;
+          }
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dateStr = d.createdAt || d.deadline;
+        const dVal = new Date(dateStr).getDate();
+        if (dVal >= 1 && dVal <= daysInMonth) {
+          bins[dVal - 1]['Doanh thu'] += d.amount || 0;
+        }
+      });
+
+      filteredExpenses.forEach(e => {
+        const dVal = new Date(e.date).getDate();
+        if (dVal >= 1 && dVal <= daysInMonth) {
+          bins[dVal - 1]['Chi phí'] += e.amount;
+        }
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+      });
+
+      return bins;
+    }
+
+    // 4. Daily breakdown (for 7days, 30days, week, custom)
+    const startDate = new Date(activeRange.start);
+    const endDate = new Date(activeRange.end);
+    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (diffDays <= 45) {
+      const bins: { name: string; dateStr: string; 'Doanh thu': number; 'Chi phí': number; 'Lợi nhuận': number }[] = [];
+      const curr = new Date(startDate);
+      while (curr <= endDate) {
+        const dStr = getTodayStr(curr);
+        const label = `${String(curr.getDate()).padStart(2, '0')}/${String(curr.getMonth() + 1).padStart(2, '0')}`;
+        bins.push({
+          name: label,
+          dateStr: dStr,
+          'Doanh thu': 0,
+          'Chi phí': 0,
+          'Lợi nhuận': 0
+        });
+        curr.setDate(curr.getDate() + 1);
+      }
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const oDateStr = toLocalDateStr(o.createdAt);
+          const bin = bins.find(b => b.dateStr === oDateStr);
+          if (bin) bin['Doanh thu'] += o.price;
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dateStr = toLocalDateStr(d.createdAt || d.deadline);
+        const bin = bins.find(b => b.dateStr === dateStr);
+        if (bin) bin['Doanh thu'] += d.amount || 0;
+      });
+
+      filteredExpenses.forEach(e => {
+        const bin = bins.find(b => b.dateStr === e.date);
+        if (bin) bin['Chi phí'] += e.amount;
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+      });
+
+      return bins;
+    } else {
+      // Monthly bins for ranges > 45 days
+      const bins: { name: string; yearMonth: string; 'Doanh thu': number; 'Chi phí': number; 'Lợi nhuận': number }[] = [];
+      const curr = new Date(startDate);
+      curr.setDate(1);
+      const endLimit = new Date(endDate);
+
+      let loopGuard = 0;
+      while (curr <= endLimit && loopGuard < 120) {
+        loopGuard++;
+        const ym = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
+        const label = `T${String(curr.getMonth() + 1).padStart(2, '0')}/${curr.getFullYear()}`;
+        bins.push({
+          name: label,
+          yearMonth: ym,
+          'Doanh thu': 0,
+          'Chi phí': 0,
+          'Lợi nhuận': 0
+        });
+        curr.setMonth(curr.getMonth() + 1);
+      }
+
+      filteredOrders.forEach(o => {
+        if (o.paymentStatus === 'Đã thanh toán') {
+          const oDate = new Date(o.createdAt);
+          const ym = `${oDate.getFullYear()}-${String(oDate.getMonth() + 1).padStart(2, '0')}`;
+          const bin = bins.find(b => b.yearMonth === ym);
+          if (bin) bin['Doanh thu'] += o.price;
+        }
+      });
+
+      filteredDesigns.forEach(d => {
+        const dDate = new Date(d.createdAt || d.deadline);
+        const ym = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+        const bin = bins.find(b => b.yearMonth === ym);
+        if (bin) bin['Doanh thu'] += d.amount || 0;
+      });
+
+      filteredExpenses.forEach(e => {
+        const eDate = new Date(e.date);
+        const ym = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
+        const bin = bins.find(b => b.yearMonth === ym);
+        if (bin) bin['Chi phí'] += e.amount;
+      });
+
+      bins.forEach(b => {
+        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+      });
+
+      return bins;
+    }
+  }, [filteredOrders, filteredDesigns, filteredExpenses, timeFilter, selectedDayOption, selectedWeekOption, selectedMonthOption, selectedYearOption, customStart, customEnd, currentDateTime, goals, activeRange]);
+
+  // Financial KPIs - calculate from trendChartData when timeFilter is quarter or year to include goal summary actuals
   const totalRevenue = useMemo(() => {
+    if (timeFilter === 'quarter' || timeFilter === 'year') {
+      return trendChartData.reduce((sum, b) => sum + (b['Doanh thu'] || 0), 0);
+    }
     const orderRev = filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .reduce((sum, o) => sum + o.price, 0);
     const designRev = filteredDesigns
       .reduce((sum, d) => sum + (d.amount || 0), 0);
     return orderRev + designRev;
-  }, [filteredOrders, filteredDesigns]);
+  }, [timeFilter, trendChartData, filteredOrders, filteredDesigns]);
 
   const totalExpense = useMemo(() => {
+    if (timeFilter === 'quarter' || timeFilter === 'year') {
+      return trendChartData.reduce((sum, b) => sum + (b['Chi phí'] || 0), 0);
+    }
     return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [filteredExpenses]);
+  }, [timeFilter, trendChartData, filteredExpenses]);
 
   const netProfit = useMemo(() => {
     return totalRevenue - totalExpense;
@@ -500,290 +829,7 @@ export default function DashboardView({
     });
   }, [collaborators, filteredExpenses]);
 
-  const trendChartData = useMemo(() => {
-    // 1. Hourly breakdown (for today / yesterday)
-    if (timeFilter === 'day' && (selectedDayOption === 'today' || selectedDayOption === 'yesterday')) {
-      const bins = Array.from({ length: 24 }, (_, i) => ({
-        name: `${String(i).padStart(2, '0')}:00`,
-        'Doanh thu': 0,
-        'Chi phí': 0,
-        'Lợi nhuận': 0
-      }));
 
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const hr = new Date(o.createdAt).getHours();
-          if (hr >= 0 && hr < 24) bins[hr]['Doanh thu'] += o.price;
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const hr = new Date(dateStr).getHours();
-        if (hr >= 0 && hr < 24) bins[hr]['Doanh thu'] += d.amount || 0;
-      });
-
-      filteredExpenses.forEach(e => {
-        const hr = new Date(e.date).getHours();
-        if (hr >= 0 && hr < 24) bins[hr]['Chi phí'] += e.amount;
-      });
-
-      bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-      });
-
-      return bins;
-    }
-
-    // 2. Yearly breakdown (for year filter)
-    if (timeFilter === 'year') {
-      const currentYear = selectedYearOption;
-      const activeMonthNum = (selectedYearOption === new Date().getFullYear()) ? new Date().getMonth() + 1 : 13;
-      const goalForYear = goals.find(g => g.year === currentYear) || goals[0];
-
-      const bins = Array.from({ length: 12 }, (_, i) => {
-        const mNum = i + 1;
-        return {
-          name: `Tháng ${String(mNum).padStart(2, '0')}`,
-          month: mNum,
-          'Doanh thu': 0,
-          'Chi phí': 0,
-          'Lợi nhuận': 0
-        };
-      });
-
-      bins.forEach(b => {
-        if (b.month < activeMonthNum) {
-          const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
-          if (targetMonth) {
-            b['Doanh thu'] = targetMonth.actualRevenue || 0;
-            b['Chi phí'] = (targetMonth.actualExpenseAds || 0) + (targetMonth.actualExpenseOther || 0);
-            b['Lợi nhuận'] = targetMonth.actualProfit || (b['Doanh thu'] - b['Chi phí']);
-          }
-        }
-      });
-
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const m = new Date(o.createdAt).getMonth() + 1;
-          if (m >= activeMonthNum) {
-            const bin = bins.find(b => b.month === m);
-            if (bin) bin['Doanh thu'] += o.price;
-          }
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const m = new Date(dateStr).getMonth() + 1;
-        if (m >= activeMonthNum) {
-          const bin = bins.find(b => b.month === m);
-          if (bin) bin['Doanh thu'] += d.amount || 0;
-        }
-      });
-
-      filteredExpenses.forEach(e => {
-        const m = new Date(e.date).getMonth() + 1;
-        if (m >= activeMonthNum) {
-          const bin = bins.find(b => b.month === m);
-          if (bin) bin['Chi phí'] += e.amount;
-        }
-      });
-
-      bins.forEach(b => {
-        if (b.month >= activeMonthNum) {
-          b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-        }
-      });
-
-      return bins;
-    }
-
-    // 2b. Quarterly breakdown (for quarter filter)
-    if (timeFilter === 'quarter') {
-      const year = selectedYearOption;
-      const quarterStartMonth = (selectedQuarterOption - 1) * 3; // 0, 3, 6, 9
-
-      const bins = Array.from({ length: 3 }, (_, i) => {
-        const mNum = quarterStartMonth + i + 1;
-        return {
-          name: `Tháng ${String(mNum).padStart(2, '0')}`,
-          month: mNum,
-          'Doanh thu': 0,
-          'Chi phí': 0,
-          'Lợi nhuận': 0
-        };
-      });
-
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const m = new Date(o.createdAt).getMonth() + 1;
-          const bin = bins.find(b => b.month === m);
-          if (bin) bin['Doanh thu'] += o.price;
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const m = new Date(dateStr).getMonth() + 1;
-        const bin = bins.find(b => b.month === m);
-        if (bin) bin['Doanh thu'] += d.amount || 0;
-      });
-
-      filteredExpenses.forEach(e => {
-        const m = new Date(e.date).getMonth() + 1;
-        const bin = bins.find(b => b.month === m);
-        if (bin) bin['Chi phí'] += e.amount;
-      });
-
-      bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-      });
-
-      return bins;
-    }
-
-    // 3. Monthly breakdown (for month filter)
-    if (timeFilter === 'month') {
-      const year = selectedYearOption;
-      const month = selectedMonthOption - 1;
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      const bins = Array.from({ length: daysInMonth }, (_, i) => ({
-        name: `Ngày ${String(i + 1).padStart(2, '0')}`,
-        'Doanh thu': 0,
-        'Chi phí': 0,
-        'Lợi nhuận': 0
-      }));
-
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const d = new Date(o.createdAt).getDate();
-          if (d >= 1 && d <= daysInMonth) {
-            bins[d - 1]['Doanh thu'] += o.price;
-          }
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const dVal = new Date(dateStr).getDate();
-        if (dVal >= 1 && dVal <= daysInMonth) {
-          bins[dVal - 1]['Doanh thu'] += d.amount || 0;
-        }
-      });
-
-      filteredExpenses.forEach(e => {
-        const dVal = new Date(e.date).getDate();
-        if (dVal >= 1 && dVal <= daysInMonth) {
-          bins[dVal - 1]['Chi phí'] += e.amount;
-        }
-      });
-
-      bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-      });
-
-      return bins;
-    }
-
-    // 4. Daily breakdown (for 7days, 30days, week, custom)
-    const startDate = new Date(activeRange.start);
-    const endDate = new Date(activeRange.end);
-    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-    if (diffDays <= 45) {
-      const bins: { name: string; dateStr: string; 'Doanh thu': number; 'Chi phí': number; 'Lợi nhuận': number }[] = [];
-      const curr = new Date(startDate);
-      while (curr <= endDate) {
-        const dStr = getTodayStr(curr);
-        const label = `${String(curr.getDate()).padStart(2, '0')}/${String(curr.getMonth() + 1).padStart(2, '0')}`;
-        bins.push({
-          name: label,
-          dateStr: dStr,
-          'Doanh thu': 0,
-          'Chi phí': 0,
-          'Lợi nhuận': 0
-        });
-        curr.setDate(curr.getDate() + 1);
-      }
-
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const oDateStr = toLocalDateStr(o.createdAt);
-          const bin = bins.find(b => b.dateStr === oDateStr);
-          if (bin) bin['Doanh thu'] += o.price;
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dateStr = toLocalDateStr(d.createdAt || d.deadline);
-        const bin = bins.find(b => b.dateStr === dateStr);
-        if (bin) bin['Doanh thu'] += d.amount || 0;
-      });
-
-      filteredExpenses.forEach(e => {
-        const bin = bins.find(b => b.dateStr === e.date);
-        if (bin) bin['Chi phí'] += e.amount;
-      });
-
-      bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-      });
-
-      return bins;
-    } else {
-      // Monthly bins for ranges > 45 days
-      const bins: { name: string; yearMonth: string; 'Doanh thu': number; 'Chi phí': number; 'Lợi nhuận': number }[] = [];
-      const curr = new Date(startDate);
-      curr.setDate(1);
-      const endLimit = new Date(endDate);
-
-      let loopGuard = 0;
-      while (curr <= endLimit && loopGuard < 120) {
-        loopGuard++;
-        const ym = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
-        const label = `T${String(curr.getMonth() + 1).padStart(2, '0')}/${curr.getFullYear()}`;
-        bins.push({
-          name: label,
-          yearMonth: ym,
-          'Doanh thu': 0,
-          'Chi phí': 0,
-          'Lợi nhuận': 0
-        });
-        curr.setMonth(curr.getMonth() + 1);
-      }
-
-      filteredOrders.forEach(o => {
-        if (o.paymentStatus === 'Đã thanh toán') {
-          const oDate = new Date(o.createdAt);
-          const ym = `${oDate.getFullYear()}-${String(oDate.getMonth() + 1).padStart(2, '0')}`;
-          const bin = bins.find(b => b.yearMonth === ym);
-          if (bin) bin['Doanh thu'] += o.price;
-        }
-      });
-
-      filteredDesigns.forEach(d => {
-        const dDate = new Date(d.createdAt || d.deadline);
-        const ym = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
-        const bin = bins.find(b => b.yearMonth === ym);
-        if (bin) bin['Doanh thu'] += d.amount || 0;
-      });
-
-      filteredExpenses.forEach(e => {
-        const eDate = new Date(e.date);
-        const ym = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        const bin = bins.find(b => b.yearMonth === ym);
-        if (bin) bin['Chi phí'] += e.amount;
-      });
-
-      bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
-      });
-
-      return bins;
-    }
-  }, [filteredOrders, filteredDesigns, filteredExpenses, timeFilter, selectedDayOption, selectedWeekOption, selectedMonthOption, selectedYearOption, customStart, customEnd, currentDateTime, goals, activeRange]);
 
   // Dynamic Chart Title & Description
   const chartInfo = useMemo(() => {
