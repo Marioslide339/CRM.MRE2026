@@ -87,10 +87,18 @@ export default function DashboardView({
   const [selectedDayOption, setSelectedDayOption] = useState<'today' | 'yesterday' | '7days' | '30days'>('today');
   const [selectedWeekOption, setSelectedWeekOption] = useState<1 | 2 | 3 | 4>(1);
   const [selectedMonthOption, setSelectedMonthOption] = useState<number>(new Date().getMonth() + 1);
-  const [selectedQuarterOption, setSelectedQuarterOption] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedQuarterOption, setSelectedQuarterOption] = useState<1 | 2 | 3 | 4>(() => {
+    return (Math.floor(new Date().getMonth() / 3) + 1) as 1 | 2 | 3 | 4;
+  });
   const [selectedYearOption, setSelectedYearOption] = useState<number>(new Date().getFullYear());
-  const [customStart, setCustomStart] = useState<string>('');
-  const [customEnd, setCustomEnd] = useState<string>('');
+  const [customStart, setCustomStart] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [customEnd, setCustomEnd] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   const formatVND = (value: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -105,21 +113,65 @@ export default function DashboardView({
     return `${year}-${month}-${day}`;
   };
 
-  // Convert any date string (ISO UTC or plain YYYY-MM-DD) to local date string YYYY-MM-DD
-  // This fixes timezone issues: new Date().toISOString() stores UTC, but we compare with local date
-  const toLocalDateStr = (dateStr: string): string => {
+  // Convert any date format (DD/MM/YYYY, YYYY-MM-DD, ISO string) to standardized YYYY-MM-DD for comparison
+  const toLocalDateStr = (dateStr: any): string => {
     if (!dateStr) return '';
-    // If it's already a plain date (YYYY-MM-DD, 10 chars, no T), return as-is
-    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
-    // Parse as Date object and use LOCAL time methods
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
-    return getTodayStr(d);
+    const str = String(dateStr).trim();
+    if (!str) return '';
+
+    // Format 1: DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+    if (str.includes('/')) {
+      const parts = str.split(' ')[0].split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        if (year.length === 4) {
+          return `${year}-${month}-${day}`;
+        }
+      }
+    }
+
+    // Format 2: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    if (str.includes('-')) {
+      const plainDate = str.split('T')[0].split(' ')[0];
+      const parts = plainDate.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const year = parts[0];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    // Fallback: Date object
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return getTodayStr(d);
+    }
+
+    return '';
   };
 
   const todayStr = useMemo(() => {
     return getTodayStr(currentDateTime);
   }, [currentDateTime]);
+
+  const availableYears = useMemo(() => {
+    const currentY = new Date().getFullYear();
+    const yearsSet = new Set<number>([currentY, currentY - 1, currentY - 2]);
+    [...orders, ...expenses, ...customers, ...designs].forEach(item => {
+      const rawDate = (item as any).createdAt || (item as any).date || (item as any).deadline;
+      if (rawDate) {
+        const d = new Date(rawDate);
+        const y = d.getFullYear();
+        if (!isNaN(y) && y >= 2020 && y <= 2035) {
+          yearsSet.add(y);
+        }
+      }
+    });
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [orders, expenses, customers, designs]);
 
   const activeRange = useMemo(() => {
     const today = new Date(currentDateTime);
@@ -204,9 +256,13 @@ export default function DashboardView({
     }
     
     if (timeFilter === 'custom') {
+      const defaultStart = `${today.getFullYear()}-01-01`;
+      const defaultEnd = getTodayStr(today);
+      const s = customStart || defaultStart;
+      const e = customEnd || defaultEnd;
       return {
-        start: customStart || '1970-01-01',
-        end: customEnd || '9999-12-31'
+        start: s <= e ? s : e,
+        end: s <= e ? e : s
       };
     }
     
@@ -683,7 +739,9 @@ export default function DashboardView({
       curr.setDate(1);
       const endLimit = new Date(endDate);
 
-      while (curr <= endLimit) {
+      let loopGuard = 0;
+      while (curr <= endLimit && loopGuard < 120) {
+        loopGuard++;
         const ym = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
         const label = `T${String(curr.getMonth() + 1).padStart(2, '0')}/${curr.getFullYear()}`;
         bins.push({
@@ -888,10 +946,9 @@ export default function DashboardView({
                 onChange={e => setSelectedYearOption(Number(e.target.value))}
                 className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
               >
-                {Array.from({ length: 5 }, (_, i) => {
-                  const y = 2026 + i;
-                  return <option key={y} value={y}>Năm {y}</option>;
-                })}
+                {availableYears.map(y => (
+                  <option key={y} value={y}>Năm {y}</option>
+                ))}
               </select>
             </div>
           )}
@@ -912,10 +969,9 @@ export default function DashboardView({
                 onChange={e => setSelectedYearOption(Number(e.target.value))}
                 className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
               >
-                {Array.from({ length: 5 }, (_, i) => {
-                  const y = 2026 + i;
-                  return <option key={y} value={y}>Năm {y}</option>;
-                })}
+                {availableYears.map(y => (
+                  <option key={y} value={y}>Năm {y}</option>
+                ))}
               </select>
             </div>
           )}
@@ -937,10 +993,9 @@ export default function DashboardView({
                 onChange={e => setSelectedYearOption(Number(e.target.value))}
                 className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
               >
-                {Array.from({ length: 5 }, (_, i) => {
-                  const y = 2026 + i;
-                  return <option key={y} value={y}>Năm {y}</option>;
-                })}
+                {availableYears.map(y => (
+                  <option key={y} value={y}>Năm {y}</option>
+                ))}
               </select>
             </div>
           )}
@@ -952,10 +1007,9 @@ export default function DashboardView({
                 onChange={e => setSelectedYearOption(Number(e.target.value))}
                 className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none text-slate-700 font-sans cursor-pointer"
               >
-                {Array.from({ length: 5 }, (_, i) => {
-                  const y = 2026 + i;
-                  return <option key={y} value={y}>Năm {y}</option>;
-                })}
+                {availableYears.map(y => (
+                  <option key={y} value={y}>Năm {y}</option>
+                ))}
               </select>
             </div>
           )}
