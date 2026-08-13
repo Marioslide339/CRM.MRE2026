@@ -668,8 +668,30 @@ export default function App() {
       const resData = await response.json();
       
       const newLogs: AutomationLog[] = [];
-      if (resData && resData.success) {
-        handleUpdateOrder(order.id, { deliveryStatus: 'Đã cấp tài khoản', activatedAt: new Date().toISOString() }, false);
+      const isSuccess = resData && resData.success;
+      const targetStatus = isSuccess ? 'Đã cấp tài khoản' : 'Cần gửi thủ công';
+      const activatedTime = isSuccess ? new Date().toISOString() : order.activatedAt;
+
+      setOrders(prevOrders => {
+        const updated = prevOrders.map(o => 
+          o.id === order.id ? { ...o, deliveryStatus: targetStatus, activatedAt: activatedTime } : o
+        );
+        saveToStorage('mre_orders', updated);
+        debouncedSyncToGoogleSheets(undefined, {
+          customers,
+          orders: updated,
+          courses,
+          designs,
+          collaborators,
+          campaigns,
+          logs,
+          expenses,
+          goals
+        });
+        return updated;
+      });
+
+      if (isSuccess) {
         newLogs.push({
           id: `L${Date.now()}_bg1`,
           timestamp: new Date().toISOString(),
@@ -680,7 +702,6 @@ export default function App() {
         });
         showToast('success', `Đã gửi email kích hoạt khoá học thành công cho ${order.customerEmail}!`);
       } else {
-        handleUpdateOrder(order.id, { deliveryStatus: 'Cần gửi thủ công' }, false);
         newLogs.push({
           id: `L${Date.now()}_bg3`,
           timestamp: new Date().toISOString(),
@@ -691,7 +712,6 @@ export default function App() {
         });
         showToast('error', `Lỗi Apps Script khi kích hoạt cho ${order.customerEmail}: ${resData.error || 'Unknown'}`);
         
-        // Cung cấp giải pháp thủ công
         setPendingManualMail({
           email: order.customerEmail,
           name: order.customerName,
@@ -708,7 +728,13 @@ export default function App() {
       
     } catch (err: any) {
       console.error('Auto activation error:', err);
-      handleUpdateOrder(order.id, { deliveryStatus: 'Cần gửi thủ công' }, false);
+      setOrders(prevOrders => {
+        const updated = prevOrders.map(o => 
+          o.id === order.id ? { ...o, deliveryStatus: 'Cần gửi thủ công' } : o
+        );
+        saveToStorage('mre_orders', updated);
+        return updated;
+      });
       showToast('error', `Không thể kết nối Apps Script để kích hoạt và gửi email thực tế cho ${order.customerEmail}.`);
       
       setPendingManualMail({
@@ -985,7 +1011,11 @@ export default function App() {
   };
 
   const handleAddOrder = (newOrder: Partial<Order>) => {
-    const id = `DH${String(orders.length + 1).padStart(4, '0')}`;
+    const maxOrderNum = orders.reduce((max, o) => {
+      const num = parseInt(String(o.id || '').replace(/\D/g, ''), 10);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const id = `DH${String(maxOrderNum + 1).padStart(4, '0')}`;
     const fullOrder: Order = {
       ...(newOrder as Omit<Order, 'id'>),
       id,
