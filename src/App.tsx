@@ -769,7 +769,17 @@ export default function App() {
     try {
       // Step 1: Fetch pending customers from registration sheet
       const response = await fetch(`${REGISTRATION_SHEET_URL}?action=getPending`);
-      const resData = await response.json();
+      const resText = await response.text();
+      let resData: any;
+      try {
+        resData = JSON.parse(resText);
+      } catch (parseErr) {
+        if (resText.trim().startsWith('<!DOCTYPE') || resText.trim().startsWith('<html')) {
+          throw new Error('Google Apps Script Web App "Đăng Ký Khoá Học" bị lỗi ủy quyền Google hoặc chưa mở quyền "Anyone" (Tất cả mọi người). Vui lòng vào Google Apps Script -> Deploy -> Manage deployments -> Cập nhật "Who has access" thành "Anyone".');
+        }
+        throw new Error(`Phản hồi từ Google Sheet không đúng định dạng JSON: ${resText.substring(0, 100)}`);
+      }
+
       if (!resData.success) {
         throw new Error(resData.error || 'Lỗi không xác định từ Script Đăng ký.');
       }
@@ -803,8 +813,11 @@ export default function App() {
         const courseTitle = matchedCourse.title || (matchedCourse as any).name || 'Khoá học';
         
         if (!dup) {
-          const nextIdNum = updatedCustomers.length + 1;
-          const nextIdStr = `KH${String(nextIdNum).padStart(4, '0')}`;
+          const maxIdNum = updatedCustomers.reduce((max, cust) => {
+            const n = parseInt(String(cust.id || '').replace(/\D/g, ''), 10);
+            return !isNaN(n) && n > max ? n : max;
+          }, 0);
+          const nextIdStr = `KH${String(maxIdNum + 1).padStart(4, '0')}`;
           
           const newCust: Customer = {
             id: nextIdStr,
@@ -876,7 +889,13 @@ export default function App() {
             rows: rowNumsToConfirm
           })
         });
-        const confirmData = await confirmRes.json();
+        const confirmText = await confirmRes.text();
+        let confirmData: any;
+        try {
+          confirmData = JSON.parse(confirmText);
+        } catch (e) {
+          throw new Error('Không thể chuyển trạng thái trên Sheet Đăng ký (Apps Script phản hồi không đúng định dạng).');
+        }
         if (!confirmData.success) {
           throw new Error(confirmData.error || 'Không thể chuyển trạng thái Đã xác nhận trên Sheet Đăng ký.');
         }
