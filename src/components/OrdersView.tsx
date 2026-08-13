@@ -69,13 +69,44 @@ export default function OrdersView({
     return `${year}-${month}-${day}`;
   };
 
-  // Convert ISO UTC date string to local YYYY-MM-DD for correct timezone comparison
-  const toLocalDateStr = (dateStr: string): string => {
+  // Convert any date format (DD/MM/YYYY, YYYY-MM-DD, ISO string) to standardized YYYY-MM-DD for comparison
+  const toLocalDateStr = (dateStr: any): string => {
     if (!dateStr) return '';
-    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
-    return getTodayStr(d);
+    const str = String(dateStr).trim();
+    if (!str) return '';
+
+    // Format 1: DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+    if (str.includes('/')) {
+      const parts = str.split(' ')[0].split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        if (year.length === 4) {
+          return `${year}-${month}-${day}`;
+        }
+      }
+    }
+
+    // Format 2: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    if (str.includes('-')) {
+      const plainDate = str.split('T')[0].split(' ')[0];
+      const parts = plainDate.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const year = parts[0];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    // Fallback: Date object
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return getTodayStr(d);
+    }
+
+    return '';
   };
 
   const todayStr = useMemo(() => getTodayStr(currentDateTime), [currentDateTime]);
