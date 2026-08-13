@@ -917,25 +917,31 @@ export default function App() {
   
 
   const handleAddCustomer = (newCustomer: Partial<Customer>) => {
-    const id = `KH${String(customers.length + 1).padStart(4, '0')}`;
-    const fullCustomer: Customer = {
-      ...(newCustomer as Omit<Customer, 'id'>),
-      id,
-      createdAt: newCustomer.createdAt || new Date().toISOString(),
-      coursesPurchased: newCustomer.coursesPurchased || [],
-      lmsProgress: newCustomer.lmsProgress || {},
-      aiAnalysis: newCustomer.aiAnalysis || {
-        segment: 'Tiềm năng',
-        summary: 'Thành viên mới tạo trên hệ thống CRM.',
-        lastEvaluation: new Date().toISOString()
-      }
-    };
-    const updated = [fullCustomer, ...customers];
-    setCustomers(updated);
-    saveToStorage('mre_customers', updated);
-    showToast('success', `Đã thêm khách hàng ${fullCustomer.name} thành công!`);
-    const updatedLogs = addActivityLog(`[Hồ sơ] Thêm khách hàng mới: ${fullCustomer.name} (${id})`, 'success', id);
-    debouncedSyncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+    setCustomers(prevCustomers => {
+      const maxCustNum = prevCustomers.reduce((max, c) => {
+        const num = parseInt(String(c.id || '').replace(/\D/g, ''), 10);
+        return !isNaN(num) && num > max ? num : max;
+      }, 0);
+      const id = `KH${String(maxCustNum + 1).padStart(4, '0')}`;
+      const fullCustomer: Customer = {
+        ...(newCustomer as Omit<Customer, 'id'>),
+        id,
+        createdAt: newCustomer.createdAt || new Date().toISOString(),
+        coursesPurchased: newCustomer.coursesPurchased || [],
+        lmsProgress: newCustomer.lmsProgress || {},
+        aiAnalysis: newCustomer.aiAnalysis || {
+          segment: 'Tiềm năng',
+          summary: 'Thành viên mới tạo trên hệ thống CRM.',
+          lastEvaluation: new Date().toISOString()
+        }
+      };
+      const updated = [fullCustomer, ...prevCustomers];
+      saveToStorage('mre_customers', updated);
+      showToast('success', `Đã thêm khách hàng ${fullCustomer.name} thành công!`);
+      const updatedLogs = addActivityLog(`[Hồ sơ] Thêm khách hàng mới: ${fullCustomer.name} (${id})`, 'success', id);
+      debouncedSyncToGoogleSheets(undefined, { customers: updated, orders, courses, designs, collaborators, campaigns, logs: updatedLogs, expenses, goals });
+      return updated;
+    });
   };
 
   const handleUpdateCustomer = (id: string, updatedFields: Partial<Customer>) => {
@@ -1262,22 +1268,28 @@ export default function App() {
   };
 
   const handleAddDesign = (newDesign: Partial<DesignService>) => {
-    const id = `TK${String(designs.length + 1).padStart(4, '0')}`;
-    const fullDesign: DesignService = {
-      ...(newDesign as Omit<DesignService, 'id'>),
-      id,
-      createdAt: newDesign.createdAt || new Date().toISOString(),
-      deadline: sanitizeDate(newDesign.deadline || ''),
-      deadlineDemo: sanitizeDate(newDesign.deadlineDemo || newDesign.deadline || ''),
-      status: newDesign.status || 'Tiếp nhận'
-    } as DesignService;
-    const updated = [fullDesign, ...designs];
-    setDesigns(updated);
-    saveToStorage('mre_designs', updated);
-    showToast('success', 'Đã giao dự án thiết kế mới cho CTV.');
-    const updatedLogs = addActivityLog(`[Thiết kế] Giao dự án thiết kế mới: ${fullDesign.title} (${id})`, 'success', id);
-    const finalGoals = updateGoalsWithLiveActuals(goals, orders, updated, expenses);
-    debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+    setDesigns(prevDesigns => {
+      const maxDesignNum = prevDesigns.reduce((max, d) => {
+        const num = parseInt(String(d.id || '').replace(/\D/g, ''), 10);
+        return !isNaN(num) && num > max ? num : max;
+      }, 0);
+      const id = `TK${String(maxDesignNum + 1).padStart(4, '0')}`;
+      const fullDesign: DesignService = {
+        ...(newDesign as Omit<DesignService, 'id'>),
+        id,
+        createdAt: newDesign.createdAt || new Date().toISOString(),
+        deadline: sanitizeDate(newDesign.deadline || ''),
+        deadlineDemo: sanitizeDate(newDesign.deadlineDemo || newDesign.deadline || ''),
+        status: newDesign.status || 'Tiếp nhận'
+      } as DesignService;
+      const updated = [fullDesign, ...prevDesigns];
+      saveToStorage('mre_designs', updated);
+      showToast('success', 'Đã giao dự án thiết kế mới cho CTV.');
+      const updatedLogs = addActivityLog(`[Thiết kế] Giao dự án thiết kế mới: ${fullDesign.title} (${id})`, 'success', id);
+      const finalGoals = updateGoalsWithLiveActuals(goals, orders, updated, expenses);
+      debouncedSyncToGoogleSheets(undefined, { customers, orders, courses, designs: updated, collaborators, campaigns, logs: updatedLogs, expenses, goals: finalGoals });
+      return updated;
+    });
   };
 
   const handleUpdateDesign = (id: string, updatedFields: Partial<DesignService>) => {
