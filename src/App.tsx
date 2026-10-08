@@ -239,19 +239,25 @@ export default function App() {
       const storedKeys = localStorage.getItem('mre_gemini_keys');
       const storedGoals = localStorage.getItem('mre_goals');
 
+      const cachedOrders = storedOrders ? JSON.parse(storedOrders) : [];
+      const cachedDesigns = storedDesigns ? sanitizeDesigns(JSON.parse(storedDesigns)) : [];
+      const cachedExpenses = storedExpenses ? sanitizeExpenses(JSON.parse(storedExpenses)) : [];
+
       setCustomers(storedCustomers ? sanitizeCustomers(JSON.parse(storedCustomers)) : []);
-      setOrders(storedOrders ? JSON.parse(storedOrders) : []);
+      setOrders(cachedOrders);
       setCourses(storedCourses ? JSON.parse(storedCourses) : []);
-      setDesigns(storedDesigns ? sanitizeDesigns(JSON.parse(storedDesigns)) : []);
+      setDesigns(cachedDesigns);
       setCollaborators(storedCollaborators ? JSON.parse(storedCollaborators) : []);
       setCampaigns(storedCampaigns ? JSON.parse(storedCampaigns) : []);
       setLogs(storedLogs ? JSON.parse(storedLogs) : []);
-      setExpenses(storedExpenses ? sanitizeExpenses(JSON.parse(storedExpenses)) : []);
+      setExpenses(cachedExpenses);
       setGeminiKeys(storedKeys ? JSON.parse(storedKeys) : []);
+
+      let baseGoals = INITIAL_GOALS;
       if (storedGoals) {
         try {
           const parsed = JSON.parse(storedGoals) as YearlyGoal[];
-          const aligned = parsed.map(g => {
+          baseGoals = parsed.map(g => {
             const initialGoalForYear = INITIAL_GOALS.find(ig => ig.year === g.year);
             if (!initialGoalForYear) return g;
             return {
@@ -271,13 +277,12 @@ export default function App() {
               })
             };
           });
-          setGoals(aligned);
         } catch (e) {
-          setGoals(INITIAL_GOALS);
+          baseGoals = INITIAL_GOALS;
         }
-      } else {
-        setGoals(INITIAL_GOALS);
       }
+      const initialComputedGoals = computeGoalsWithActuals(baseGoals, cachedOrders, cachedDesigns, cachedExpenses);
+      setGoals(initialComputedGoals);
     } catch (e) {
       console.error('Failed to parse cached database:', e);
     }
@@ -510,12 +515,56 @@ export default function App() {
     currentDesigns: DesignService[],
     currentExpenses: Expense[]
   ): YearlyGoal[] => {
-    const toLocalDateStr = (dateStr: string): string => {
+    const toLocalDateStr = (dateStr: any): string => {
       if (!dateStr) return '';
-      if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr.substring(0, 10);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const str = String(dateStr).trim();
+      if (!str) return '';
+
+      // Format 1: DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+      if (str.includes('/')) {
+        const parts = str.split(' ')[0].split('/');
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          if (year.length === 4) {
+            return `${year}-${month}-${day}`;
+          }
+        }
+      }
+
+      // Format 2: ISO datetime (contains 'T' or ends with 'Z')
+      if (str.includes('T') || str.endsWith('Z')) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        }
+      }
+
+      // Format 3: YYYY-MM-DD
+      if (str.includes('-')) {
+        const plainDate = str.split(' ')[0];
+        const parts = plainDate.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+          const year = parts[0];
+          const month = parts[1].padStart(2, '0');
+          const day = parts[2].padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+
+      return '';
     };
 
     return currentGoals.map(g => {
@@ -553,7 +602,7 @@ export default function App() {
 
         // For month 6 and later, calculate dynamically from live data up to current time (no yesterday limit)
         const monthOrders = (currentOrders || []).filter(o => {
-          if (o.paymentStatus !== 'Đã thanh toán') return false;
+          if (o.paymentStatus !== 'Đã thanh toán' || o.orderType === 'Gửi lại') return false;
           const d = toLocalDateStr(o.createdAt);
           if (!d) return false;
           const parts = d.split('-');
