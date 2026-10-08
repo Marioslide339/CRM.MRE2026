@@ -136,16 +136,57 @@ export default function GoalsViewComponent({
   designs = [],
   expenses = []
 }: GoalsViewComponentProps) {
-  // Convert ISO UTC date string to local YYYY-MM-DD for correct timezone comparison
-  const toLocalDateStr = (dateStr: string): string => {
+  // Convert any date format (DD/MM/YYYY, ISO, YYYY-MM-DD) to local YYYY-MM-DD for correct timezone comparison
+  const toLocalDateStr = (dateStr: any): string => {
     if (!dateStr) return '';
-    if (dateStr.length === 10 && !dateStr.includes('T')) return dateStr;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr.substring(0, 10);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const str = String(dateStr).trim();
+    if (!str) return '';
+
+    // Format 1: DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+    if (str.includes('/')) {
+      const parts = str.split(' ')[0].split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        if (year.length === 4) {
+          return `${year}-${month}-${day}`;
+        }
+      }
+    }
+
+    // Format 2: ISO datetime (contains 'T' or ends with 'Z')
+    if (str.includes('T') || str.endsWith('Z')) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    // Format 3: YYYY-MM-DD
+    if (str.includes('-')) {
+      const plainDate = str.split(' ')[0];
+      const parts = plainDate.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const year = parts[0];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    return '';
   };
   const availableYears = useMemo(() => {
     const years = goals.map(g => g.year);
@@ -177,7 +218,7 @@ export default function GoalsViewComponent({
       // For month 6 and later, calculate dynamically from live data up to current time (no yesterday limit)
       // Find orders for this month & year
       const monthOrders = orders.filter(o => {
-        if (o.paymentStatus !== 'Đã thanh toán') return false;
+        if (o.paymentStatus !== 'Đã thanh toán' || o.orderType === 'Gửi lại') return false;
         const d = toLocalDateStr(o.createdAt);
         if (!d) return false;
         const parts = d.split('-');
