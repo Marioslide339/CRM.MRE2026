@@ -132,9 +132,20 @@ export default function DashboardView({
       }
     }
 
-    // Format 2: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    // Format 2: ISO datetime (contains 'T' or ends with 'Z')
+    if (str.includes('T') || str.endsWith('Z')) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    // Format 3: YYYY-MM-DD
     if (str.includes('-')) {
-      const plainDate = str.split('T')[0].split(' ')[0];
+      const plainDate = str.split(' ')[0];
       const parts = plainDate.split('-');
       if (parts.length === 3 && parts[0].length === 4) {
         const year = parts[0];
@@ -147,7 +158,10 @@ export default function DashboardView({
     // Fallback: Date object
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      return getTodayStr(d);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
 
     return '';
@@ -163,10 +177,12 @@ export default function DashboardView({
     [...orders, ...expenses, ...customers, ...designs].forEach(item => {
       const rawDate = (item as any).createdAt || (item as any).date || (item as any).deadline;
       if (rawDate) {
-        const d = new Date(rawDate);
-        const y = d.getFullYear();
-        if (!isNaN(y) && y >= 2020 && y <= 2035) {
-          yearsSet.add(y);
+        const dStr = toLocalDateStr(rawDate);
+        if (dStr) {
+          const y = parseInt(dStr.split('-')[0], 10);
+          if (!isNaN(y) && y >= 2020 && y <= 2035) {
+            yearsSet.add(y);
+          }
         }
       }
     });
@@ -348,7 +364,6 @@ export default function DashboardView({
     // 2. Yearly breakdown (for year filter)
     if (timeFilter === 'year') {
       const currentYear = selectedYearOption;
-      const activeMonthNum = (selectedYearOption === new Date().getFullYear()) ? new Date().getMonth() + 1 : 13;
       const goalForYear = goals.find(g => g.year === currentYear) || goals[0];
 
       const bins = Array.from({ length: 12 }, (_, i) => {
@@ -362,8 +377,9 @@ export default function DashboardView({
         };
       });
 
+      // 1. Populate historical monthly summary actuals from goals for T1-T5 of 2026
       bins.forEach(b => {
-        if (b.month < activeMonthNum) {
+        if (currentYear === 2026 && b.month < 6) {
           const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
           if (targetMonth) {
             b['Doanh thu'] = targetMonth.actualRevenue || 0;
@@ -373,35 +389,50 @@ export default function DashboardView({
         }
       });
 
+      // 2. Add live software orders for months >= 6 (or all months if not 2026)
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
-          const m = new Date(o.createdAt).getMonth() + 1;
-          if (m >= activeMonthNum) {
-            const bin = bins.find(b => b.month === m);
-            if (bin) bin['Doanh thu'] += o.price;
+          const dStr = toLocalDateStr(o.createdAt);
+          if (dStr) {
+            const parts = dStr.split('-');
+            const oYear = parseInt(parts[0], 10);
+            const oMonth = parseInt(parts[1], 10);
+            if (oYear === currentYear && (currentYear !== 2026 || oMonth >= 6)) {
+              const bin = bins.find(b => b.month === oMonth);
+              if (bin) bin['Doanh thu'] += o.price;
+            }
           }
         }
       });
 
       filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const m = new Date(dateStr).getMonth() + 1;
-        if (m >= activeMonthNum) {
-          const bin = bins.find(b => b.month === m);
-          if (bin) bin['Doanh thu'] += d.amount || 0;
+        const dateStr = getDesignDateStr(d);
+        if (dateStr) {
+          const parts = dateStr.split('-');
+          const dYear = parseInt(parts[0], 10);
+          const dMonth = parseInt(parts[1], 10);
+          if (dYear === currentYear && (currentYear !== 2026 || dMonth >= 6)) {
+            const bin = bins.find(b => b.month === dMonth);
+            if (bin) bin['Doanh thu'] += d.amount || 0;
+          }
         }
       });
 
       filteredExpenses.forEach(e => {
-        const m = new Date(e.date).getMonth() + 1;
-        if (m >= activeMonthNum) {
-          const bin = bins.find(b => b.month === m);
-          if (bin) bin['Chi phí'] += e.amount;
+        const dateStr = toLocalDateStr(e.date);
+        if (dateStr) {
+          const parts = dateStr.split('-');
+          const eYear = parseInt(parts[0], 10);
+          const eMonth = parseInt(parts[1], 10);
+          if (eYear === currentYear && (currentYear !== 2026 || eMonth >= 6)) {
+            const bin = bins.find(b => b.month === eMonth);
+            if (bin) bin['Chi phí'] += e.amount;
+          }
         }
       });
 
       bins.forEach(b => {
-        if (b.month >= activeMonthNum) {
+        if (currentYear !== 2026 || b.month >= 6) {
           b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
         }
       });
@@ -426,45 +457,43 @@ export default function DashboardView({
         };
       });
 
-      // 1. Populate historical monthly summary actuals from goals
+      // 1. Populate historical monthly summary actuals from goals for T1-T5 of 2026
       bins.forEach(b => {
-        const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
-        if (targetMonth) {
-          b['Doanh thu'] = targetMonth.actualRevenue || 0;
-          b['Chi phí'] = (targetMonth.actualExpenseAds || 0) + (targetMonth.actualExpenseOther || 0);
-          b['Lợi nhuận'] = targetMonth.actualProfit || (b['Doanh thu'] - b['Chi phí']);
+        if (year === 2026 && b.month < 6) {
+          const targetMonth = goalForYear?.months.find(mo => mo.month === b.month);
+          if (targetMonth) {
+            b['Doanh thu'] = targetMonth.actualRevenue || 0;
+            b['Chi phí'] = (targetMonth.actualExpenseAds || 0) + (targetMonth.actualExpenseOther || 0);
+            b['Lợi nhuận'] = targetMonth.actualProfit || (b['Doanh thu'] - b['Chi phí']);
+          }
         }
       });
 
-      // 2. Add live software orders/expenses if month wasn't covered in goals
+      // 2. Add live software orders/expenses for months >= 6 (or all months if not 2026)
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
           const dStr = toLocalDateStr(o.createdAt);
           if (dStr) {
             const parts = dStr.split('-');
-            const y = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            if (y === year) {
-              const bin = bins.find(b => b.month === m);
-              if (bin && bin['Doanh thu'] === 0) {
-                bin['Doanh thu'] += o.price;
-              }
+            const oYear = parseInt(parts[0], 10);
+            const oMonth = parseInt(parts[1], 10);
+            if (oYear === year && (year !== 2026 || oMonth >= 6)) {
+              const bin = bins.find(b => b.month === oMonth);
+              if (bin) bin['Doanh thu'] += o.price;
             }
           }
         }
       });
 
       filteredDesigns.forEach(d => {
-        const dStr = toLocalDateStr(d.createdAt || d.deadline);
+        const dStr = getDesignDateStr(d);
         if (dStr) {
           const parts = dStr.split('-');
-          const y = parseInt(parts[0], 10);
-          const m = parseInt(parts[1], 10);
-          if (y === year) {
-            const bin = bins.find(b => b.month === m);
-            if (bin && bin['Doanh thu'] === 0) {
-              bin['Doanh thu'] += d.amount || 0;
-            }
+          const dYear = parseInt(parts[0], 10);
+          const dMonth = parseInt(parts[1], 10);
+          if (dYear === year && (year !== 2026 || dMonth >= 6)) {
+            const bin = bins.find(b => b.month === dMonth);
+            if (bin) bin['Doanh thu'] += d.amount || 0;
           }
         }
       });
@@ -473,19 +502,19 @@ export default function DashboardView({
         const eStr = toLocalDateStr(e.date);
         if (eStr) {
           const parts = eStr.split('-');
-          const y = parseInt(parts[0], 10);
-          const m = parseInt(parts[1], 10);
-          if (y === year) {
-            const bin = bins.find(b => b.month === m);
-            if (bin && bin['Chi phí'] === 0) {
-              bin['Chi phí'] += e.amount;
-            }
+          const eYear = parseInt(parts[0], 10);
+          const eMonth = parseInt(parts[1], 10);
+          if (eYear === year && (year !== 2026 || eMonth >= 6)) {
+            const bin = bins.find(b => b.month === eMonth);
+            if (bin) bin['Chi phí'] += e.amount;
           }
         }
       });
 
       bins.forEach(b => {
-        b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+        if (year !== 2026 || b.month >= 6) {
+          b['Lợi nhuận'] = b['Doanh thu'] - b['Chi phí'];
+        }
       });
 
       return bins;
@@ -494,8 +523,8 @@ export default function DashboardView({
     // 3. Monthly breakdown (for month filter)
     if (timeFilter === 'month') {
       const year = selectedYearOption;
-      const month = selectedMonthOption - 1;
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const month = selectedMonthOption;
+      const daysInMonth = new Date(year, month, 0).getDate();
 
       const bins = Array.from({ length: daysInMonth }, (_, i) => ({
         name: `Ngày ${String(i + 1).padStart(2, '0')}`,
@@ -506,25 +535,36 @@ export default function DashboardView({
 
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
-          const d = new Date(o.createdAt).getDate();
-          if (d >= 1 && d <= daysInMonth) {
-            bins[d - 1]['Doanh thu'] += o.price;
+          const dStr = toLocalDateStr(o.createdAt);
+          if (dStr) {
+            const parts = dStr.split('-');
+            const d = parseInt(parts[2], 10);
+            if (d >= 1 && d <= daysInMonth) {
+              bins[d - 1]['Doanh thu'] += o.price;
+            }
           }
         }
       });
 
       filteredDesigns.forEach(d => {
-        const dateStr = d.createdAt || d.deadline;
-        const dVal = new Date(dateStr).getDate();
-        if (dVal >= 1 && dVal <= daysInMonth) {
-          bins[dVal - 1]['Doanh thu'] += d.amount || 0;
+        const dateStr = getDesignDateStr(d);
+        if (dateStr) {
+          const parts = dateStr.split('-');
+          const dVal = parseInt(parts[2], 10);
+          if (dVal >= 1 && dVal <= daysInMonth) {
+            bins[dVal - 1]['Doanh thu'] += d.amount || 0;
+          }
         }
       });
 
       filteredExpenses.forEach(e => {
-        const dVal = new Date(e.date).getDate();
-        if (dVal >= 1 && dVal <= daysInMonth) {
-          bins[dVal - 1]['Chi phí'] += e.amount;
+        const dateStr = toLocalDateStr(e.date);
+        if (dateStr) {
+          const parts = dateStr.split('-');
+          const dVal = parseInt(parts[2], 10);
+          if (dVal >= 1 && dVal <= daysInMonth) {
+            bins[dVal - 1]['Chi phí'] += e.amount;
+          }
         }
       });
 
@@ -604,25 +644,31 @@ export default function DashboardView({
 
       filteredOrders.forEach(o => {
         if (o.paymentStatus === 'Đã thanh toán') {
-          const oDate = new Date(o.createdAt);
-          const ym = `${oDate.getFullYear()}-${String(oDate.getMonth() + 1).padStart(2, '0')}`;
-          const bin = bins.find(b => b.yearMonth === ym);
-          if (bin) bin['Doanh thu'] += o.price;
+          const dStr = toLocalDateStr(o.createdAt);
+          if (dStr) {
+            const ym = dStr.substring(0, 7);
+            const bin = bins.find(b => b.yearMonth === ym);
+            if (bin) bin['Doanh thu'] += o.price;
+          }
         }
       });
 
       filteredDesigns.forEach(d => {
-        const dDate = new Date(d.createdAt || d.deadline);
-        const ym = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
-        const bin = bins.find(b => b.yearMonth === ym);
-        if (bin) bin['Doanh thu'] += d.amount || 0;
+        const dStr = getDesignDateStr(d);
+        if (dStr) {
+          const ym = dStr.substring(0, 7);
+          const bin = bins.find(b => b.yearMonth === ym);
+          if (bin) bin['Doanh thu'] += d.amount || 0;
+        }
       });
 
       filteredExpenses.forEach(e => {
-        const eDate = new Date(e.date);
-        const ym = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-        const bin = bins.find(b => b.yearMonth === ym);
-        if (bin) bin['Chi phí'] += e.amount;
+        const eStr = toLocalDateStr(e.date);
+        if (eStr) {
+          const ym = eStr.substring(0, 7);
+          const bin = bins.find(b => b.yearMonth === ym);
+          if (bin) bin['Chi phí'] += e.amount;
+        }
       });
 
       bins.forEach(b => {
@@ -638,20 +684,30 @@ export default function DashboardView({
     if (timeFilter === 'quarter' || timeFilter === 'year') {
       return trendChartData.reduce((sum, b) => sum + (b['Doanh thu'] || 0), 0);
     }
+    if (timeFilter === 'month' && selectedYearOption === 2026 && selectedMonthOption < 6) {
+      const goalForYear = goals.find(g => g.year === selectedYearOption) || goals[0];
+      const targetMonth = goalForYear?.months.find(mo => mo.month === selectedMonthOption);
+      return targetMonth?.actualRevenue || 0;
+    }
     const orderRev = filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .reduce((sum, o) => sum + o.price, 0);
     const designRev = filteredDesigns
       .reduce((sum, d) => sum + (d.amount || 0), 0);
     return orderRev + designRev;
-  }, [timeFilter, trendChartData, filteredOrders, filteredDesigns]);
+  }, [timeFilter, trendChartData, selectedYearOption, selectedMonthOption, goals, filteredOrders, filteredDesigns]);
 
   const totalExpense = useMemo(() => {
     if (timeFilter === 'quarter' || timeFilter === 'year') {
       return trendChartData.reduce((sum, b) => sum + (b['Chi phí'] || 0), 0);
     }
+    if (timeFilter === 'month' && selectedYearOption === 2026 && selectedMonthOption < 6) {
+      const goalForYear = goals.find(g => g.year === selectedYearOption) || goals[0];
+      const targetMonth = goalForYear?.months.find(mo => mo.month === selectedMonthOption);
+      return (targetMonth?.actualExpenseAds || 0) + (targetMonth?.actualExpenseOther || 0);
+    }
     return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [timeFilter, trendChartData, filteredExpenses]);
+  }, [timeFilter, trendChartData, selectedYearOption, selectedMonthOption, goals, filteredExpenses]);
 
   const netProfit = useMemo(() => {
     return totalRevenue - totalExpense;
@@ -671,13 +727,21 @@ export default function DashboardView({
 
   // Extra KPI definitions - now all use filtered data to react to time filter
   const filteredPaidRevenue = useMemo(() => {
+    if (timeFilter === 'quarter' || timeFilter === 'year') {
+      return trendChartData.reduce((sum, b) => sum + (b['Doanh thu'] || 0), 0);
+    }
+    if (timeFilter === 'month' && selectedYearOption === 2026 && selectedMonthOption < 6) {
+      const goalForYear = goals.find(g => g.year === selectedYearOption) || goals[0];
+      const targetMonth = goalForYear?.months.find(mo => mo.month === selectedMonthOption);
+      return targetMonth?.actualRevenue || 0;
+    }
     const orderRev = filteredOrders
       .filter(o => o.paymentStatus === 'Đã thanh toán')
       .reduce((sum, o) => sum + o.price, 0);
     const designRev = filteredDesigns
       .reduce((sum, d) => sum + (d.amount || 0), 0);
     return orderRev + designRev;
-  }, [filteredOrders, filteredDesigns]);
+  }, [timeFilter, trendChartData, selectedYearOption, selectedMonthOption, goals, filteredOrders, filteredDesigns]);
 
   const activeDesigns = useMemo(() => {
     return designs.filter(d => d.status !== 'Hoàn thành').length;
