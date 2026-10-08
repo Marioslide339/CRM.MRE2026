@@ -88,9 +88,20 @@ export default function OrdersView({
       }
     }
 
-    // Format 2: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+    // Format 2: ISO datetime (contains 'T' or ends with 'Z')
+    if (str.includes('T') || str.endsWith('Z')) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    // Format 3: YYYY-MM-DD
     if (str.includes('-')) {
-      const plainDate = str.split('T')[0].split(' ')[0];
+      const plainDate = str.split(' ')[0];
       const parts = plainDate.split('-');
       if (parts.length === 3 && parts[0].length === 4) {
         const year = parts[0];
@@ -103,7 +114,10 @@ export default function OrdersView({
     // Fallback: Date object
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
-      return getTodayStr(d);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
 
     return '';
